@@ -1,0 +1,62 @@
+10/36 (106s)
+20/36 (207s)
+30/36 (331s)
+== results/sw_h4m.jsonl (36 runs)
+-- by profile/difficulty
+mid normal                         n= 36 clear= 92% reach15= 92% deathMin= 6.7 lvl= 45 kills=62855 scrap=6009 bossTTK=87s
+-- by profile/difficulty/map
+mid normal hospital                n= 12 clear= 92% reach15= 92% deathMin= 5.5 lvl= 44 kills=58892 scrap=6018 bossTTK=42s
+mid normal quarantine              n= 12 clear= 83% reach15= 83% deathMin= 7.3 lvl= 42 kills=61605 scrap=5615 bossTTK=83s
+mid normal suburbs                 n= 12 clear=100% reach15=100% deathMin=   - lvl= 48 kills=68068 scrap=6394 bossTTK=131s
+-- by profile/difficulty/survivor
+mid normal ines                    n=  6 clear=100% reach15=100% deathMin=   - lvl= 44 kills=51832 scrap=5507 bossTTK=85s
+mid normal juno                    n=  6 clear=100% reach15=100% deathMin=   - lvl= 51 kills=81534 scrap=7393 bossTTK=87s
+mid normal mira                    n=  6 clear= 67% reach15= 67% deathMin= 5.9 lvl= 35 kills=41080 scrap=4241 bossTTK=78s
+mid normal rook                    n=  6 clear=100% reach15=100% deathMin=   - lvl= 47 kills=67427 scrap=5894 bossTTK=69s
+mid normal silas                   n=  6 clear=100% reach15=100% deathMin=   - lvl= 49 kills=71699 scrap=6659 bossTTK=134s
+mid normal tomas                   n=  6 clear= 83% reach15= 83% deathMin= 8.3 lvl= 44 kills=63559 scrap=6360 bossTTK=63s
+-- damage share (avg share of a run's total damage, over runs where the source dealt damage)
+carpetbomb         runs=  14 avgShare= 37.7%  overall= 14.7%
+perk_hotlead       runs=   8 avgShare= 37.4%  overall=  8.3%
+akimbo             runs=  21 avgShare= 33.9%  overall= 19.8%
+napalm             runs=  13 avgShare= 26.8%  overall=  9.7%
+ult_silas          runs=   6 avgShare= 22.5%  overall=  3.7%
+perk_overkill      runs=   8 avgShare= 18.3%  overall=  4.1%
+ult_mira           runs=   6 avgShare= 15.8%  overall=  2.6%
+ult_ines           runs=   6 avgShare= 13.8%  overall=  2.3%
+ult_rook           runs=   6 avgShare= 13.3%  overall=  2.2%
+proxfield          runs=   1 avgShare= 13.1%  overall=  0.4%
+passive_ines       runs=   6 avgShare= 12.7%  overall=  2.1%
+bunker             runs=   8 avgShare= 11.4%  overall=  2.5%
+ult_tomas          runs=   6 avgShare=  8.4%  overall=  1.4%
+tesla              runs=  16 avgShare=  8.3%  overall=  3.7%
+buzzsaw            runs=  14 avgShare=  7.1%  overall=  2.8%
+claymores          runs=   3 avgShare=  5.3%  overall=  0.4%
+rockets            runs=  14 avgShare=  5.0%  overall=  1.9%
+twincleavers       runs=  16 avgShare=  4.7%  overall=  2.1%
+sanctuary          runs=  11 avgShare=  4.5%  overall=  1.4%
+droneswarm         runs=   7 avgShare=  4.4%  overall=  0.9%
+molotov            runs=  15 avgShare=  4.4%  overall=  1.8%
+dogs               runs=  10 avgShare=  3.8%  overall=  1.1%
+grenade            runs=  36 avgShare=  3.1%  overall=  3.1%
+flamethrower       runs=   5 avgShare=  2.9%  overall=  0.4%
+sawblade           runs=  15 avgShare=  2.7%  overall=  1.1%
+reaper             runs=  18 avgShare=  2.3%  overall=  1.2%
+chainsaw           runs=  19 avgShare=  2.1%  overall=  1.1%
+passive_mira       runs=   6 avgShare=  2.0%  overall=  0.3%
+mortar             runs=  15 avgShare=  1.5%  overall=  0.6%
+ult_juno           runs=   6 avgShare=  1.4%  overall=  0.2%
+sentry             runs=   8 avgShare=  1.2%  overall=  0.3%
+pistol             runs=  22 avgShare=  1.0%  overall=  0.6%
+drones             runs=   9 avgShare=  0.9%  overall=  0.2%
+cleaver            runs=  17 avgShare=  0.8%  overall=  0.4%
+holywater          runs=  12 avgShare=  0.8%  overall=  0.3%
+dash_tomas         runs=   6 avgShare=  0.6%  overall=  0.1%
+dash_silas         runs=   6 avgShare=  0.2%  overall=  0.0%
+passive_tomas      runs=   6 avgShare=  0.2%  overall=  0.0%
+dash_ines          runs=   6 avgShare=  0.2%  overall=  0.0%
+dash_juno          runs=   6 avgShare=  0.0%  overall=  0.0%
+-- killed by: gurney 1, other 1, bull 1
+-- damage taken by source: bilesniper 28%, bull 21%, lobber 9%, gurney 7%, other 4%, area:zpuddle:zacid 3%, sprinter 3%, lasher 2%, boss:surgeon 2%, area:zpuddle:zgas 2%, mower 2%, broodmother 2%, riot 1%, brute 1%, boss:nightnurse 1%, gas 1%, leaper 1%, shambler 1%
+-- avg level by minute (alive runs): 0:3 1:4 2:6 3:8 4:10 5:11 6:14 7:16 8:19 9:22 10:26 11:29 12:33 13:36 14:40 15:42
+wall 453s

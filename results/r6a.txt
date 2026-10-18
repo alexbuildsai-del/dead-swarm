@@ -1,0 +1,36 @@
+10/40 (42s)
+20/40 (66s)
+30/40 (83s)
+40/40 (93s)
+== results/r6_fresh_s08.jsonl (40 runs)
+-- by profile/difficulty
+fresh normal                       n= 40 clear= 65% reach15= 68% deathMin= 5.5 lvl= 39 kills= 3857 scrap=1357 bossTTK=209s
+-- by profile/difficulty/map
+fresh normal suburbs               n= 40 clear= 65% reach15= 68% deathMin= 5.5 lvl= 39 kills= 3857 scrap=1357 bossTTK=209s
+-- by profile/difficulty/survivor
+fresh normal juno                  n= 20 clear= 30% reach15= 35% deathMin= 5.5 lvl= 27 kills= 2502 scrap= 812 bossTTK=287s
+fresh normal rook                  n= 20 clear=100% reach15=100% deathMin=   - lvl= 50 kills= 5212 scrap=1901 bossTTK=185s
+-- damage share (avg share of a run's total damage, over runs where the source dealt damage)
+akimbo             runs=  25 avgShare= 56.4%  overall= 35.3%
+carpetbomb         runs=  18 avgShare= 31.7%  overall= 14.2%
+tesla              runs=  18 avgShare= 22.5%  overall= 10.1%
+cleaver            runs=  30 avgShare= 11.2%  overall=  8.4%
+buzzsaw            runs=  25 avgShare=  8.9%  overall=  5.5%
+pistol             runs=  30 avgShare=  7.7%  overall=  5.8%
+mortar             runs=  21 avgShare=  6.6%  overall=  3.5%
+dogs               runs=  16 avgShare=  6.4%  overall=  2.6%
+sanctuary          runs=  18 avgShare=  6.1%  overall=  2.7%
+twincleavers       runs=  27 avgShare=  5.7%  overall=  3.9%
+ult_rook           runs=  20 avgShare=  4.2%  overall=  2.1%
+sawblade           runs=  31 avgShare=  3.5%  overall=  2.7%
+reaper             runs=  18 avgShare=  3.2%  overall=  1.4%
+perk_hotlead       runs=   5 avgShare=  1.7%  overall=  0.2%
+chainsaw           runs=  20 avgShare=  1.4%  overall=  0.7%
+holywater          runs=  20 avgShare=  0.7%  overall=  0.4%
+grenade            runs=  30 avgShare=  0.5%  overall=  0.4%
+dash_juno          runs=  12 avgShare=  0.3%  overall=  0.1%
+ult_juno           runs=   8 avgShare=  0.2%  overall=  0.0%
+-- killed by: area:zpuddle:zgas 9, area:zpuddle:zacid 3, lobber 1
+-- damage taken by source: area:zpuddle:zgas 62%, other 8%, bilesniper 7%, area:zpuddle:zacid 6%, bull 4%, lobber 3%, boss:abomination 2%, shambler 1%, brute 1%, mower 1%, broodmother 1%, sprinter 1%, boss:postman 1%, howler 0%, area:zaura:zuvaura 0%, splitter 0%, lasher 0%, riot 0%
+-- avg level by minute (alive runs): 0:1 1:2 2:7 3:10 4:13 5:15 6:18 7:20 8:24 9:27 10:29 11:32 12:35 13:38 14:41 15:44
+wall 93s

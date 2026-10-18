@@ -1,0 +1,64 @@
+=== boss_oob.js
+surgeon spawned at -203 3347 → alive after 120 s: false hp 0% pos 301 2840 seconds with centre inside walls 2 / 67
+surgeon spawned at 1640 60 → alive after 120 s: true hp 59% pos 1584 366 seconds with centre inside walls 1 / 120
+=== boss_wall_replay.js
+spawnBoss nightnurse t=300.0 survivor 1539 2886 survivor in wall false flow cells 5776 → boss at 1938 2833 boss in wall false
+spawnBoss orderlyking t=600.0 survivor 1466 1793 survivor in wall false flow cells 5776 → boss at 1522 1342 boss in wall false
+spawnBoss surgeon t=900.0 survivor 1892 1774 survivor in wall false flow cells 5776 → boss at 1504 1865 boss in wall false
+[0] hospital/ines/normal/inf10/M6Balt random+god → timeout t=960s lvl=36 hold=0s 13635ms  problems=-
+SUMMARY {}
+=== finalboss.js quarantine 3
+quarantine seed 1 juno final spawned 900 killed 906 evac landed over null | samples 5 hidden 0 boss motionless samples 4 min hp 86.4% | last: hivequeen hp 86.4% phase 1 d=349 hidden=false state=tendrils inWall=false | weapons twincleavers*,stormgrid*,droneswarm*,buzzsaw*,sanctuary*
+quarantine seed 2 tomas final spawned 900 killed 944 evac away over null | samples 43 hidden 9 boss motionless samples 21 min hp 5.9% | last: hivequeen hp 5.9% phase 3 d=372 hidden=false state=- inWall=false | weapons reaper*,napalm*,buzzsaw*,bunker*,akimbo*
+quarantine seed 3 ines final spawned 900 killed 1044 evac landed over evac | samples 143 hidden 12 boss motionless samples 83 min hp 3.1% | last: hivequeen hp 3.1% phase 3 d=497 hidden=false state=- inWall=false | weapons tesla5,napalm*,carpetbomb*,cleaver5,reaper*
+=== finalboss.js hospital 2
+hospital seed 1 juno final spawned 900 killed 944 evac away over null | samples 43 hidden 0 boss motionless samples 11 min hp 2.5% | last: surgeon hp 2.5% phase 3 d=247 hidden=false state=- inWall=false | weapons twincleavers*,sanctuary*,flamethrower5,proxfield*,buzzsaw*
+hospital seed 2 tomas final spawned 900 killed 970 evac away over null | samples 70 hidden 0 boss motionless samples 14 min hp 0.3% | last: surgeon hp 0.3% phase 3 d=297 hidden=false state=- inWall=false | weapons reaper*,buzzsaw*,carpetbomb*,akimbo*,tesla5
+=== spikes.js
+walked 7905 units in 40 s | flow refresh with window shift: n 31 avg 2.46 ms, max 47.5 | without shift avg 0.21 ms | genBlock 84 blocks 9.8 ms total | step p50 0.01 max 92.3 blocks cached 77
+=== edge.js
+4 maxed build level-up options: item:peaches,item:pocketscrap
+   banish on fallback item (should be refused): true
+   reroll on fallback consumed a reroll: 1 (options peaches,pocketscrap )
+   resolveChoice(7) with 2 options → choice cleared without effect: true
+5 banish-all → options now item:peaches,item:pocketscrap banished 28 remaining banishes 22
+6 all perks owned → perk choice skipped, next choice: levelup
+7 hold out started: true away
+   after 125 s: evac incoming windowT 30.0 holdBonus 69
+   landed again? landed
+   boarded return flight: evac scrap 69 hold bonus 69
+8 second wind: revives used 2 over death stats.revived 2
+9 endRun twice keeps first result: quit | step after over is inert, choice null
+10 daily quarantine ines perks scavking seed 20261017 | two worlds same seed same first 600 ticks: true
+11 infection 10: minibosses spawned 2 alive 2 | choices queued after killing both: [null] serum 2
+12 spore hulk → sporelings 3 | choices after all dead: [] | minibosses stat 1 serum 1
+=== snapfuzz.js
+     quarantine/silas M3 t=935.02 before="{\"k\":19124,\"c\":14,\"e\":17,\"o\":4}" after="{\"k\":19143,\"c\":14,\"e\":17,\"o\":4}"
+ISSUE diff:pickups 4
+     quarantine t=905.02 979 → 981
+     quarantine t=905.2 981 → 982
+     quarantine t=834.52 485 → 489
+     quarantine t=905.02 398 → 408
+ISSUE diff:allyKinds 11
+     hospital/juno t=692.9 [bike,bunker] → after 3s [bunker]
+     hospital/mira t=601.02 [dog,hound] → after 3s [dog]
+     hospital/mira t=854.68 [dog,hound] → after 3s [dog]
+     hospital/mira t=905.02 [dog,hound] → after 3s [dog]
+     suburbs/tomas t=38.85 [drone] → after 3s [boombox,drone]
+     suburbs/ines t=182.3 [teslanode,turret] → after 3s [turret]
+ISSUE diff:bosses 1
+     quarantine/silas M3 t=905.02 before="hivequeen:61393" after="hivequeen:60942"
+=== combos.js
+combos 40 failures 0
+=== evac_hosp.js
+hospital evac pads: path length p50 280 p90 320 max 320 (straight-line ~280) | pads > 1400 units of walking: 0 / 200
+worst 5 (path, straight): 320/243  320/259  320/225  320/302  320/285
+=== fuzz.js --n 6 --seed 23 --minutes 16 --mode random
+[0] hospital/ines/normal/inf10/M6Balt random+god → evac t=952s lvl=40 hold=0s 16779ms  problems=-
+[1] hospital/ines/normal/inf10/M4 random+god → timeout t=960s lvl=27 hold=0s 12662ms  problems=-
+[2] hospital/mira/normal/inf5/M8B random+god → timeout t=960s lvl=33 hold=27s 13590ms  problems=-
+[3] quarantine/silas/normal/inf0/M1/daily random+god → timeout t=960s lvl=31 hold=0s 18416ms  problems=-
+[4] hospital/tomas/nightmare/inf10/M3alt random → death t=273s lvl=12 hold=0s 2643ms  problems=-
+[5] quarantine/juno/normal/inf10/M9Aalt random → death t=215s lvl=9 hold=0s 3041ms  problems=-
+SUMMARY {}
+DONE

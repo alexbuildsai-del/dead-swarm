@@ -1,0 +1,2 @@
+{"hpQuad":0.066,"dmgLin":0.105}
+SWEEPDONE

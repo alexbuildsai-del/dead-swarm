@@ -1,0 +1,89 @@
+=== boot.py
+fonts unreachable (proxy) → menu visible after 1.31s {"dcl": 125, "load": 130.30000000074506} {"artInit": null, "now": 1446.4000000022352}
+   error: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED
+fonts aborted → menu visible after 0.96s {"dcl": 106.80000000074506, "load": 111.20000000298023} {"artInit": null, "now": 1045.5}
+   error: Failed to load resource: net::ERR_FAILED
+=== input.py
+hold S while a level-up opens (3 skips owned): {"skipsLeft": 3, "level": 2, "overlayOpen": true, "choice": true, "shows": 1}
+hold S with 0 skips → overlay re-renders (DS.Overlay.show calls): {"overlayOpen": true, "shows": 0, "choice": true}
+hold Space (dash) while a crate opens → crate auto-collected within 0.25 s: {"overlayOpen": true, "choice": true}
+errors: []
+joystick + dash + ult multi-touch: {"dashes": 1, "ults": 1, "joyActive": false, "vec": {"x": 0, "y": 0}} joystick state right after the dash finger lifted: {"active": false, "vec": {"x": 0, "y": 0}} moved right by 211
+after touchcancel: joystick {"active": false, "vec": {"x": 0, "y": 0}}
+visibility hidden: paused True snapshot saved True
+visible again: still paused (expects tap on RESUME): True
+hide during level-up: {"paused": true, "overlay": true, "choice": true, "uiMode": "pause"}
+card tappable after resume: choice cleared = True
+errors: []
+=== overlay_passthrough.py
+crate overlay open: True | element under the ULT button: ov ov-crate
+ult fired while the crate is open: 0 | joystick grabbed under the overlay: False
+after COLLECT: ult fired = 0 | survivor drifting right (held joystick) by 0
+=== overlay_taps.py
+844x390 {"levelup": ["btnDash\u2192card k-weapon Lv 2 \u2192 3WEAPON", "btnUlt\u2192card k-weapon Lv 2 \u2192 3WEAPON"], "crate": ["btnDash\u2192overlay", "btnUlt\u2192overlay"], "perk": ["btnDash\u2192overlay", "btnUlt\u2192overlay"]}
+667x375 {"levelup": ["btnDash\u2192ov-burst", "btnUlt\u2192ov-burst"], "crate": ["btnDash\u2192overlay", "btnUlt\u2192overlay"], "perk": ["btnDash\u2192overlay", "btnUlt\u2192overlay"]}
+932x430 {"levelup": ["btnDash\u2192card k-gear Lv 1 \u2192 2GEARRu", "btnUlt\u2192card k-gear Lv 1 \u2192 2GEARRu"], "crate": ["btnDash\u2192overlay", "btnUlt\u2192overlay"], "perk": ["btnDash\u2192overlay", "btnUlt\u2192overlay"]}
+390x844 {"levelup": ["btnDash\u2192ov-burst", "btnUlt\u2192ov-burst"], "crate": ["btnDash\u2192overlay", "btnUlt\u2192overlay"], "perk": ["btnDash\u2192overlay", "btnUlt\u2192overlay"]}
+360x740 {"levelup": ["btnDash\u2192ov-burst", "btnUlt\u2192ov-burst"], "crate": ["btnDash\u2192overlay", "btnUlt\u2192reels n5"], "perk": ["btnDash\u2192overlay", "btnUlt\u2192overlay"]}
+=== smallscreens.py
+360x640 all overlay buttons on screen
+320x568 all overlay buttons on screen
+568x320 all overlay buttons on screen
+640x360 all overlay buttons on screen
+375x667 all overlay buttons on screen
+=== saves_browser.py
+1 truncated main save: {"scrap": 4321, "note": "Save was damaged \u2014 restored the last backup.", "bak": "{\"_seq\":1,\"_sum\":\"cfcb51ee\",\"v", "corrupt": true, "toast": "Save was damaged \u2014 restored the last backup."} []
+1b second corruption right after a recovery (backup slot was overwritten by the corrupt copy): {"scrap": 4321, "note": "Save was damaged \u2014 restored the last backup."}
+2 storage throws: boot {"ok": false, "settingsRow": "saving is blocked"} → after a run {"ok": false, "mode": "end", "warn": false} []
+3 quota exceeded: {"ok": false, "stored": 777} []
+4 reload 0.2 s after death: {"runs": 1, "scrap": 200, "over": true} → {"runs": 1, "scrap": 200, "resumeButton": false, "resumeText": null}
+5 snapshot missing player.gear → Resume: {"t": 100, "weapons": ["cleaver"], "unlockedType": "Set"} then a level-up: {"t": 100, "overlay": true, "errBox": null} []
+6 import errors: ["The code is damaged \u2014 a character is missing or changed. Copy it again in full.", "That doesn't look like a Dead Swarm save code. It should start with DS1:"] | reset with lowercase "reset" accepted: {"mode": "menu", "screen": "main", "prereset": false} []
+7 setting autosaved: True | daily snapshot resume label: Resume runTomas, St. Agnes, 01:10 []
+=== resume_fallback.py
+resume button shown: True
+fell back to a fresh world: {"t": 1, "unlockedWeapons": "Set"}
+after a level-up: time advanced 0.08 s in 2 s; {"t": 1.3666666666666667, "choice": true, "overlay": true, "errBox": null}
+3 s later (frozen if t unchanged): {"t": 1.3666666666666667, "choice": true, "overlay": true, "q": 0}
+console errors (first 3 of 0): []
+=== endflows.py
+death → {"mode": "end", "game": "end", "runs": 1, "scrap": 40, "snap": false, "stamp": "DEAD", "stamp2": null}
+retry → {"mode": "off", "game": "run", "runs": 1, "scrap": 40, "snap": false, "stamp": null, "stamp2": null} new world t 1
+hold-out death → {"mode": "end", "game": "end", "runs": 2, "scrap": 140, "snap": false, "stamp": "CLEARED", "stamp2": "DIED IN HOLD OUT"}
+quit → {"mode": "end", "game": "end", "runs": 3, "scrap": 140, "snap": false, "stamp": "QUIT", "stamp2": null}
+daily end → {"daily": "Daily Outbreak Sun 18 Oct759First score today", "best": {"20261018": 760}} | retry daily starts {"key":20261018,"perk":"secondskin"}
+errors []
+=== multitouch.py
+default | after dash tap: {"joy": true, "vec": {"x": 1, "y": 0}, "dashBtnDown": true} | after ult tap: {"joy": true, "vec": {"x": 1, "y": 0}, "ultBtnDown": true} | counts {"dashes": 1, "ults": 1} | touch on button half starts joystick: False | errors []
+swap | after dash tap: {"joy": true, "vec": {"x": 1, "y": 0}, "dashBtnDown": true} | after ult tap: {"joy": true, "vec": {"x": 1, "y": 0}, "ultBtnDown": true} | counts {"dashes": 1, "ults": 1} | touch on button half starts joystick: False | errors []
+=== evac_ui.py
+844x390 {"holdBtn": [210, 271], "promptY": 289, "subtitleBottom": 376, "visible": "block"} after tapping HOLD OUT: {"holdOut": true, "evac": "away"} []
+667x375 {"holdBtn": [199, 261], "promptY": 278, "subtitleBottom": 361, "visible": "block"} after tapping HOLD OUT: {"holdOut": true, "evac": "away"} []
+390x844 {"holdBtn": [523, 585], "promptY": 625, "subtitleBottom": 830, "visible": "block"} after tapping HOLD OUT: {"holdOut": true, "evac": "away"} []
+=== debugmenu.py
+menu: debug open True disabled in-run buttons ['Skip 1 minute', 'Spawn the final boss', 'Spawn 1,000 zombies']
+  after +scrap/unlock: modal still open True scrap 1000 achievements 79
+pause: after 16× skip + boss + horde: {"t": 961, "bosses": ["surgeon"], "zombies": 1017, "modal": true, "paused": true}
+6 s later: {"t": 967, "bosses": ["surgeon", "nightnurse", "orderlyking", "surgeon"], "zombies": 1019, "fps": 60, "over": null, "q": 2}
+errors []
+=== audio_runs.py
+after unlock {"ctx": "running", "voices": 0, "stats": {"played": 0, "dropped": 0, "stolen": 0, "peakVoices": 0, "merged": 0}, "music": {"mode": "menu", "style": "menu", "n": 0, "tg": {"pad": 1, "bass": 1, "drums": 1, "lead": 1, "boss": 0, "siren": 0}, "lv": {"pad": 0.35, "bass": 0.35, "drums": 0.35, "lead": 0.35
+run 1 peak voices 9 | paused voices 1 | ctx hidden suspended visible running | menu voices 0 stats {"played": 128, "dropped": 32, "stolen": 0, "peakVoices": 11, "merged": 37, "baked": 121} | music {"mode": "menu", "style": "menu", "n": 0, "tg": {"pad": 1, "bass": 1, "drums": 1, "lead": 1, "boss": 0, "siren": 0}, "lv": {"pad": 0.8, "bass": 0.8, "drums": 0.
+run 2 peak voices 10 | paused voices 1 | ctx hidden suspended visible running | menu voices 0 stats {"played": 255, "dropped": 57, "stolen": 0, "peakVoices": 12, "merged": 65, "baked": 243} | music {"mode": "menu", "style": "menu", "n": 0, "tg": {"pad": 1, "bass": 1, "drums": 1, "lead": 1, "boss": 0, "siren": 0}, "lv": {"pad": 0.79, "bass": 0.79, "drums": 
+run 3 peak voices 9 | paused voices 1 | ctx hidden suspended visible running | menu voices 0 stats {"played": 386, "dropped": 82, "stolen": 0, "peakVoices": 13, "merged": 99, "baked": 370} | music {"mode": "menu", "style": "menu", "n": 0, "tg": {"pad": 1, "bass": 1, "drums": 1, "lead": 1, "boss": 0, "siren": 0}, "lv": {"pad": 0.78, "bass": 0.78, "drums": 
+errors []
+=== saves.js
+ok   snapshot with unknown ids / missing sections restores
+ok   … and keeps running
+ok   snapshot with other version is rejected by load()
+=== test_meta
+
+186 passed, 0 failed
+=== ui_robust
+· settings persist and apply
+· resume an interrupted run
+· keyboard navigation & 2-tap start
+38 passed, 0 failed
+tools/agents/meta/ui_robust.py
+tools/agents/meta/ui_walk.py
+DONE

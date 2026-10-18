@@ -1,0 +1,136 @@
+/* ==========================================================================
+   web/00_base.css — base layout, touch controls, in-run overlays (zine style)
+   ========================================================================== */
+:root {
+  --ink: #1b1f1a; --ink2: #2b3129; --paper: #d8d5c4; --paper2: #c9c5b0; --paperD: #a9a690;
+  --g1: #3d4a3a; --g2: #56664f; --g3: #74826a; --red: #c8323a; --yellow: #f2c84b; --uv: #5b6cff; --white: #f4f1e4;
+  --f-head: "Anton", Impact, "Arial Narrow", sans-serif; --f-hand: "Permanent Marker", "Comic Sans MS", cursive; --f-type: "Special Elite", "Courier New", monospace;
+  --sl: env(safe-area-inset-left, 0px); --sr: env(safe-area-inset-right, 0px); --st: env(safe-area-inset-top, 0px); --sb: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root { color-scheme: dark; }
+html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: var(--ink); color: var(--paper); font-family: var(--f-type); overscroll-behavior: none; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+#game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; background: var(--ink); }
+#hud-dom, #touch, #overlay, #ui { position: fixed; inset: 0; pointer-events: none; }
+#touch { pointer-events: auto; display: none; z-index: 5; }
+#hud-dom { z-index: 6; }
+#overlay { z-index: 20; }
+#ui { z-index: 30; }
+#hud-dom > *, #overlay > *, #ui > * { pointer-events: auto; }
+#overlay.ov { pointer-events: auto; } /* an open overlay swallows every tap: nothing reaches the touch layer / HUD below */
+#touch.ov-open { pointer-events: none; }
+#touch.ov-open .tbtn, #touch.ov-open .joy-base, #touch.ov-open .joy-hint { visibility: hidden; } /* inert while an overlay is open */
+.safe-probe { position: fixed; left: 0; top: 0; width: 0; height: 0; padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); visibility: hidden; pointer-events: none; }
+button { font-family: inherit; color: inherit; cursor: pointer; }
+
+/* ---------- boot ---------- */
+#boot { position: fixed; inset: 0; z-index: 100; background: var(--ink); display: flex; align-items: center; justify-content: center; transition: opacity .5s; }
+#boot.gone { opacity: 0; pointer-events: none; }
+.boot-title { font-family: var(--f-head); font-size: 64px; letter-spacing: 2px; color: var(--paper); text-shadow: 4px 4px 0 var(--red); }
+.boot-sub { font-family: var(--f-type); color: var(--yellow); text-align: center; margin-top: 8px; animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: .35; } }
+
+/* ---------- touch controls ---------- */
+.joy-base { position: fixed; width: 132px; height: 132px; margin: -66px 0 0 -66px; border-radius: 50%; border: 3px dashed rgba(216,213,196,.55); background: rgba(27,31,26,.25); display: none; pointer-events: none; }
+.joy-knob { position: absolute; left: 50%; top: 50%; width: 58px; height: 58px; border-radius: 50%; background: rgba(216,213,196,.85); border: 3px solid var(--ink); box-shadow: 3px 3px 0 rgba(0,0,0,.4); transform: translate(-50%,-50%); }
+.joy-hint { position: fixed; left: calc(16px + var(--sl)); bottom: calc(22px + var(--sb)); font-family: var(--f-hand); font-size: 13px; color: rgba(216,213,196,.5); pointer-events: none; transition: opacity .6s; display: none; }
+#touch.is-touch .joy-hint { display: block; }
+#touch.swap .joy-hint { left: auto; right: calc(16px + var(--sr)); }
+.tbtn { position: fixed; border-radius: 50%; border: 3px solid var(--ink); display: none; align-items: center; justify-content: center; flex-direction: column; font-family: var(--f-head); color: var(--ink); background: var(--paper); box-shadow: 4px 4px 0 rgba(0,0,0,.45); padding: 0; touch-action: none; }
+#touch.is-touch .tbtn { display: flex; }
+.tbtn .tb-ring { position: absolute; inset: -7px; border-radius: 50%; background: conic-gradient(var(--c, var(--yellow)) calc(var(--k, 0) * 360deg), rgba(27,31,26,.45) 0); -webkit-mask: radial-gradient(circle, transparent 58%, #000 60%); mask: radial-gradient(circle, transparent 58%, #000 60%); }
+.tbtn .tb-lbl { position: relative; font-size: 15px; letter-spacing: 1px; }
+.tbtn .tb-sub { position: relative; font-size: 12px; }
+.tbtn.down { transform: translate(2px,2px); box-shadow: 2px 2px 0 rgba(0,0,0,.45); }
+.tbtn-dash { width: 82px; height: 82px; right: calc(26px + var(--sr)); bottom: calc(28px + var(--sb)); --c: var(--paper); }
+.tbtn-dash:not(.ready) { background: var(--paperD); }
+.tbtn-ult { width: 64px; height: 64px; right: calc(124px + var(--sr)); bottom: calc(54px + var(--sb)); background: var(--g3); --c: var(--yellow); }
+.tbtn-ult.ready { background: var(--yellow); animation: ultpulse .8s ease-in-out infinite; }
+.tbtn-ult.active { background: var(--red); color: var(--paper); }
+@keyframes ultpulse { 50% { box-shadow: 0 0 0 6px rgba(242,200,75,.35), 4px 4px 0 rgba(0,0,0,.45); } }
+#touch.swap .tbtn-dash { right: auto; left: calc(26px + var(--sl)); }
+#touch.swap .tbtn-ult { right: auto; left: calc(124px + var(--sl)); }
+@media (orientation: portrait) { .tbtn-ult { right: calc(30px + var(--sr)); bottom: calc(126px + var(--sb)); } #touch.swap .tbtn-ult { left: calc(30px + var(--sl)); } }
+
+/* ---------- pause / hold out ---------- */
+.pause-btn { position: fixed; top: calc(12px + var(--st)); right: calc(12px + var(--sr)); width: 44px; height: 44px; display: none; align-items: center; justify-content: center; padding: 0; background: var(--paper); color: var(--ink); border: 3px solid var(--ink); font-family: var(--f-head); font-size: 18px; box-shadow: 3px 3px 0 rgba(0,0,0,.45); transform: rotate(2deg); }
+.ov-pause { display: flex; z-index: 2; } /* overlay's own copy of the pause button, same spot */
+.hold-btn { position: fixed; left: 50%; bottom: calc(31% + var(--sb)); transform: translateX(-50%) rotate(-1.5deg); display: none; background: var(--uv); color: var(--white); border: 3px solid var(--ink); padding: 8px 18px; font-family: var(--f-head); font-size: 20px; letter-spacing: 1px; box-shadow: 4px 4px 0 var(--ink); }
+.hold-btn small { display: block; font-family: var(--f-type); font-size: 11px; letter-spacing: 0; }
+.err-box { position: fixed; left: 10px; bottom: 10px; z-index: 200; background: var(--red); color: var(--white); padding: 8px 12px; font-size: 12px; max-width: 80vw; }
+.fallback-menu, .fallback-pause { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(27,31,26,.7); gap: 12px; }
+.fallback-menu button, .fallback-pause button { font-family: var(--f-head); font-size: 22px; padding: 10px 24px; background: var(--paper); color: var(--ink); border: 3px solid var(--ink); }
+
+/* ---------- overlays ---------- */
+/* "safe" centring: the two spacers share the free space (centred) and collapse to 0 when the content is taller than
+   the screen, which then scrolls from the top instead of being clipped at both ends (same as justify-content: safe
+   center, which older iOS Safari ignores in flexbox) */
+.ov { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: calc(10px + var(--st)) calc(12px + var(--sr)) calc(10px + var(--sb)) calc(12px + var(--sl)); background: rgba(16,19,15,.8); animation: ovIn .18s ease-out; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; }
+.ov::before, .ov::after { content: ''; flex: 1 0 0; }
+@keyframes ovIn { from { background: rgba(16,19,15,0); } }
+.ov-burst { position: fixed; inset: -20%; background: repeating-conic-gradient(from 0deg, rgba(242,200,75,.10) 0 6deg, transparent 6deg 14deg); animation: spinburst 18s linear infinite; pointer-events: none; }
+@keyframes spinburst { to { transform: rotate(360deg); } }
+.ov-head { position: relative; text-align: center; margin-bottom: 10px; }
+.stamp { display: inline-block; font-family: var(--f-head); font-size: clamp(30px, 7vh, 54px); letter-spacing: 2px; color: var(--paper); background: var(--ink); padding: 0 18px; transform: rotate(-3deg); box-shadow: 5px 5px 0 var(--uv); animation: stampIn .28s cubic-bezier(.2,1.6,.4,1); }
+.stamp.red { box-shadow: 5px 5px 0 var(--red); } .stamp.yellow { box-shadow: 5px 5px 0 var(--yellow); }
+@keyframes stampIn { from { transform: scale(2.2) rotate(-12deg); opacity: 0; } }
+.ov-sub { font-family: var(--f-hand); color: var(--yellow); margin-top: 6px; font-size: 15px; text-shadow: 2px 2px 0 var(--ink); }
+.cards { position: relative; display: flex; gap: 14px; justify-content: center; align-items: stretch; flex-wrap: nowrap; max-width: 100%; }
+.card { position: relative; width: clamp(140px, 22vw, 210px); min-height: clamp(180px, 46vh, 270px); padding: 10px 10px 12px; text-align: left; background: var(--paper); color: var(--ink); border: 3px solid var(--ink); box-shadow: 6px 6px 0 rgba(0,0,0,.55); transform: rotate(var(--rot, 0deg)); animation: cardIn .34s cubic-bezier(.2,1.5,.5,1) backwards; animation-delay: calc(var(--i) * 70ms); display: flex; flex-direction: column; gap: 4px; background-image: radial-gradient(rgba(27,31,26,.08) 1px, transparent 1.2px); background-size: 5px 5px; }
+.card::before { content: ''; position: absolute; top: -10px; left: 50%; width: 64px; height: 20px; margin-left: -32px; background: rgba(242,200,75,.7); transform: rotate(-4deg); box-shadow: 1px 1px 0 rgba(0,0,0,.2); }
+@keyframes cardIn { from { transform: translateY(40px) scale(1.4) rotate(calc(var(--rot, 0deg) * 6)); opacity: 0; } }
+.card:hover, .card:focus-visible { transform: rotate(0deg) translateY(-6px); box-shadow: 8px 10px 0 rgba(0,0,0,.55); outline: none; }
+.card.picked { animation: picked .14s ease-in forwards; }
+@keyframes picked { to { transform: scale(1.08) rotate(0); box-shadow: 0 0 0 6px var(--yellow); } }
+.card-top { display: flex; justify-content: space-between; align-items: center; }
+.badge { font-family: var(--f-head); font-size: 12px; padding: 1px 6px; letter-spacing: .5px; }
+.badge.new { background: var(--red); color: var(--white); transform: rotate(-4deg); }
+.badge.lv { background: var(--ink); color: var(--paper); }
+.badge.evo { background: var(--yellow); color: var(--ink); }
+.badge.perk { background: var(--uv); color: var(--white); }
+.badge.item { background: var(--g2); color: var(--white); }
+.kind { font-family: var(--f-type); font-size: 10px; opacity: .65; }
+.card-icon { display: flex; justify-content: center; margin: 2px 0; }
+.ov-icon { width: clamp(52px, 12vh, 84px); height: clamp(52px, 12vh, 84px); image-rendering: auto; }
+.card-name { font-family: var(--f-head); font-size: clamp(16px, 3.4vh, 21px); line-height: 1.05; }
+.card-text { font-family: var(--f-type); font-size: clamp(11px, 2.3vh, 13px); line-height: 1.25; flex: 1; }
+.evo-hint { font-family: var(--f-hand); font-size: 11px; color: var(--g1); border-top: 1px dashed rgba(27,31,26,.4); padding-top: 4px; }
+.evo-hint b { color: var(--red); font-weight: normal; }
+.card-key { position: absolute; right: 6px; bottom: 4px; font-family: var(--f-head); font-size: 11px; opacity: .35; }
+.k-perk { background-color: #e4e0cf; }
+.banishing .card { outline: 3px dashed var(--red); outline-offset: 4px; }
+.card.nope { animation: nope .28s ease-out; }
+@keyframes nope { 25% { transform: translateX(-6px) rotate(var(--rot, 0deg)); } 75% { transform: translateX(6px) rotate(var(--rot, 0deg)); } }
+.ov-tools { position: relative; display: flex; gap: 10px; margin-top: 14px; transform: translateX(var(--dx, 0px)); }
+.tool { font-family: var(--f-head); font-size: 14px; min-height: 44px; padding: 6px 12px; background: var(--ink); color: var(--paper); border: 2px solid var(--paper); letter-spacing: .5px; }
+.tool b { color: var(--yellow); }
+.tool kbd { display: inline-block; margin-left: 7px; padding: 0 4px; font-family: var(--f-type); font-size: 11px; line-height: 15px; color: var(--ink); background: var(--paper); transform: rotate(-3deg); vertical-align: 1px; }
+.tool:disabled { opacity: .3; }
+.tool.on { background: var(--red); }
+/* short landscape (phones): tighter cards so the row ends above the DASH/ULT corner */
+@media (max-height: 430px) { .card { min-height: 0; padding: 6px 8px 7px; gap: 2px; } .ov-head { margin-bottom: 10px; } .stamp { font-size: 30px; } .ov-sub { font-size: 12px; margin-top: 7px; } .ov-tools { margin-top: 8px; } .ov-icon { width: 40px; height: 40px; } .card-name { font-size: 15px; } .card-text { font-size: 11px; line-height: 1.2; } .evo-hint { font-size: 10px; line-height: 1.15; padding-top: 3px; } }
+@media (max-height: 360px) { .stamp { font-size: 26px; } .ov-sub { display: none; } .ov-icon { width: 32px; height: 32px; } .card-name { font-size: 14px; } .card-text { font-size: 10.5px; } .card::before { height: 14px; top: -7px; } }
+/* portrait phones: cards stack as compact strips */
+@media (max-width: 560px) and (orientation: portrait) { .cards { flex-direction: column; align-items: center; gap: 7px; } .card { width: min(88vw, 340px); min-height: 0; display: grid; grid-template-columns: 50px 1fr; grid-template-areas: "icon top" "icon name" "icon text" "hint hint"; column-gap: 10px; row-gap: 2px; padding: 7px 10px 8px; } .card-top { grid-area: top; } .card-icon { grid-area: icon; align-items: center; } .card-name { grid-area: name; font-size: clamp(15px, 2.4vh, 19px); } .card-text { grid-area: text; font-size: 12px; line-height: 1.2; } .evo-hint { grid-area: hint; padding-top: 3px; } .ov-icon { width: 48px; height: 48px; } .stamp { font-size: clamp(30px, 5.6vh, 46px); } .ov-head { margin-bottom: 8px; } .ov-tools { margin-top: 10px; } }
+/* portrait under 600 px tall (320x568): smaller still, so the whole level-up fits without scrolling */
+@media (max-width: 560px) and (orientation: portrait) and (max-height: 600px) { .card { padding: 5px 8px 6px; grid-template-columns: 42px 1fr; column-gap: 8px; } .ov-icon { width: 40px; height: 40px; } .card-name { font-size: 15px; } .card-text { font-size: 11px; } .evo-hint { font-size: 10px; line-height: 1.15; } .badge { font-size: 11px; } .stamp { font-size: 28px; } .ov-sub { font-size: 12px; margin-top: 2px; } .ov-head { margin-bottom: 6px; } .ov-tools { margin-top: 8px; gap: 8px; } .tool { padding: 6px 10px; } .cards { gap: 6px; } }
+
+/* crate */
+.crate-box { position: relative; width: 120px; height: 100px; display: flex; align-items: center; justify-content: center; animation: crateShake .09s linear infinite; }
+.crate-box img { width: 110px; height: 110px; }
+.crate-box.open { animation: none; transform: scale(.75); opacity: .6; transition: all .3s; }
+@keyframes crateShake { 25% { transform: rotate(-3deg) translateX(-2px); } 75% { transform: rotate(3deg) translateX(2px); } }
+.reels { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; justify-content: center; max-width: 96vw; }
+.reel { display: flex; flex-direction: column; align-items: center; gap: 4px; width: clamp(92px, 16vw, 130px); }
+.reel-win { width: clamp(84px, 15vw, 116px); height: clamp(84px, 15vw, 116px); background: var(--ink); border: 4px solid var(--paper); box-shadow: inset 0 0 0 3px var(--ink), 5px 5px 0 rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.reel-img { width: 80%; height: 80%; filter: blur(1px) grayscale(.5); }
+.reel.stopped .reel-img { filter: none; animation: reelStop .25s cubic-bezier(.2,1.8,.5,1); }
+.reel.is-evo .reel-win { border-color: var(--yellow); box-shadow: 0 0 0 4px var(--red), 5px 5px 0 rgba(0,0,0,.5); }
+@keyframes reelStop { from { transform: translateY(-30%) scale(1.3); } }
+.reel-label { font-family: var(--f-head); font-size: 13px; text-align: center; color: var(--paper); min-height: 32px; line-height: 1.1; }
+.reel-label i { font-style: normal; color: var(--yellow); font-family: var(--f-type); font-size: 11px; }
+.reel-label .evo { color: var(--yellow); font-weight: normal; }
+.collect { margin-top: 10px; font-family: var(--f-head); font-size: 22px; padding: 8px 28px; background: var(--yellow); color: var(--ink); border: 3px solid var(--ink); box-shadow: 5px 5px 0 var(--ink); transform: translateX(var(--dx, 0px)) rotate(-1.5deg); }
+@media (max-height: 430px) { .crate-box { height: 60px; } .crate-box img { width: 64px; height: 64px; } }
+@media (max-height: 360px) { .crate-box { height: 40px; } .crate-box img { width: 44px; height: 44px; } .reel-win { width: 64px; height: 64px; } .reel { width: 80px; } .reel-label { min-height: 26px; font-size: 12px; } .collect { margin-top: 6px; padding: 6px 24px; } }
+@media (orientation: portrait) { .joy-hint { bottom: calc(112px + var(--sb)); } }

@@ -1,0 +1,33 @@
+10/16 (47s)
+== results/r4_fresh.jsonl (16 runs)
+-- by profile/difficulty
+fresh normal                       n= 16 clear= 56% reach15= 69% deathMin= 8.9 lvl= 39 kills= 3983 scrap=1294 bossTTK=194s
+-- by profile/difficulty/map
+fresh normal suburbs               n= 16 clear= 56% reach15= 69% deathMin= 8.9 lvl= 39 kills= 3983 scrap=1294 bossTTK=194s
+-- by profile/difficulty/survivor
+fresh normal juno                  n=  8 clear= 38% reach15= 38% deathMin= 3.7 lvl= 27 kills= 2357 scrap= 888 bossTTK=231s
+fresh normal rook                  n=  8 clear= 75% reach15=100% deathMin=21.9 lvl= 52 kills= 5609 scrap=1701 bossTTK=176s
+-- damage share (avg share of a run's total damage, over runs where the source dealt damage)
+akimbo             runs=  12 avgShare= 51.2%  overall= 38.4%
+carpetbomb         runs=  10 avgShare= 33.4%  overall= 20.9%
+tesla              runs=  10 avgShare= 26.7%  overall= 16.7%
+cleaver            runs=  12 avgShare=  6.3%  overall=  4.7%
+buzzsaw            runs=  11 avgShare=  5.5%  overall=  3.8%
+pistol             runs=  12 avgShare=  4.7%  overall=  3.5%
+twincleavers       runs=   9 avgShare=  4.3%  overall=  2.4%
+dogs               runs=   5 avgShare=  3.8%  overall=  1.2%
+sanctuary          runs=   4 avgShare=  3.6%  overall=  0.9%
+ult_rook           runs=   8 avgShare=  3.6%  overall=  1.8%
+mortar             runs=  11 avgShare=  3.2%  overall=  2.2%
+sawblade           runs=  14 avgShare=  2.6%  overall=  2.3%
+perk_hotlead       runs=   3 avgShare=  1.6%  overall=  0.3%
+reaper             runs=   7 avgShare=  1.1%  overall=  0.5%
+grenade            runs=  11 avgShare=  0.4%  overall=  0.3%
+holywater          runs=   3 avgShare=  0.3%  overall=  0.1%
+ult_juno           runs=   3 avgShare=  0.1%  overall=  0.0%
+dash_juno          runs=   3 avgShare=  0.1%  overall=  0.0%
+chainsaw           runs=   4 avgShare=  0.0%  overall=  0.0%
+-- killed by: area:zpuddle 6, lobber 1
+-- damage taken by source: area:zpuddle 78%, bilesniper 5%, boss:abomination 4%, other 3%, lobber 3%, shambler 2%, bull 2%, boss:postman 1%, boss:blockcaptain 1%, area:zaura 0%, howler 0%, sprinter 0%, splitter 0%
+-- avg level by minute (alive runs): 0:1 1:2 2:7 3:10 4:12 5:14 6:17 7:20 8:23 9:26 10:29 11:32 12:34 13:38 14:41 15:44
+wall 54s

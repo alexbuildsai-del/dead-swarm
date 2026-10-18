@@ -1,0 +1,12 @@
+build/
+fresh/
+node_modules/
+__pycache__/
+*.pyc
+tools/agents/review/out/
+# balance run data (large, regenerable); keep the logs, tables and the final matrix
+results/*.jsonl
+!results/final_all.jsonl
+results/*_done.txt
+results/*.log
+results/*.sum

@@ -1,0 +1,102 @@
+== results/v5_all.jsonl (148 runs)
+-- by profile/difficulty
+fresh normal                       n= 40 clear= 35% reach15= 45% deathMin= 9.1 lvl= 26 kills=23531 scrap= 345 bossTTK=158s
+late nightmare                     n= 18 clear= 44% reach15= 67% deathMin=12.1 lvl= 35 kills=35055 scrap=2509 bossTTK=134s
+mid hard                           n= 36 clear= 44% reach15= 56% deathMin=10.2 lvl= 32 kills=31667 scrap=1214 bossTTK=109s
+mid nightmare                      n= 18 clear=  0% reach15= 11% deathMin= 8.1 lvl= 18 kills= 8008 scrap= 650 bossTTK=-
+mid normal                         n= 36 clear= 81% reach15= 86% deathMin=11.3 lvl= 39 kills=44518 scrap=1052 bossTTK=77s
+-- by profile/difficulty/map
+fresh normal suburbs               n= 40 clear= 35% reach15= 45% deathMin= 9.1 lvl= 26 kills=23531 scrap= 345 bossTTK=158s
+late nightmare hospital            n=  6 clear= 17% reach15= 50% deathMin=10.0 lvl= 27 kills=20309 scrap=1393 bossTTK=1s
+late nightmare quarantine          n=  6 clear= 67% reach15= 83% deathMin=15.6 lvl= 42 kills=48060 scrap=3543 bossTTK=167s
+late nightmare suburbs             n=  6 clear= 50% reach15= 67% deathMin=13.3 lvl= 37 kills=36796 scrap=2590 bossTTK=134s
+mid hard hospital                  n= 12 clear= 33% reach15= 42% deathMin= 8.0 lvl= 26 kills=24890 scrap= 860 bossTTK=53s
+mid hard quarantine                n= 12 clear= 33% reach15= 50% deathMin=11.6 lvl= 31 kills=30927 scrap=1123 bossTTK=167s
+mid hard suburbs                   n= 12 clear= 67% reach15= 75% deathMin=11.8 lvl= 37 kills=39184 scrap=1659 bossTTK=107s
+mid nightmare hospital             n=  6 clear=  0% reach15= 17% deathMin= 7.4 lvl= 19 kills=10901 scrap= 789 bossTTK=-
+mid nightmare quarantine           n=  6 clear=  0% reach15= 17% deathMin= 9.5 lvl= 19 kills= 8530 scrap= 820 bossTTK=-
+mid nightmare suburbs              n=  6 clear=  0% reach15=  0% deathMin= 7.3 lvl= 16 kills= 4594 scrap= 342 bossTTK=-
+mid normal hospital                n= 12 clear=100% reach15=100% deathMin=   - lvl= 44 kills=52151 scrap=1280 bossTTK=31s
+mid normal quarantine              n= 12 clear= 75% reach15= 92% deathMin=13.4 lvl= 40 kills=47849 scrap=1014 bossTTK=106s
+mid normal suburbs                 n= 12 clear= 67% reach15= 67% deathMin= 9.7 lvl= 34 kills=33555 scrap= 863 bossTTK=115s
+-- by profile/difficulty/survivor
+fresh normal juno                  n= 20 clear= 25% reach15= 30% deathMin= 8.5 lvl= 23 kills=20886 scrap= 292 bossTTK=170s
+fresh normal rook                  n= 20 clear= 45% reach15= 60% deathMin= 9.9 lvl= 28 kills=26176 scrap= 397 bossTTK=152s
+late nightmare ines                n=  3 clear= 67% reach15=100% deathMin=15.8 lvl= 40 kills=40710 scrap=3234 bossTTK=164s
+late nightmare juno                n=  3 clear= 67% reach15=100% deathMin=17.7 lvl= 40 kills=41413 scrap=2838 bossTTK=55s
+late nightmare mira                n=  3 clear=  0% reach15= 33% deathMin=11.3 lvl= 26 kills=16324 scrap=1232 bossTTK=-
+late nightmare rook                n=  3 clear=  0% reach15=  0% deathMin=10.6 lvl= 24 kills=11967 scrap= 989 bossTTK=-
+late nightmare silas               n=  3 clear= 67% reach15=100% deathMin=16.3 lvl= 43 kills=41882 scrap=3458 bossTTK=161s
+late nightmare tomas               n=  3 clear= 67% reach15= 67% deathMin= 5.5 lvl= 39 kills=58034 scrap=3301 bossTTK=157s
+mid hard ines                      n=  6 clear= 33% reach15= 50% deathMin= 8.5 lvl= 26 kills=20688 scrap=1065 bossTTK=33s
+mid hard juno                      n=  6 clear= 50% reach15= 67% deathMin=10.2 lvl= 34 kills=39262 scrap=1298 bossTTK=115s
+mid hard mira                      n=  6 clear= 17% reach15= 17% deathMin= 8.6 lvl= 23 kills=13165 scrap= 470 bossTTK=1s
+mid hard rook                      n=  6 clear= 33% reach15= 33% deathMin=11.8 lvl= 31 kills=25185 scrap=1006 bossTTK=168s
+mid hard silas                     n=  6 clear= 67% reach15= 83% deathMin=13.1 lvl= 33 kills=26222 scrap=1267 bossTTK=165s
+mid hard tomas                     n=  6 clear= 67% reach15= 83% deathMin=11.6 lvl= 43 kills=65480 scrap=2178 bossTTK=83s
+mid nightmare ines                 n=  3 clear=  0% reach15= 67% deathMin=13.7 lvl= 31 kills=23303 scrap=1915 bossTTK=-
+mid nightmare juno                 n=  3 clear=  0% reach15=  0% deathMin= 8.6 lvl= 18 kills= 6693 scrap= 572 bossTTK=-
+mid nightmare mira                 n=  3 clear=  0% reach15=  0% deathMin= 3.5 lvl=  9 kills=  849 scrap= 124 bossTTK=-
+mid nightmare rook                 n=  3 clear=  0% reach15=  0% deathMin=10.8 lvl= 25 kills=13818 scrap= 944 bossTTK=-
+mid nightmare silas                n=  3 clear=  0% reach15=  0% deathMin= 6.0 lvl= 12 kills= 1732 scrap= 170 bossTTK=-
+mid nightmare tomas                n=  3 clear=  0% reach15=  0% deathMin= 5.8 lvl= 12 kills= 1655 scrap= 177 bossTTK=-
+mid normal ines                    n=  6 clear= 67% reach15= 83% deathMin=12.5 lvl= 37 kills=36592 scrap= 974 bossTTK=63s
+mid normal juno                    n=  6 clear= 83% reach15= 83% deathMin= 7.0 lvl= 43 kills=63194 scrap=1097 bossTTK=77s
+mid normal mira                    n=  6 clear= 67% reach15= 83% deathMin=14.8 lvl= 39 kills=37186 scrap= 930 bossTTK=75s
+mid normal rook                    n=  6 clear=100% reach15=100% deathMin=   - lvl= 40 kills=41964 scrap=1103 bossTTK=101s
+mid normal silas                   n=  6 clear=100% reach15=100% deathMin=   - lvl= 41 kills=44566 scrap=1152 bossTTK=76s
+mid normal tomas                   n=  6 clear= 67% reach15= 67% deathMin= 8.7 lvl= 36 kills=43610 scrap=1058 bossTTK=63s
+-- damage share (avg share of a run's total damage, over runs where the source dealt damage)
+akimbo             runs=  53 avgShare= 29.2%  overall= 10.5%
+carpetbomb         runs=  37 avgShare= 26.9%  overall=  6.7%
+perk_hotlead       runs=  17 avgShare= 24.0%  overall=  2.8%
+napalm             runs=  23 avgShare= 24.0%  overall=  3.7%
+passive_ines       runs=  18 avgShare= 23.4%  overall=  2.8%
+flashfreeze        runs=  13 avgShare= 20.0%  overall=  1.8%
+ult_silas          runs=  18 avgShare= 19.1%  overall=  2.3%
+ult_rook           runs=  36 avgShare= 18.0%  overall=  4.4%
+dragonsbreath      runs=   3 avgShare= 15.6%  overall=  0.3%
+ult_tomas          runs=  17 avgShare= 15.3%  overall=  1.8%
+ult_mira           runs=  15 avgShare= 15.0%  overall=  1.5%
+perk_overkill      runs=  25 avgShare= 15.0%  overall=  2.5%
+sanctuary          runs=  33 avgShare= 13.7%  overall=  3.1%
+rocketbarrage      runs=  23 avgShare= 13.3%  overall=  2.1%
+stormgrid          runs=  26 avgShare= 13.2%  overall=  2.3%
+ult_ines           runs=  18 avgShare= 12.3%  overall=  1.5%
+tesla              runs=  62 avgShare= 12.3%  overall=  5.1%
+proxfield          runs=  16 avgShare= 12.1%  overall=  1.3%
+cryo               runs=  23 avgShare= 10.2%  overall=  1.6%
+molotov            runs=  33 avgShare= 10.0%  overall=  2.2%
+bunker             runs=  18 avgShare=  9.6%  overall=  1.2%
+cleaver            runs=  76 avgShare=  9.5%  overall=  4.9%
+twincleavers       runs=  46 avgShare=  9.0%  overall=  2.8%
+mortar             runs=  58 avgShare=  8.6%  overall=  3.4%
+blockparty         runs=  10 avgShare=  8.5%  overall=  0.6%
+k9unit             runs=  20 avgShare=  7.7%  overall=  1.0%
+rockets            runs=  35 avgShare=  7.4%  overall=  1.8%
+buzzsaw            runs=  47 avgShare=  7.2%  overall=  2.3%
+reaper             runs=  46 avgShare=  6.5%  overall=  2.0%
+dogs               runs=  54 avgShare=  6.4%  overall=  2.3%
+sawblade           runs=  74 avgShare=  5.4%  overall=  2.7%
+claymores          runs=  28 avgShare=  5.4%  overall=  1.0%
+flamethrower       runs=  21 avgShare=  5.1%  overall=  0.7%
+sentry             runs=  23 avgShare=  5.0%  overall=  0.8%
+droneswarm         runs=  19 avgShare=  5.0%  overall=  0.6%
+grenade            runs= 134 avgShare=  4.9%  overall=  4.4%
+pistol             runs=  71 avgShare=  4.8%  overall=  2.3%
+boombox            runs=  14 avgShare=  4.2%  overall=  0.4%
+chainsaw           runs=  68 avgShare=  3.9%  overall=  1.8%
+perk_chainreaction runs=   3 avgShare=  3.6%  overall=  0.1%
+passive_mira       runs=  18 avgShare=  3.2%  overall=  0.4%
+ult_juno           runs=  38 avgShare=  2.7%  overall=  0.7%
+holywater          runs=  57 avgShare=  1.7%  overall=  0.6%
+drones             runs=  28 avgShare=  1.6%  overall=  0.3%
+dash_silas         runs=  18 avgShare=  1.6%  overall=  0.2%
+dash_ines          runs=  18 avgShare=  0.9%  overall=  0.1%
+dash_tomas         runs=  18 avgShare=  0.9%  overall=  0.1%
+dash_juno          runs=  38 avgShare=  0.5%  overall=  0.1%
+passive_tomas      runs=  18 avgShare=  0.4%  overall=  0.0%
+-- killed by: bilesniper 22, bull 13, brute 10, mower 7, gurney 7, lobber 6, other 5, shambler 3, boss:surgeon 3, area:zpuddle:zacid 2, sprinter 2, boss:nightnurse 2, hazmat 2, area:zpuddle:zgas 2, orderly 2, crawler 1, boss:postman 1, riot 1, broodmother 1, boss:hivequeen 1, leaper 1, gasbag 1, jogger 1, boss:deconunit 1, area:zaura:zglowaura 1, lasher 1
+-- damage taken by source: bilesniper 24%, bull 17%, lobber 7%, mower 5%, brute 5%, gurney 4%, lasher 4%, other 4%, broodmother 3%, area:zpuddle:zacid 2%, sprinter 2%, hazmat 2%, boss:surgeon 2%, shambler 2%, leaper 2%, riot 2%, area:zpuddle:zgas 1%, jogger 1%
+-- avg level by minute (alive runs): 0:3 1:4 2:6 3:8 4:10 5:11 6:13 7:15 8:18 9:21 10:24 11:26 12:29 13:31 14:34 15:36
+MATRIXDONE

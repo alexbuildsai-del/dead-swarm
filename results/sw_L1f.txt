@@ -1,0 +1,34 @@
+10/20 (48s)
+20/20 (90s)
+== results/sw_L1f.jsonl (20 runs)
+-- by profile/difficulty
+fresh normal                       n= 20 clear= 35% reach15= 35% deathMin= 5.8 lvl= 22 kills=18580 scrap=1299 bossTTK=246s
+-- by profile/difficulty/map
+fresh normal suburbs               n= 20 clear= 35% reach15= 35% deathMin= 5.8 lvl= 22 kills=18580 scrap=1299 bossTTK=246s
+-- by profile/difficulty/survivor
+fresh normal juno                  n= 10 clear= 20% reach15= 20% deathMin= 5.9 lvl= 17 kills=10349 scrap= 678 bossTTK=428s
+fresh normal rook                  n= 10 clear= 50% reach15= 50% deathMin= 5.8 lvl= 27 kills=26811 scrap=1920 bossTTK=173s
+-- damage share (avg share of a run's total damage, over runs where the source dealt damage)
+akimbo             runs=   6 avgShare= 47.0%  overall= 14.1%
+mortar             runs=   8 avgShare= 26.4%  overall= 10.6%
+cleaver            runs=  12 avgShare= 25.4%  overall= 15.2%
+carpetbomb         runs=   2 avgShare= 22.3%  overall=  2.2%
+pistol             runs=  13 avgShare= 20.5%  overall= 13.3%
+ult_rook           runs=   9 avgShare= 18.6%  overall=  8.4%
+perk_hotlead       runs=   2 avgShare= 17.8%  overall=  1.8%
+tesla              runs=  12 avgShare= 15.3%  overall=  9.2%
+sawblade           runs=  14 avgShare= 10.6%  overall=  7.4%
+twincleavers       runs=   4 avgShare=  9.5%  overall=  1.9%
+buzzsaw            runs=   8 avgShare=  8.3%  overall=  3.3%
+dogs               runs=   6 avgShare=  7.6%  overall=  2.3%
+reaper             runs=   5 avgShare=  6.1%  overall=  1.5%
+chainsaw           runs=  13 avgShare=  5.2%  overall=  3.4%
+sanctuary          runs=   2 avgShare=  2.9%  overall=  0.3%
+grenade            runs=  16 avgShare=  2.9%  overall=  2.3%
+holywater          runs=   8 avgShare=  2.8%  overall=  1.1%
+ult_juno           runs=  10 avgShare=  2.2%  overall=  1.1%
+dash_juno          runs=  10 avgShare=  1.3%  overall=  0.6%
+-- killed by: bull 4, riot 3, boss:postman 2, splitter 1, other 1, jogger 1, area:zpuddle:zgas 1, lobber 1, mower 1
+-- damage taken by source: bull 25%, bilesniper 16%, other 10%, mower 6%, lobber 5%, area:zpuddle:zgas 5%, lasher 5%, riot 4%, area:zpuddle:zacid 4%, shambler 4%, brute 3%, jogger 3%, boss:postman 2%, boss:abomination 2%, sprinter 2%, broodmother 1%, leaper 1%, area:zaura:zuvaura 1%
+-- avg level by minute (alive runs): 0:1 1:4 2:6 3:7 4:9 5:11 6:13 7:15 8:18 9:20 10:24 11:26 12:28 13:31 14:33 15:35
+wall 90s

@@ -1,0 +1,17 @@
+== L1f {"hpQuad":0.035,"dmgLin":0.08,"floorCap":600}
+fresh normal                       n= 20 clear= 35% reach15= 35% deathMin= 5.8 lvl= 22 kills=18580 scrap=1299 bossTTK=246s
+-- killed by: bull 4, riot 3, boss:postman 2, splitter 1, other 1, jogger 1, area:zpuddle:zgas 1, lobber 1, mower 1
+-- avg level by minute (alive runs): 0:1 1:4 2:6 3:7 4:9 5:11 6:13 7:15 8:18 9:20 10:24 11:26 12:28 13:31 14:33 15:35
+== L1m {"hpQuad":0.035,"dmgLin":0.08,"floorCap":600}
+mid normal                         n= 18 clear= 78% reach15= 78% deathMin= 8.1 lvl= 41 kills=53180 scrap=4984 bossTTK=93s
+-- killed by: lobber 2, boss:nightnurse 1, gurney 1, bilesniper 1, bull 1
+-- avg level by minute (alive runs): 0:3 1:4 2:6 3:8 4:10 5:12 6:14 7:16 8:19 9:22 10:25 11:27 12:31 13:34 14:36 15:39
+== L2f {"hpQuad":0.05,"dmgLin":0.09,"floorCap":620}
+fresh normal                       n= 20 clear= 25% reach15= 30% deathMin= 6.7 lvl= 20 kills=15181 scrap=1171 bossTTK=155s
+-- killed by: bull 7, brute 2, other 1, area:zpuddle:zacid 1, jogger 1, howler 1, boss:postman 1, shambler 1
+-- avg level by minute (alive runs): 0:1 1:4 2:6 3:7 4:9 5:10 6:12 7:14 8:17 9:19 10:23 11:25 12:28 13:31 14:34 15:36
+== L2m {"hpQuad":0.05,"dmgLin":0.09,"floorCap":620}
+mid normal                         n= 18 clear= 67% reach15= 78% deathMin=11.3 lvl= 37 kills=42258 scrap=3960 bossTTK=63s
+-- killed by: bull 2, lobber 1, brute 1, boss:nightnurse 1, leaper 1
+-- avg level by minute (alive runs): 0:3 1:4 2:6 3:8 4:10 5:11 6:14 7:16 8:19 9:22 10:25 11:27 12:30 13:33 14:36 15:38
+ALLDONE
