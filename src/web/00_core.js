@@ -49,53 +49,19 @@ if (DS.Snapshot) DS.Snapshot.storage = DS.store;
 
 /* fonts used on canvas; wait for them before pre-rendering text */
 DS.FONT = { head: '"Anton", Impact, "Arial Narrow", sans-serif', hand: '"Permanent Marker", "Comic Sans MS", cursive', type: '"Special Elite", "Courier New", monospace' };
-/* Web fonts never hold the game up. The Google Fonts sheet (<link id="ds-fonts" data-href> in the page) is
-   attached when the window 'load' event fires — this handler is registered before the boot's — so a slow or
-   hung font server can't delay that event, and it is attached as a print sheet switched to 'all' on arrival,
-   so it never blocks rendering. The boot waits at most a moment (DS.fontsReady); fonts that land after that
+/* The three faces are embedded in the page as data: @font-face rules (tools/build.js, src/fonts/), so they work
+   offline; they only need decoding. The boot waits at most a moment (DS.fontsReady); fonts that land after that
    fire DS.onFontsLate callbacks and a 'ds-fonts' window event so cached canvas text can be repainted. */
 (function () {
   const FACES = ['20px Anton', '20px "Permanent Marker"', '20px "Special Elite"'];
-  let sheetP = null, allP = null, late = [], bootMissed = false;
+  let allP = null, late = [], bootMissed = false;
   DS.fontsState = 'pending';   // → 'ready' | 'failed'
-  /* → Promise<link element | null> once the sheet arrived (media flipped to 'all') or failed */
-  function attachSheet() {
-    if (sheetP) return sheetP;
-    sheetP = new Promise(res => {
-      const l = document.getElementById('ds-fonts');
-      const href = l && (l.getAttribute('data-href') || l.getAttribute('href'));
-      if (!l || !href) { res(null); return; }
-      if (l.getAttribute('href') && l.sheet) { l.media = 'all'; res(l); return; }
-      l.addEventListener('load', () => { l.media = 'all'; res(l); }, { once: true });
-      l.addEventListener('error', () => res(null), { once: true });
-      if (!l.getAttribute('href')) l.setAttribute('href', href);
-    });
-    return sheetP;
-  }
-  /* After the media flip the browser re-applies the sheet asynchronously (Chrome re-reads it, normally from
-     cache, and fires 'load' again); its @font-face rules only join document.fonts then — fonts.load() before
-     that finds nothing. Wait for the three faces; give up soon if the re-applied sheet brought none. */
-  function facesActive(l) {
-    return new Promise(res => {
-      const t0 = performance.now(); let again = 0;
-      l.addEventListener('load', () => { again = performance.now(); }, { once: true });
-      const tick = () => {
-        let n = 0;
-        try { document.fonts.forEach(f => { if (/Anton|Permanent Marker|Special Elite/i.test(f.family)) n++; }); } catch (e) { n = 3; }
-        const now = performance.now();
-        if (n >= 3) res(true);
-        else if (now - t0 > 6000 || (!n && ((again && now - again > 150) || now - t0 > 1000))) res(false);
-        else setTimeout(tick, 30);
-      };
-      tick();
-    });
-  }
   /* → Promise<bool>: true once all three faces are loaded (no time limit) */
   DS.fontsLoaded = function () {
     if (allP) return allP;
-    allP = attachSheet().then(l => {
-      if (!l || !document.fonts || !document.fonts.load) return false;
-      return facesActive(l).then(any => any ? Promise.all(FACES.map(f => document.fonts.load(f).then(a => !!(a && a.length), () => false))).then(r => r.every(Boolean)) : false);
+    allP = Promise.resolve().then(() => {
+      if (!document.fonts || !document.fonts.load) return false;
+      return Promise.all(FACES.map(f => document.fonts.load(f).then(a => !!(a && a.length), () => false))).then(r => r.every(Boolean));
     }).catch(() => false).then(ok => {
       DS.fontsState = ok ? 'ready' : 'failed';
       if (ok && bootMissed) {
@@ -117,5 +83,5 @@ DS.FONT = { head: '"Anton", Impact, "Arial Narrow", sans-serif', hand: '"Permane
   };
   /* fn runs once if the fonts arrive after the boot stopped waiting for them */
   DS.onFontsLate = function (fn) { late.push(fn); };
-  window.addEventListener('load', () => { try { DS.fontsLoaded(); } catch (e) { } });
+  try { DS.fontsLoaded(); } catch (e) { }
 })();

@@ -59,6 +59,8 @@ python3 tools/shot.py "run=suburbs&god=1&t=8" /tmp/deadswarm/x.png 6 844 390   #
 - **Art:** sprites are drawn in code and cached in atlases (`01_art_*`). Never build a sprite variant mid-draw; queue
   it (`DS.Art.beginFrame` runs the budgeted queue).
 - **Overlays** capture all input. Touch controls are hidden while an overlay is open, and taps get a 350 ms grace.
+- **Fonts** are embedded (`src/fonts/`, base64 via `tools/build.js`); the page makes no network requests and must
+  stay that way (`tools/agents/review/offline.py` checks it).
 - **Account sync:** `src/web/22_cloud.js` mirrors the save to the viewer's private claude.ai artifact storage. It only
   does anything when the page runs as a claude.ai artifact; anywhere else it's a no-op.
 

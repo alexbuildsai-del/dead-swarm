@@ -12,7 +12,7 @@ touch; they are commented.
   Prints kills, per-weapon damage and any exception. **Run it for everything you add.**
 - Visual check: `python3 tools/shot.py "run=suburbs&surv=rook&give=tesla:5&spawn=bull:10&god=1&quiet=1&t=10" /tmp/deadswarm/x.png 4`
   (the same `give/spawn/boss/god/quiet/perks/level/t/diff/surv/seed` params work in the URL). Then look at the PNG.
-  Google Fonts are unreachable in the sandbox, so fonts fall back — that's expected.
+  Fonts are embedded in the page (`src/fonts/`), so screenshots show the real faces even offline.
 - Never edit another agent's files. If you need a core change, describe it in your final report instead.
 
 ## Global namespace
@@ -202,7 +202,7 @@ Sound names in use (implement all; unknown names → a soft generic click): see 
   `DS.Meta.finishRun` applied and saved), so closing the app during the death beat can't undo a run.
   `DS.Game.onRunEnd((summary, world, res) => …)` callbacks fire after the 0.6–1.3 s beat and only *display* `res`.
 - Menu backdrop: `DS.Game.setMenuCovered(bool)` stops simulating/drawing the backdrop behind full-screen pages.
-- Fonts load without blocking; `DS.fontsReady` resolves within 1.5 s. Late arrival fires `DS.onFontsLate(cb)` callbacks
+- Fonts are embedded as data: @font-face rules (`src/fonts/`, added by `tools/build.js`) and need no network; `DS.fontsReady` resolves within 1.5 s. Late arrival fires `DS.onFontsLate(cb)` callbacks
   and a `window` `ds-fonts` event; `DS.Art.refreshText()` rebuilds text-bearing sprites.
 - Art cache: `DS.Art.beginFrame(t, world, R, s, ox, oy)` runs the budgeted sprite-build queue before drawing (never build
   while drawing; missing looks fall back to the nearest built frame), `DS.Art.note(z)` / `reach(z)` pre-warm types,

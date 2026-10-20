@@ -32,7 +32,11 @@ const simJs = bundle(simFiles);
 fs.writeFileSync(path.join(OUT, 'sim.js'), simJs + '\nif (typeof module !== "undefined") module.exports = globalThis.DS;\n');
 
 const cssFiles = fs.existsSync(path.join(SRC, 'web')) ? fs.readdirSync(path.join(SRC, 'web')).filter(f => f.endsWith('.css') && keep(f, /^00_/)).sort().map(f => path.join(SRC, 'web', f)) : [];
-const css = cssFiles.map(f => fs.readFileSync(f, 'utf8')).join('\n');
+// web fonts embedded as data: URIs so the page works offline (src/fonts/, latin subset, licences alongside)
+const FONTS = [['Anton', 'Anton.woff2'], ['Permanent Marker', 'PermanentMarker.woff2'], ['Special Elite', 'SpecialElite.woff2']];
+const fontCss = FONTS.filter(([, f]) => fs.existsSync(path.join(SRC, 'fonts', f))).map(([fam, f]) =>
+  `@font-face{font-family:'${fam}';font-style:normal;font-weight:400;font-display:swap;src:url(data:font/woff2;base64,${fs.readFileSync(path.join(SRC, 'fonts', f)).toString('base64')}) format('woff2')}`).join('\n');
+const css = fontCss + '\n' + cssFiles.map(f => fs.readFileSync(f, 'utf8')).join('\n');
 const tpl = fs.readFileSync(path.join(SRC, 'index.template.html'), 'utf8');
 const js = simJs + '\n;\n' + bundle(webFiles);
 // guard against a literal </script> inside the bundle
@@ -43,7 +47,7 @@ fs.writeFileSync(path.join(OUT, 'index.html'), html);
 {
   const head = html.slice(html.indexOf('<head>') + 6, html.indexOf('</head>'));
   const body = html.slice(html.indexOf('<body>') + 6, html.lastIndexOf('</body>'));
-  const keep = head.split('\n').filter(l => /<title>|ds-fonts|<noscript>/.test(l)).join('\n');
+  const keep = head.split('\n').filter(l => /<title>/.test(l)).join('\n');
   const style = head.slice(head.indexOf('<style>'), head.lastIndexOf('</style>') + 8);
   const page = keep.replace(/(<title>[^<]*<\/title>)/, '$1\n<meta name="claude:viewport-fit-sides" content="cover">') + '\n' + style + '\n' + body.trim() + '\n';
   fs.writeFileSync(path.join(OUT, 'dead-swarm.html'), page);
