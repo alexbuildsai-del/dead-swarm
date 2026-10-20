@@ -1,0 +1,51 @@
+# Builds the game and publishes build/index.html to GitHub Pages.
+# Also attaches dead-swarm-itch.zip (index.html at the zip root) to each run for uploading to itch.io.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main, claude/peaceful-feynman-sffvzy]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Build
+        run: node tools/build.js
+      - name: Collect site
+        run: |
+          mkdir -p site
+          cp build/index.html site/index.html
+          (cd site && zip -q ../dead-swarm-itch.zip index.html)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dead-swarm-itch
+          path: dead-swarm-itch.zip
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

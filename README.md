@@ -12,6 +12,12 @@ between runs, and K-DED 88.1 "The Last Signal": a pirate-radio DJ who talks you 
 No dependencies. `src/sim/*` is pure game logic that also runs in Node; `src/web/*` is rendering, audio, input and
 menus. Files load in name order and share the `DS` namespace. `src/index.template.html` receives the CSS and JS.
 
+## Playtest builds
+
+Every push to `main` (or the current Claude branch) runs `.github/workflows/pages.yml`: it builds the game, publishes it
+to GitHub Pages (https://alexbuildsai-del.github.io/dead-swarm/) and attaches `dead-swarm-itch.zip` to the run for
+uploading to itch.io as an HTML5 game.
+
 ## Layout
 
 | Path | What |
