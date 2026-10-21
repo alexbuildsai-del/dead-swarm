@@ -24,6 +24,8 @@ uploading to itch.io as an HTML5 game.
 |---|---|
 | `CLAUDE.md` | Orientation for Claude Code: commands, architecture, gotchas |
 | `docs/SPEC.md` | The original brief |
+| `docs/ROADMAP.md` | Decisions, what's next, later ideas, Steam and business notes |
+| `docs/plans/` | Detailed implementation plans |
 | `docs/TODO_LATER.md` | Parked balance and QA items |
 | `docs/DESIGN.md` | Every rule and number (§16: balance results) |
 | `docs/ENGINE_API.md` | The contract between the engine and content modules |

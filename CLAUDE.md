@@ -3,7 +3,8 @@
 A zombie survivor roguelite that ships as **one self-contained HTML file**. The look is a photocopied zine, with a
 pirate-radio DJ (Lou Vesper, K-DED 88.1). There are no runtime dependencies and no npm packages.
 The original brief is `docs/SPEC.md`. The full rules and numbers are in `docs/DESIGN.md`, and the code wins if they
-disagree. What's still open is in `docs/TODO_LATER.md`.
+disagree. What's next and every agreed idea is in `docs/ROADMAP.md` (detailed plans in `docs/plans/`); smaller open items
+are in `docs/TODO_LATER.md`. Tick the ROADMAP box when an item lands.
 
 ## Commands
 ```bash
