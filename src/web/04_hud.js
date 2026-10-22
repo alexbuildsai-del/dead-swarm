@@ -73,9 +73,7 @@ DS.HUD = {
     const tw = ctx.measureText(tm).width + 18;
     ctx.fillStyle = DS.COL.ink; ctx.fillRect(W / 2 - tw / 2, TT + 4, tw, tfs + 4);
     ctx.fillStyle = world.holdOut ? DS.COL.uv : DS.COL.paper; ctx.fillText(tm, W / 2, TT + 6 + tfs / 2);
-    ctx.font = '12px ' + DS.FONT.type; ctx.fillStyle = DS.COL.paper;
-    const kt = '☠ ' + world.stats.kills + '   ⚙ ' + Math.floor(world.scrap) + (world.serum ? '   ✚ ' + world.serum : '') + (world.holdOut ? '   +' + Math.floor(world.holdBonus) : '');
-    ctx.lineWidth = 3; ctx.strokeStyle = DS.COL.ink; ctx.strokeText(kt, W / 2, TT + tfs + 18); ctx.fillText(kt, W / 2, TT + tfs + 18);
+    this.counters(ctx, world, W / 2, TT + tfs + 9, dt);
     let by = TT + tfs + 32;
     // ---- boss bars (a little narrower on landscape phones so the objective column beside them has room)
     let subHp = 0, subMax = 0, subN = 0, subRef = null;
@@ -130,6 +128,35 @@ DS.HUD = {
     if (this.tipUntil > 0 && world.t < this.tipUntil) this.tips(ctx, world, W, H, S, t);
     if (DS.Settings.fps) { ctx.textAlign = 'left'; ctx.font = '11px ' + DS.FONT.type; ctx.fillStyle = this.fps < 50 ? DS.COL.red : '#9fe08a'; ctx.fillText(Math.round(this.fps) + ' fps · ' + world.zombies.length + 'z · q' + R.q, L, H - S.b - 10); }
     if (DS.Input && DS.Input.enabled) DS.Input.updateButtons(world);
+  },
+  /* kills / Scrap / Serum as icon chips centred under the timer; the Serum chip flashes "+N SERUM" when it grows */
+  counters(ctx, world, cx, cy, dt) {
+    if (this._cw !== world) { this._cw = world; this.serumSeen = world.serum; this.serumFlash = 0; }
+    if (world.serum > this.serumSeen) { this.serumGain = world.serum - this.serumSeen; this.serumFlash = 2.4; }
+    this.serumSeen = world.serum;
+    const chips = [['skull', world.stats.kills, DS.COL.paper], ['scrap', Math.floor(world.scrap), DS.COL.paper]];
+    if (world.serum) chips.push(['serum', world.serum, '#9fe08a']);
+    if (world.holdOut) chips.push([null, '+' + Math.floor(world.holdBonus), DS.COL.uv]);
+    ctx.font = '12px ' + DS.FONT.type;
+    const ch = 18, ci = 14, cg = 5;
+    const ws = chips.map(c => (c[0] ? ci + 4 : 0) + ctx.measureText(String(c[1])).width + 12);
+    let x = cx - (ws.reduce((a, b) => a + b, 0) + cg * (chips.length - 1)) / 2;
+    const fl = this.serumFlash > 0;
+    chips.forEach((c, i) => {
+      const w = ws[i], hot = fl && c[0] === 'serum';
+      ctx.fillStyle = hot ? '#7fbf6a' : 'rgba(27,31,26,0.82)'; ctx.fillRect(x, cy, w, ch);
+      let tx = x + 6;
+      if (c[0]) { const ic = DS.Art.icon(c[0], 64); if (ic) ctx.drawImage(ic, tx - 1, cy + 2, ci, ci); tx += ci + 4; }
+      ctx.textAlign = 'left'; ctx.fillStyle = hot ? DS.COL.ink : c[2]; ctx.fillText(String(c[1]), tx, cy + ch / 2 + 1);
+      x += w + cg;
+    });
+    if (fl) {
+      this.serumFlash -= dt;
+      const a0 = ctx.globalAlpha; ctx.globalAlpha = a0 * Math.min(1, this.serumFlash * 2);
+      ctx.font = '13px ' + DS.FONT.head; ctx.textAlign = 'left'; ctx.lineWidth = 3; ctx.strokeStyle = DS.COL.ink; ctx.fillStyle = '#9fe08a';
+      const s = '+' + (this.serumGain || 1) + ' SERUM'; ctx.strokeText(s, x + 2, cy + ch / 2 + 1); ctx.fillText(s, x + 2, cy + ch / 2 + 1);
+      ctx.globalAlpha = a0;
+    }
   },
   slot(ctx, x, y, sz, item, kind) {
     ctx.fillStyle = 'rgba(27,31,26,0.75)'; ctx.fillRect(x, y, sz, sz);

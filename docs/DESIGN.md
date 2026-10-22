@@ -566,13 +566,13 @@ HP `1,500 × hpMult(m)` × difficulty × infection HP (keeps growing with the cu
 
 | Pickup | Base chance per kill | Effect |
 |---|---|---|
-| XP vial | always | tiers: 1 (pale green), 5 (UV blue), 25 (muzzle yellow), 100 (blood red). More than 260 vials on the ground → new XP merges into the nearest vial (tier upgrades as value grows) |
+| XP vial | always | tiers: 1 (pale green), 5 (UV blue), 25 (muzzle yellow), 100 (magenta; red on the floor only ever means health). More than 260 vials on the ground → new XP merges into the nearest vial (tier upgrades as value grows) |
 | Scrap | 0.22% (×luck) | 1 Scrap. Also +1 Scrap per 700 kills, elites 3, minibosses 12, bosses 40 |
-| Canned food | 0.35% (×luck) | heal 30 |
+| First-aid tin (`food`) | 0.35% (×luck) | heal 30; white tin with a red cross, a steady white ring and a red pulse |
 | Magnet | 0.08% (×luck) | pulls every vial on the map |
 | Grenade | 0.06% (×luck) | screen clear: 99,999 to non-boss zombies on screen, 5% max HP to bosses |
 | Cryo | 0.06% (×luck) | freezes everything on screen for 4 s (bosses slowed) |
-| Blessing (Silas) | 2% | heal 8 |
+| Blessing (Silas) | 2% | heal 8; small cream card with a red cross |
 
 ---
 

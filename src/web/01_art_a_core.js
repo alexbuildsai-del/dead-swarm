@@ -1145,6 +1145,11 @@
       const q = LOD.q, b = q === 2 ? 0 : (this.boil + k.id) % 3, sp = K.PK[key] || K.PK.scrap;
       const sc = k.big ? 1.35 : 1;
       const u = 0.5 + 0.5 * Math.sin(t * 4.2 + k.id * 1.7);
+      if (sp.ring) {   // steady ground ring under the pulse: the pickup reads at a glance even between pulses
+        const a0 = ctx.globalAlpha, r = sp.gr || 9;
+        ctx.globalAlpha = a0 * 0.9; ctx.strokeStyle = INK; ctx.lineWidth = 2.6; ctx.beginPath(); ctx.ellipse(x, y + 1, r, r * 0.4, 0, 0, TAU); ctx.stroke();
+        ctx.strokeStyle = sp.ring; ctx.lineWidth = 1.4; ctx.stroke(); ctx.globalAlpha = a0;
+      }
       if (sp.glow) {
         const g = (t * 1.1 + k.id * 0.21) % 1, a0 = ctx.globalAlpha;
         ctx.globalAlpha = a0 * (1 - g) * 0.75; ctx.strokeStyle = sp.glow; ctx.lineWidth = 1.6;

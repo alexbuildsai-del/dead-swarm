@@ -26,8 +26,10 @@
   K.PK.xp0 = vial('#b6c99a', '#e9f2d6'); K.PK.xp0.glow = null;
   K.PK.xp1 = vial(C.uv, '#c9d0ff'); K.PK.xp1.glow = null;
   K.PK.xp2 = vial(C.yellow, '#fff3c4', '#7a6550');
-  K.PK.xp3 = vial(C.red, '#f2a0a4', '#5a4a3a');
+  // the top tier is magenta, not red: red on the floor only ever means health
+  K.PK.xp3 = vial('#d94fc8', '#f6c9ef', '#5a4a3a');
   K.PK.xp3.box = [-7, -16, 7, 2];
+  { const d = K.PK.xp3.draw; K.PK.xp3.draw = function () { d(); if (!K.cur.sil) { K.line([4.2, -12.6, 4.2, -9.8], 0.6, '#f4f1e4'); K.line([2.8, -11.2, 5.6, -11.2], 0.6, '#f4f1e4'); } }; }
   K.PK.scrap = {
     box: [-7, -10, 7, 2], bob: 0.8, lift: 0.6,
     draw() {
@@ -41,23 +43,17 @@
     }
   };
   K.PK.food = {
-    box: [-7, -14, 7, 2], glow: '#e6e2cf', gr: 8,
+    // first-aid tin: white body, big red cross, a steady white ring and a red pulse, so health never reads as grey
+    box: [-8, -17, 8, 2], glow: C.red, ring: '#f4f1e4', gr: 10,
     draw() {
-      // tin can with a peach label
-      const top = -10.5, bot = -1;
-      K.blob(K.pb().m(-4, top).l(-4, bot).q(0, bot + 1.6, 4, bot).l(4, top).pts, '#b0b3ab', { lw: 0.9 });
-      K.fillOnly(K.RR(-4, top + 2, 8, 5.5, 0), '#d8b66a');
-      if (!K.cur.sil) {
-        K.blob(K.E(0.4, top + 4.8, 1.8, 1.6), '#e09a5a', { lw: 0.55 }); K.line([0.4, top + 3.2, 1.2, top + 2.4], 0.5, '#56664f');
-        K.spot('red', col => K.fillOnly(K.RR(-4, top + 6.6, 8, 0.9, 0), col, 0.85));
-        for (let i = 0; i < 3; i++) K.line([-4, top + 1 + i * 0.4 + (i ? 7 : 0), 4, top + 1 + i * 0.4 + (i ? 7 : 0)], 0.4, '#6a6e68');
-      }
-      K.blob(K.E(0, top, 4, 1.3), '#cfd2ca', { lw: 0.8 });
-      if (!K.cur.sil) K.line([-1.8, top - 0.2, 1.4, top + 0.3], 0.5, '#878b84');
+      K.line(K.RR(-2.4, -15.4, 4.8, 3, 1.2), 0.9, INK, { closed: true });
+      K.blob(K.RR(-6.4, -13, 12.8, 11, 1.6), '#f4f1e4', { lw: 1.0, shade: 2, sd: 1, sa: 0.3 });
+      K.spot('red', col => { K.fillOnly(K.RR(-1.5, -11.6, 3, 8.2, 0.3), col); K.fillOnly(K.RR(-4.6, -9, 9.2, 3, 0.3), col); });
+      if (!K.cur.sil) K.line([-6, -3.6, 6, -3.6], 0.5, '#878b84');
     }
   };
   K.PK.magnet = {
-    box: [-8, -14, 8, 2], glow: C.uv, gr: 8,
+    box: [-8, -14, 8, 2], glow: C.uv, ring: C.uv, gr: 9,
     draw() {
       const U = K.pb().m(-4.6, -1.5).l(-4.6, -7).a(0, -7, 4.6, PI, TAU).l(4.6, -1.5).l(2.2, -1.5).l(2.2, -7).a(0, -7, 2.2, TAU, PI, 2.2).l(-2.2, -1.5).pts;
       K.blob(U, C.red, { lw: 0.9, shade: 3, sd: 1, sa: 0.5 });
@@ -66,7 +62,7 @@
     }
   };
   K.PK.grenade = {
-    box: [-7, -14, 7, 2], glow: C.yellow, gr: 7,
+    box: [-7, -14, 7, 2], glow: C.yellow, ring: C.yellow, gr: 8,
     draw() {
       K.blob(K.E(0, -4.6, 3.6, 4.2), '#56664f', { lw: 0.9, shade: 3, sd: 1.2, sa: 0.55 });
       if (!K.cur.sil) { K.line([-3.4, -4.6, 3.4, -4.6], 0.5, INK); K.line([0, -8.6, 0, -0.6], 0.5, INK); }
@@ -77,7 +73,7 @@
     }
   };
   K.PK.cryo = {
-    box: [-7, -15, 7, 2], glow: '#9fd0ff', gr: 8,
+    box: [-7, -15, 7, 2], glow: '#9fd0ff', ring: '#9fd0ff', gr: 9,
     draw() {
       K.blob(K.RR(-3, -11, 6, 10.5, 1.6), '#cfe8f2', { lw: 0.9, shade: 2, sd: 1.2, sa: 0.5 });
       K.blob(K.RR(-2, -13, 4, 2.4, 0.4), '#878b84', { lw: 0.7 });
@@ -89,13 +85,11 @@
     }
   };
   K.PK.bless = {
-    box: [-8, -16, 8, 2], glow: C.yellow, gr: 9, bob: 2.2, lift: 2,
+    // Father Silas's blessing card: small cream card with a red cross (anything with a red cross heals)
+    box: [-8, -16, 8, 2], glow: '#f4f1e4', gr: 8, bob: 2.2, lift: 2,
     draw() {
-      // little cross with a halo ring
-      if (!K.cur.sil) K.spot('yellow', col => K.line(K.E(0, -12.2, 4.2, 1.3), 0.9, col, { closed: true }));
-      const cr = [-1.1, -11, 1.1, -11, 1.1, -8.4, 3.6, -8.4, 3.6, -6.4, 1.1, -6.4, 1.1, -0.8, -1.1, -0.8, -1.1, -6.4, -3.6, -6.4, -3.6, -8.4, -1.1, -8.4];
-      K.blob(cr, '#f4f1e4', { lw: 0.85 });
-      if (!K.cur.sil) K.spot('yellow', col => K.fillOnly([-1.1, -11, 1.1, -11, 1.1, -0.8, -1.1, -0.8], col, 0.55));
+      K.blob(K.xf(K.RR(-3.6, -12.6, 7.2, 9.6, 0.8), 0, 0, -0.12), '#efe6c8', { lw: 0.85 });
+      K.spot('red', col => { K.fillOnly(K.xf(K.RR(-0.9, -11.4, 1.8, 6.6, 0.2), 0, 0, -0.12), col); K.fillOnly(K.xf(K.RR(-2.6, -9.6, 5.2, 1.8, 0.2), 0, 0, -0.12), col); });
     }
   };
   K.PK.crate = {

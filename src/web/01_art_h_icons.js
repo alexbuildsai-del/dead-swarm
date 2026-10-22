@@ -421,7 +421,7 @@
   /* ======================== misc ======================== */
   I.xp = g => { g.save(); g.translate(50, 86); g.scale(5.2, 5.2); K.begin(g, 1, 0, K.cur.S * 5.2, { amp: 0.2, lw: K.cur.lw / 4.5, kn: 3, step: 0.6, pitch: 0.8, reg: 0.4 }); K.PK.xp1.draw(g); g.restore(); };
   I.scrap = g => { g.save(); g.translate(50, 72); g.scale(5.2, 5.2); K.begin(g, 2, 0, K.cur.S * 5.2, { amp: 0.2, lw: K.cur.lw / 4.5, kn: 3, step: 0.6, pitch: 0.8, reg: 0.4 }); K.PK.scrap.draw(g); g.restore(); };
-  I.food = g => { g.save(); g.translate(50, 86); g.scale(5.6, 5.6); K.begin(g, 3, 0, K.cur.S * 5.6, { amp: 0.2, lw: K.cur.lw / 4.8, kn: 3, step: 0.6, pitch: 0.8, reg: 0.4 }); K.PK.food.draw(g); g.restore(); };
+  I.food = g => { g.save(); g.translate(50, 90); g.scale(5.2, 5.2); K.begin(g, 3, 0, K.cur.S * 5.2, { amp: 0.2, lw: K.cur.lw / 4.5, kn: 3, step: 0.6, pitch: 0.8, reg: 0.4 }); K.PK.food.draw(g); g.restore(); };
   I.magnet = g => { g.save(); g.translate(50, 86); g.scale(5.2, 5.2); K.begin(g, 4, 0, K.cur.S * 5.2, { amp: 0.2, lw: K.cur.lw / 4.5, kn: 3, step: 0.6, pitch: 0.8, reg: 0.4 }); K.PK.magnet.draw(g); g.restore(); };
   I.grenade = g => { g.save(); g.translate(50, 86); g.scale(5.4, 5.4); K.begin(g, 5, 0, K.cur.S * 5.4, { amp: 0.2, lw: K.cur.lw / 4.6, kn: 3, step: 0.6, pitch: 0.8, reg: 0.4 }); K.PK.grenade.draw(g); g.restore(); };
   I.cryo_pk = I.cryo;
