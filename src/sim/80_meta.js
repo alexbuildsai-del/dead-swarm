@@ -140,6 +140,47 @@
       sporehulk: ['Spore Hulk', 'mini', 'quarantine', 10500],
       hivequeen: ['The Hive Queen', 'final', 'quarantine', 45000]
     },
+    // what it does and how to get out of it, one line: the end screen's "Killed by" strip and the Field Notes entry
+    tips: {
+      shambler: 'Bites when it touches you. It is slow: keep moving and it can\'t keep up.',
+      sprinter: 'Fast, and bites on contact. Comes in packs.',
+      brute: 'Slams the ground in front of it: a red circle first, then the hit. Back out of the circle.',
+      lobber: 'Throws acid at the spot you\'re standing on. Leave the red circle before it fills, and stay off the green puddle.',
+      gasbag: 'Swells up next to you, then bursts: get out of the red circle around it. It also bursts when it dies.',
+      splitter: 'Cut it in half and the torso keeps crawling after you.',
+      crawler: 'What is left of a Splitter: low, slow, still biting.',
+      bull: 'Lines up behind a red line, then charges along it. Step sideways off the line.',
+      riot: 'Its shield blocks most shots from the front. Bites up close.',
+      howler: 'Its howl makes every zombie near it faster.',
+      lurker: 'Waits under the street and bursts up where red cracks open under you. Step off the cracks.',
+      leaper: 'Marks a red circle, then lands on it. Leave the circle.',
+      lasher: 'Its tongue lashes along a red line and reels you in. Step off the line.',
+      broodmother: 'Keeps birthing Sprinters until she is dead.',
+      bilesniper: 'Spits along a long red line from far away. Step sideways off the line before it fills.',
+      jogger: 'Picks a heading through you and runs it. Sidestep and it overshoots.',
+      mower: 'Spins its blade in a red circle around itself when you get close. Back out of the circle.',
+      gurney: 'Rolls along a red line until it hits a wall. Step off the line.',
+      orderly: 'Grabs you inside the red circle around it and holds you in place. Back out before it fills.',
+      hazmat: 'Its suit shrugs off fire and toxins. Bites up close.',
+      glowback: 'Leaves a glowing puddle that burns. Stay off it.',
+      postman: 'Throws parcels where you are about to be: red circles, then a bang a second later. Change direction or dash. Also charges along a red line.',
+      blockcaptain: 'Slams a big red circle around himself and jumps onto a red circle under you. Back away, or step off it.',
+      abomination: 'Slams in red rings that spread out from it, charges along red lines and sprays bile in a red cone. Get out of whatever is filling.',
+      nightnurse: 'Fans needles along red lines and blinks onto a red X under you. Step between the lines, off the X.',
+      orderlyking: 'Lashes along a red line and pulls you in, throws gurneys onto red circles and sweeps a red cone in front of him.',
+      surgeon: 'Fans scalpels along red lines, drops onto a red X under you and gasses red circles that slow you. Leave each shape before it fills.',
+      deconunit: 'Sprays flame in a red cone in front of it and lobs gas grenades onto red circles.',
+      sporehulk: 'Lobs spore bombs onto red circles that leave a cloud, and charges along a red line.',
+      sporeling: 'A piece of the Spore Hulk: one spore bomb at a time and short dashes along a red line.',
+      hivequeen: 'Spore bombs onto red circles, tendrils along red lines, bursts up under red cracks and screams in a huge red circle.',
+      zacid: 'An acid puddle. Lobbers leave them where their acid lands. It burns while you stand in it.',
+      zgas: 'A cloud of toxic gas, from a Gasbag or a gas grenade. It burns while you stand in it.',
+      zglow: 'A Glowback\'s hot puddle. It burns while you stand in it.',
+      zspore: 'A spore cloud left by a spore bomb. It burns while you stand in it.',
+      zuvaura: 'An irradiated zombie (blue halo) hurts everything close to it. Keep your distance.',
+      gas: 'The gas wall. A banner warns you 15 s before it moves in; stay inside the ring.',
+      other: 'Anything red on the ground is an attack about to land. When the red fills the shape, it hits: step out, or dash through it.'
+    },
     maps: {
       suburbs: { name: 'Maple Hollow Suburbs', short: 'Maple Hollow', objective: 'Power 3 generators', desc: 'Open streets, dead lawns, a lot of parked cars nobody is coming back for.' },
       hospital: { name: 'St. Agnes Hospital', short: 'St. Agnes', objective: 'Escort the ambulance', desc: 'Tight corridors, flickering lights, and an ambulance with a full tank.' },
@@ -180,6 +221,20 @@
   M.ORDER = ORDER;
 
   /* display name for anything; registries win, fallbacks otherwise */
+  /* the end screen's "Killed by": a damage key (DS.dmgSourceKey: 'lobber', 'boss:postman', 'bull(elite)', 'lobber:shot',
+     'area:zpuddle:zacid', 'gas', 'other') → { id, kind: 'zombie' | 'boss' | 'area' | 'other', name, tip, elite } */
+  const AREA_NAMES = { zacid: 'Acid puddle', zgas: 'Gas cloud', zglow: 'Glowing puddle', zspore: 'Spore cloud', zuvaura: 'Radiation', gas: 'The gas' };
+  M.killerInfo = function (key) {
+    const tips = M.INFO.tips;
+    let k = String(key || 'other'); const elite = /\(elite\)$/.test(k);
+    k = k.replace(/\(elite\)$/, '').replace(/:shot$/, '');
+    const boss = k.indexOf('boss:') === 0; if (boss) k = k.slice(5);
+    if (k.indexOf('area:') === 0) k = k.split(':')[2] || 'other';
+    if (AREA_NAMES[k]) return { id: k, kind: 'area', name: AREA_NAMES[k], tip: tips[k] || tips.other, elite: false };
+    if (boss || DS.BOSSES[k] || M.INFO.bosses[k]) return { id: k, kind: 'boss', name: M.name('boss', k), tip: tips[k] || tips.other, elite: false };
+    if (DS.ZOMBIES[k] || M.INFO.zombies[k]) return { id: k, kind: 'zombie', name: M.name('zombie', k), tip: tips[k] || tips.other, elite };
+    return { id: 'other', kind: 'other', name: 'Something red', tip: tips.other, elite: false };
+  };
   M.name = function (kind, id) {
     const I = M.INFO;
     switch (kind) {

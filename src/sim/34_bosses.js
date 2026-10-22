@@ -32,7 +32,7 @@
       const att = z && z.alive && z.id === tg.ownerId ? z : null;
       let dealt = 0;
       if (d.pd > 0 && !(d.grp && d.grp.hit) && world.inTelegraph(tg, p.x, p.y, p.r * 0.6)) {
-        dealt = world.hurtPlayer(d.pd, att);
+        dealt = world.hurtPlayer(d.pd, att, !att && tg.by ? { by: tg.by } : undefined);
         if (d.grp) d.grp.hit = 1;
         if (dealt > 0) {
           if (d.slow) p.addBuff('zslow', d.slow[1], { speed: -d.slow[0] });

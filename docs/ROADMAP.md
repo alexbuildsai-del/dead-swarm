@@ -60,6 +60,11 @@ Tick a box and add a one-line note when an item lands.
   - St. Agnes: supply closets in the wards, and a defibrillator station that gives one revive.
   - Quarantine: footlockers in tents and containers, and fuel drums that explode when shot.
 
+- [x] **"What keeps killing me?"** (playtest; done, test `tools/agents/review/killers.js`): telegraph outlines drawn
+  above the crowd and the survivor in daylight, a red warning sign over the survivor while they stand in one, a
+  "Killed by" strip on the death screen with the attack's card and a one-line tip (also in Field Notes), and the Field
+  Guide's red card explains the fill and the dash.
+
 ## Later: more map ideas
 - **Fuel drums (Quarantine)** and car alarms both need a shootable-prop system (a drum or car that weapons can hit and that
   explodes). Build that once and use it for both.

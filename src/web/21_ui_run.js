@@ -108,6 +108,13 @@
     const L = ['Another name for Lou to read out.', 'The swarm got a vote. It won.', 'Lights out in ' + M.name('mapShort', s.map) + '.', 'They\'ll be talking about this one on the late show.'];
     return L[(Math.floor(s.time || 0) + (s.kills | 0)) % L.length];
   }
+  /* "Killed by": what landed the last hit and, in one line, how that attack works (M.killerInfo / M.INFO.tips) */
+  function killedHTML(s) {
+    if (s.result !== 'death' || !s.killedBy) return '';
+    const k = M.killerInfo(s.killedBy), card = k.kind === 'zombie' || k.kind === 'boss';
+    return '<section class="m-ekill">' + (card ? U.img(U.zcardURL(k.id, 112), 'm-ekill-pic', '') : '<span class="m-ekill-pic q" aria-hidden="true">!</span>') +
+      '<div><span class="m-kl">Killed by</span><b>' + esc(k.name) + (k.elite ? ' <small>(elite)</small>' : '') + '</b><p>' + esc(k.tip) + '</p></div></section>';
+  }
   function endHTML(s, r) {
     const st = resultStamp(s), si = U.survInfo(s.survivor), mi = M.masteryInfo(M.data, s.survivor);
     const title = M.data.title;
@@ -158,7 +165,7 @@
             '<div><b class="m-ename">' + esc(si.fullName) + '</b>' + (title ? '<span class="m-etitle">"' + esc(title) + '"</span>' : '') + '<span class="m-ewhere">' + esc(where) + (s.daily ? ', Daily Outbreak' : '') + '</span>' +
             '<p class="m-esub">' + esc(st.sub) + '</p></div></div>' +
           '<dl class="m-estats"><div><dt>Time</dt><dd>' + DS.fmtTime(s.time) + '</dd></div><div><dt>Kills</dt><dd>' + fmt(s.kills) + '</dd></div><div><dt>Level</dt><dd>' + (s.level | 0) + '</dd></div><div><dt>Damage</dt><dd>' + fmtK(dmgTotal) + '</dd></div></dl>' +
-        '</header>' + err +
+        '</header>' + killedHTML(s) + err +
         '<div class="m-egrid">' +
           '<section class="m-erew"><h2 class="m-h2">Take-home</h2>' + ledger + serum + mast + daily + '</section>' +
           '<section class="m-edmg"><h2 class="m-h2">Who did the work</h2>' + U.dmgHTML(s.damage, 8) + '</section>' +

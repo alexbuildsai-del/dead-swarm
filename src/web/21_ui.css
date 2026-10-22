@@ -332,6 +332,7 @@ body.m-paused .m-root { background: rgba(16,19,15,.62); animation: ovIn .18s eas
 .m-zc.boss { border: 2px solid #9e1f27; } .m-zc.boss.k-final { box-shadow: 3px 3px 0 var(--red); }
 .m-zc.locked .m-zn { color: var(--dim); letter-spacing: 2px; }
 .m-zdet { display: grid; grid-template-columns: 180px 1fr; gap: 16px; padding-right: 28px; }
+.m-ztip { margin: 6px 0 8px; padding: 6px 8px; font-size: 13.5px; line-height: 1.4; background: rgba(200,50,58,.1); border-left: 4px solid var(--splat); }
 .m-zimg.big { border: 3px solid var(--pink); transform: rotate(-2deg); box-shadow: 4px 4px 0 rgba(27,31,26,.35); }
 .m-lore { font-family: var(--f-hand); font-size: 16px; line-height: 1.35; color: var(--ink); margin: 6px 0 10px; }
 .m-list { display: flex; flex-direction: column; }
@@ -500,6 +501,11 @@ body.m-paused .m-root { background: rgba(16,19,15,.62); animation: ovIn .18s eas
 .m-estats { display: grid; grid-template-columns: repeat(2, auto); gap: 4px 14px; margin: 0; }
 .m-estats > div { text-align: right; } .m-estats dt { font-size: 11px; color: var(--dim); } .m-estats dd { margin: 0; font-family: var(--f-head); font-size: 26px; line-height: 1; }
 .m-egrid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 6px; }
+.m-ekill { display: flex; gap: 12px; align-items: center; margin: 10px 0 4px; padding: 8px 12px 8px 8px; background: var(--ink); color: var(--paper); border-left: 6px solid var(--splat); }
+.m-ekill-pic { flex: none; width: 56px; height: 56px; object-fit: cover; background: var(--g2); border: 2px solid var(--paper); transform: rotate(-3deg); }
+.m-ekill-pic.q { display: grid; place-items: center; background: var(--splat); color: #fff; font-family: var(--f-head); font-size: 34px; line-height: 1; }
+.m-ekill .m-kl { color: #ff8f86; } .m-ekill b { font-family: var(--f-head); font-weight: normal; font-size: 20px; line-height: 1.1; letter-spacing: .4px; } .m-ekill small { font-size: 13px; opacity: .75; }
+.m-ekill p { margin: 2px 0 0; font-size: 13.5px; line-height: 1.35; }
 .m-ledg { list-style: none; margin: 0 0 10px; padding: 0; font-size: 14px; }
 .m-ledg li { display: flex; align-items: baseline; gap: 6px; padding: 4px 0; }
 .m-ledg li b { font-family: var(--f-head); font-weight: normal; font-size: 17px; }

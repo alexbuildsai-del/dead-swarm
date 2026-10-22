@@ -151,7 +151,7 @@ DS.Renderer = class Renderer {
     if (world.evac && world.evac.state !== 'away') DS.Art.drawHeli(ctx, world.evac, t, world, 'pad');
     // dusk on Maple Hollow (map.duskAt); on any dark map, loot and telegraphs are drawn above the darkness instead
     const dusk = !world.map.dark && world.map.duskAt ? world.map.duskAt(world.t) : 0, darkish = world.map.dark || dusk > 0.02;
-    if (!darkish) { this.drawPickups(ctx, world, alpha, t, inView); this.drawTelegraphs(ctx, world, t); }
+    if (!darkish) { this.drawPickups(ctx, world, alpha, t, inView); this.drawTelegraphs(ctx, world, t, 'fill'); }
     // allies on the ground layer
     for (const a of world.allies) { if (!a.alive || a.layer !== 'ground') continue; this.drawAlly(ctx, a, alpha, t, world, inView); }
     // y-sorted entities: zombies, allies, survivor
@@ -199,6 +199,7 @@ DS.Renderer = class Renderer {
     // weapon overlays (arcs, beams…) drawn by weapon modules
     for (const inst of p.weapons) { const fn = DS.DRAW.weapon[inst.def.id]; if (fn) fn(ctx, inst, world, alpha, t); }
     const sd = DS.DRAW.survivor[p.id]; if (sd) sd(ctx, p, world, alpha, t);
+    if (!darkish) { this.drawTelegraphs(ctx, world, t, 'edge'); this.drawDangerCue(ctx, world, px, py, t); }
     // world fx
     if (DS.FXS) DS.FXS.drawWorld(ctx, t, dt, this);
     // heli body above everything
@@ -207,7 +208,7 @@ DS.Renderer = class Renderer {
     if (darkish) {
       this.drawDarkness(world, alpha, t, dusk); ctx.setTransform(s, 0, 0, s, -cx * s + this.cv.width / 2, -cy * s + this.cv.height / 2);
       if (world.map.dark || dusk > 0.35) this.drawEyes(ctx, world, alpha, t);
-      this.drawPickups(ctx, world, alpha, t, inView); this.drawTelegraphs(ctx, world, t);
+      this.drawPickups(ctx, world, alpha, t, inView); this.drawTelegraphs(ctx, world, t); this.drawDangerCue(ctx, world, px, py, t);
     }
     if (world.map.gas) this.drawGas(ctx, world, t);
     if (DS.FXS) DS.FXS.drawWorldTop(ctx, t, dt, this);
@@ -252,6 +253,20 @@ DS.Renderer = class Renderer {
     DS.Art.drawSurvivor(ctx, p, x, y, t, world);
     ctx.globalAlpha = 1;
   }
+  /* a red warning sign over the survivor while they stand inside an attack that is about to land; it beats faster as the
+     soonest one nears (the same test the attack itself uses, World.inTelegraph) */
+  drawDangerCue(ctx, world, x, y, t) {
+    const p = world.player; if (p.dead) return;
+    let soon = -1;
+    for (const g of world.telegraphs) if (g.alive && g.T > 0 && world.inTelegraph(g, p.x, p.y, p.r * 0.6)) soon = Math.max(soon, DS.clamp(g.t / g.T, 0, 1));
+    if (soon < 0) return;
+    const s = 1 + 0.2 * Math.max(0, Math.sin(t * (9 + 24 * soon)));
+    ctx.save(); ctx.translate(x, y - 54); ctx.scale(s, s);
+    ctx.lineJoin = 'round'; ctx.fillStyle = DS.COL.red; ctx.strokeStyle = DS.COL.ink; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(0, -13); ctx.lineTo(13, 10); ctx.lineTo(-13, 10); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.font = '16px ' + DS.FONT.head; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('!', 0, 2);
+    ctx.restore();
+  }
   defaultArea(ctx, a, t) {
     const hostile = a.hostile;
     ctx.fillStyle = hostile ? 'rgba(160,190,60,0.28)' : (a.color || 'rgba(242,200,75,0.22)');
@@ -266,63 +281,88 @@ DS.Renderer = class Renderer {
     ctx.strokeStyle = DS.COL.red; ctx.lineWidth = 2; ctx.stroke();
   }
 
-  /* ---------------- telegraphs (always red) ---------------- */
-  drawTelegraphs(ctx, world, t) {
-    const R = DS.COL.red;
+  /* ---------------- telegraphs (always red) ----------------
+     pass 'fill': the shaded area and the fill that grows to the edge as the attack lands (on the ground, under the crowd);
+     'edge': outlines and the closing edge only, drawn above the zombies and the survivor so a circle under a horde (or
+     under your own feet) still shows; undefined: both at once (dark maps, where it all draws above the darkness) */
+  drawTelegraphs(ctx, world, t, pass) {
+    const R = DS.COL.red, fill = pass !== 'edge', edge = pass !== 'fill', lead = pass === 'edge';
     for (const g of world.telegraphs) {
       if (!g.alive) continue;
       const k = DS.clamp(g.t / g.T, 0, 1);
       const pulse = 0.6 + 0.4 * Math.sin(t * 24);
       ctx.lineWidth = 2.5;
-      ctx.strokeStyle = R;
+      ctx.strokeStyle = R; ctx.fillStyle = R;
       switch (g.shape) {
         case 'circle': {
-          ctx.globalAlpha = 0.16 + 0.1 * k; ctx.fillStyle = R; ctx.beginPath(); ctx.arc(g.x, g.y, g.r, 0, DS.TAU); ctx.fill();
-          ctx.globalAlpha = 0.45 + 0.4 * k; ctx.beginPath(); ctx.arc(g.x, g.y, g.r * k, 0, DS.TAU); ctx.fill();
-          ctx.globalAlpha = 0.7 + 0.3 * pulse; ctx.setLineDash([8, 5]); ctx.beginPath(); ctx.arc(g.x, g.y, g.r, 0, DS.TAU); ctx.stroke(); ctx.setLineDash([]);
+          if (fill) {
+            ctx.globalAlpha = 0.16 + 0.1 * k; ctx.beginPath(); ctx.arc(g.x, g.y, g.r, 0, DS.TAU); ctx.fill();
+            ctx.globalAlpha = 0.45 + 0.4 * k; ctx.beginPath(); ctx.arc(g.x, g.y, g.r * k, 0, DS.TAU); ctx.fill();
+          }
+          if (edge) {
+            ctx.globalAlpha = 0.7 + 0.3 * pulse; ctx.setLineDash([8, 5]); ctx.beginPath(); ctx.arc(g.x, g.y, g.r, 0, DS.TAU); ctx.stroke(); ctx.setLineDash([]);
+            if (lead && k > 0.04) { ctx.globalAlpha = 0.9; ctx.beginPath(); ctx.arc(g.x, g.y, g.r * k, 0, DS.TAU); ctx.stroke(); }
+          }
           break;
         }
         case 'ring': {
-          ctx.globalAlpha = 0.18 + 0.12 * k; ctx.fillStyle = R; ctx.beginPath(); ctx.arc(g.x, g.y, g.r, 0, DS.TAU); ctx.arc(g.x, g.y, Math.max(0, g.r2), 0, DS.TAU, true); ctx.fill();
-          ctx.globalAlpha = 0.8; ctx.beginPath(); ctx.arc(g.x, g.y, g.r, 0, DS.TAU); ctx.stroke();
-          if (g.r2 > 0) { ctx.beginPath(); ctx.arc(g.x, g.y, g.r2, 0, DS.TAU); ctx.stroke(); }
-          ctx.globalAlpha = 0.5 * k; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(g.x, g.y, g.r2 + (g.r - g.r2) * k, 0, DS.TAU); ctx.stroke();
+          if (fill) { ctx.globalAlpha = 0.18 + 0.12 * k; ctx.beginPath(); ctx.arc(g.x, g.y, g.r, 0, DS.TAU); ctx.arc(g.x, g.y, Math.max(0, g.r2), 0, DS.TAU, true); ctx.fill(); }
+          if (edge) {
+            ctx.globalAlpha = 0.8; ctx.beginPath(); ctx.arc(g.x, g.y, g.r, 0, DS.TAU); ctx.stroke();
+            if (g.r2 > 0) { ctx.beginPath(); ctx.arc(g.x, g.y, g.r2, 0, DS.TAU); ctx.stroke(); }
+            ctx.globalAlpha = 0.5 * k; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(g.x, g.y, g.r2 + (g.r - g.r2) * k, 0, DS.TAU); ctx.stroke();
+          }
           break;
         }
         case 'line': {
           const dx = g.x2 - g.x, dy = g.y2 - g.y, len = Math.sqrt(dx * dx + dy * dy) || 1, nx = -dy / len * g.w / 2, ny = dx / len * g.w / 2;
-          ctx.globalAlpha = 0.16 + 0.1 * k; ctx.fillStyle = R;
-          ctx.beginPath(); ctx.moveTo(g.x + nx, g.y + ny); ctx.lineTo(g.x2 + nx, g.y2 + ny); ctx.lineTo(g.x2 - nx, g.y2 - ny); ctx.lineTo(g.x - nx, g.y - ny); ctx.closePath(); ctx.fill();
-          ctx.globalAlpha = 0.5 + 0.35 * k;
           const ex = g.x + dx * k, ey = g.y + dy * k;
-          ctx.beginPath(); ctx.moveTo(g.x + nx, g.y + ny); ctx.lineTo(ex + nx, ey + ny); ctx.lineTo(ex - nx, ey - ny); ctx.lineTo(g.x - nx, g.y - ny); ctx.closePath(); ctx.fill();
-          ctx.globalAlpha = 0.85; ctx.setLineDash([10, 6]);
-          ctx.beginPath(); ctx.moveTo(g.x + nx, g.y + ny); ctx.lineTo(g.x2 + nx, g.y2 + ny); ctx.moveTo(g.x - nx, g.y - ny); ctx.lineTo(g.x2 - nx, g.y2 - ny); ctx.stroke(); ctx.setLineDash([]);
-          // arrowhead
-          const ax = g.x2 - dx / len * 18, ay = g.y2 - dy / len * 18;
-          ctx.beginPath(); ctx.moveTo(g.x2, g.y2); ctx.lineTo(ax + nx * 0.8, ay + ny * 0.8); ctx.moveTo(g.x2, g.y2); ctx.lineTo(ax - nx * 0.8, ay - ny * 0.8); ctx.stroke();
+          if (fill) {
+            ctx.globalAlpha = 0.16 + 0.1 * k;
+            ctx.beginPath(); ctx.moveTo(g.x + nx, g.y + ny); ctx.lineTo(g.x2 + nx, g.y2 + ny); ctx.lineTo(g.x2 - nx, g.y2 - ny); ctx.lineTo(g.x - nx, g.y - ny); ctx.closePath(); ctx.fill();
+            ctx.globalAlpha = 0.5 + 0.35 * k;
+            ctx.beginPath(); ctx.moveTo(g.x + nx, g.y + ny); ctx.lineTo(ex + nx, ey + ny); ctx.lineTo(ex - nx, ey - ny); ctx.lineTo(g.x - nx, g.y - ny); ctx.closePath(); ctx.fill();
+          }
+          if (edge) {
+            ctx.globalAlpha = 0.85; ctx.setLineDash([10, 6]);
+            ctx.beginPath(); ctx.moveTo(g.x + nx, g.y + ny); ctx.lineTo(g.x2 + nx, g.y2 + ny); ctx.moveTo(g.x - nx, g.y - ny); ctx.lineTo(g.x2 - nx, g.y2 - ny); ctx.stroke(); ctx.setLineDash([]);
+            // arrowhead
+            const ax = g.x2 - dx / len * 18, ay = g.y2 - dy / len * 18;
+            ctx.beginPath(); ctx.moveTo(g.x2, g.y2); ctx.lineTo(ax + nx * 0.8, ay + ny * 0.8); ctx.moveTo(g.x2, g.y2); ctx.lineTo(ax - nx * 0.8, ay - ny * 0.8); ctx.stroke();
+            if (lead && k > 0.04) { ctx.globalAlpha = 0.9; ctx.beginPath(); ctx.moveTo(ex + nx, ey + ny); ctx.lineTo(ex - nx, ey - ny); ctx.stroke(); }
+          }
           break;
         }
         case 'cone': {
-          ctx.globalAlpha = 0.16 + 0.12 * k; ctx.fillStyle = R;
-          ctx.beginPath(); ctx.moveTo(g.x, g.y); ctx.arc(g.x, g.y, g.r, g.ang - g.arc / 2, g.ang + g.arc / 2); ctx.closePath(); ctx.fill();
-          ctx.globalAlpha = 0.4 + 0.4 * k; ctx.beginPath(); ctx.moveTo(g.x, g.y); ctx.arc(g.x, g.y, g.r * k, g.ang - g.arc / 2, g.ang + g.arc / 2); ctx.closePath(); ctx.fill();
-          ctx.globalAlpha = 0.85; ctx.beginPath(); ctx.moveTo(g.x, g.y); ctx.arc(g.x, g.y, g.r, g.ang - g.arc / 2, g.ang + g.arc / 2); ctx.closePath(); ctx.stroke();
+          if (fill) {
+            ctx.globalAlpha = 0.16 + 0.12 * k;
+            ctx.beginPath(); ctx.moveTo(g.x, g.y); ctx.arc(g.x, g.y, g.r, g.ang - g.arc / 2, g.ang + g.arc / 2); ctx.closePath(); ctx.fill();
+            ctx.globalAlpha = 0.4 + 0.4 * k; ctx.beginPath(); ctx.moveTo(g.x, g.y); ctx.arc(g.x, g.y, g.r * k, g.ang - g.arc / 2, g.ang + g.arc / 2); ctx.closePath(); ctx.fill();
+          }
+          if (edge) {
+            ctx.globalAlpha = 0.85; ctx.beginPath(); ctx.moveTo(g.x, g.y); ctx.arc(g.x, g.y, g.r, g.ang - g.arc / 2, g.ang + g.arc / 2); ctx.closePath(); ctx.stroke();
+            if (lead && k > 0.04) { ctx.globalAlpha = 0.9; ctx.beginPath(); ctx.arc(g.x, g.y, g.r * k, g.ang - g.arc / 2, g.ang + g.arc / 2); ctx.stroke(); }
+          }
           break;
         }
         case 'cross': {
-          ctx.globalAlpha = 0.18 + 0.1 * k; ctx.fillStyle = R; ctx.beginPath(); ctx.arc(g.x, g.y, g.r, 0, DS.TAU); ctx.fill();
-          ctx.globalAlpha = 0.9; ctx.lineWidth = 5 + 3 * k; const r = g.r * 0.7;
-          ctx.beginPath(); ctx.moveTo(g.x - r, g.y - r); ctx.lineTo(g.x + r, g.y + r); ctx.moveTo(g.x + r, g.y - r); ctx.lineTo(g.x - r, g.y + r); ctx.stroke();
-          ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(g.x, g.y, g.r, 0, DS.TAU); ctx.stroke();
+          if (fill) { ctx.globalAlpha = 0.18 + 0.1 * k; ctx.beginPath(); ctx.arc(g.x, g.y, g.r, 0, DS.TAU); ctx.fill(); }
+          if (edge) {
+            ctx.globalAlpha = 0.9; ctx.lineWidth = 5 + 3 * k; const r = g.r * 0.7;
+            ctx.beginPath(); ctx.moveTo(g.x - r, g.y - r); ctx.lineTo(g.x + r, g.y + r); ctx.moveTo(g.x + r, g.y - r); ctx.lineTo(g.x - r, g.y + r); ctx.stroke();
+            ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(g.x, g.y, g.r, 0, DS.TAU); ctx.stroke();
+          }
           break;
         }
         case 'cracks': { // lurker emergence
-          ctx.globalAlpha = 0.2 + 0.2 * k; ctx.fillStyle = R; ctx.beginPath(); ctx.arc(g.x, g.y, g.r, 0, DS.TAU); ctx.fill();
-          ctx.globalAlpha = 0.9; ctx.lineWidth = 2;
-          const seed = g.id * 7; ctx.beginPath();
-          for (let i = 0; i < 7; i++) { const a = (i / 7) * DS.TAU + (seed % 10) * 0.1; const l = g.r * (0.4 + 0.6 * k) * (0.7 + ((seed * (i + 3)) % 30) / 100); ctx.moveTo(g.x, g.y); ctx.lineTo(g.x + Math.cos(a) * l * 0.5 + Math.sin(a * 3) * 4, g.y + Math.sin(a) * l * 0.5); ctx.lineTo(g.x + Math.cos(a) * l, g.y + Math.sin(a) * l); }
-          ctx.stroke();
+          if (fill) { ctx.globalAlpha = 0.2 + 0.2 * k; ctx.beginPath(); ctx.arc(g.x, g.y, g.r, 0, DS.TAU); ctx.fill(); }
+          if (edge) {
+            ctx.globalAlpha = 0.9; ctx.lineWidth = 2;
+            const seed = g.id * 7; ctx.beginPath();
+            for (let i = 0; i < 7; i++) { const a = (i / 7) * DS.TAU + (seed % 10) * 0.1; const l = g.r * (0.4 + 0.6 * k) * (0.7 + ((seed * (i + 3)) % 30) / 100); ctx.moveTo(g.x, g.y); ctx.lineTo(g.x + Math.cos(a) * l * 0.5 + Math.sin(a * 3) * 4, g.y + Math.sin(a) * l * 0.5); ctx.lineTo(g.x + Math.cos(a) * l, g.y + Math.sin(a) * l); }
+            ctx.stroke();
+            if (lead) { ctx.lineWidth = 2; ctx.setLineDash([6, 5]); ctx.beginPath(); ctx.arc(g.x, g.y, g.r, 0, DS.TAU); ctx.stroke(); ctx.setLineDash([]); }
+          }
           break;
         }
       }

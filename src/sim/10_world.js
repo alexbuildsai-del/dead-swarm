@@ -71,7 +71,7 @@ DS.Telegraph = class Telegraph {
   reset() {
     this.id = 0; this.alive = false; this.shape = 'circle'; this.x = 0; this.y = 0; this.x2 = 0; this.y2 = 0;
     this.r = 40; this.r2 = 0; this.w = 20; this.ang = 0; this.arc = 1; this.t = 0; this.T = 1; this.owner = null; this.ownerId = 0;
-    this.onFire = null; this.data = null; this.follow = false; this.persist = false; this.color = null; this.kind = '';
+    this.onFire = null; this.data = null; this.follow = false; this.persist = false; this.color = null; this.kind = ''; this.by = '';
   }
 };
 
@@ -275,7 +275,7 @@ DS.World = class World extends DS.Emitter {
   telegraph(o) {
     const t = this.tPool.get(); t.id = this.id(); t.alive = true;
     for (const k in o) t[k] = o[k];
-    if (t.owner) t.ownerId = t.owner.id;
+    if (t.owner) { t.ownerId = t.owner.id; if (!t.by) t.by = DS.dmgSourceKey(t.owner); }   // who it hurts for, even once the owner is dead
     if (this.fxOn && this.onScreen(t.x, t.y, 60)) this.sound('telegraph', t.x, t.y, 0.35);
     this.telegraphs.push(t); return t;
   }
@@ -997,6 +997,7 @@ DS.World = class World extends DS.Emitter {
 
 DS.dmgSourceKey = function (a, o) {
   if (o && o.gas) return 'gas';
+  if (o && o.by) return o.by;   // a telegraph whose owner died before it landed
   if (a) {
     if (a.type) return (a.boss ? 'boss:' : '') + a.type + (a.elite ? '(elite)' : '');
     if (a.owner && a.owner.type) return a.owner.type + ':shot';

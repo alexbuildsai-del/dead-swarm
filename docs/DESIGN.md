@@ -809,6 +809,13 @@ menu. Export = `DS1:` + base64(JSON) + checksum; Import validates and migrates. 
   bounded maps sample their walls once per run; Quarantine adds the nests and the gas ring. Crates, evac, call-in spots
   and bosses are marked, far ones clamped to the edge. Off-screen arrows are larger, pulse, and stay below the timer and
   off the minimap.
+- **Telegraphs** (always red): the shaded area and the fill that grows to the edge as the attack lands are drawn on the
+  ground; the outline and the closing edge are drawn again above zombies and the survivor, so a circle under a horde or
+  under your own feet still shows (on dark maps and at dusk the whole telegraph is drawn above the darkness). While the
+  survivor stands inside one, a red warning sign beats over their head, faster as the soonest one nears.
+- **Killed by** (end screen, deaths only): the card of what landed the last hit, its name, and one line on how that
+  attack works and how to get out of it (`M.INFO.tips`, `M.killerInfo`). Field Notes show the same line. An attack whose
+  owner died before it landed still names it (`telegraph.by`).
 - HUD: HP bar (inked tape), XP bar (top), timer (stamp), kills, Scrap, Serum, weapon/gear icons with level pips, ult
   meter ring on the Ultimate button, dash cooldown on the Dash button, call-in card, radio subtitle box.
 - Level-up: 0.32 s slow-mo (×0.22 speed), radial ink burst, cards slam in like photocopies being slapped down.

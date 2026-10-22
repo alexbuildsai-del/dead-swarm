@@ -35,7 +35,7 @@
     /* damage the survivor if inside telegraph tg; returns damage dealt */
     hitP(world, tg, dmg, z, pad) {
       const p = world.player;
-      if (world.inTelegraph(tg, p.x, p.y, pad === undefined ? p.r * 0.6 : pad)) return world.hurtPlayer(dmg, z || null);
+      if (world.inTelegraph(tg, p.x, p.y, pad === undefined ? p.r * 0.6 : pad)) return world.hurtPlayer(dmg, z || null, !z && tg.by ? { by: tg.by } : undefined);
       return 0;
     },
     spd(world, z) { return z.spd * z.spdMul * world.zSpeedMul * (1 + (z.buffT > 0 ? z.buffAmt : 0)) * (1 - z.slowAmt); },
@@ -183,7 +183,7 @@
 
   /* =========================== 4 Lobber — acid lob =========================== */
   function acidFire(world, tg) {
-    ZU.hitP(world, tg, tg.pd, tg.owner && tg.owner.alive ? tg.owner : null);
+    const z = tg.owner; ZU.hitP(world, tg, tg.pd, z && z.alive && z.id === tg.ownerId ? z : null);
     ZU.puddle(world, tg.x, tg.y, tg.r, 2, tg.pd2, 'zacid');
     world.sound('acid_splash', tg.x, tg.y, 0.6); world.fx('zsplash', tg.x, tg.y, tg.r, 0);
   }
@@ -234,7 +234,7 @@
     onDeath(world, z) {
       if (z.c) return;
       const m = ZU.m(z);
-      world.telegraph({ shape: 'circle', x: z.x, y: z.y, r: 58 * ZU.k(z), T: ZU.wind(z, 0.75), owner: null, kind: 'gas', pd: 10 * m, pd2: 4 * m, death: true, onFire: gasDeathFire });
+      world.telegraph({ shape: 'circle', x: z.x, y: z.y, r: 58 * ZU.k(z), T: ZU.wind(z, 0.75), owner: null, by: DS.dmgSourceKey(z), kind: 'gas', pd: 10 * m, pd2: 4 * m, death: true, onFire: gasDeathFire });
     } });
 
   /* =========================== 6–7 Splitter / Crawler =========================== */
