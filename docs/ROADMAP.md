@@ -81,6 +81,17 @@ Tick a box and add a one-line note when an item lands.
 - Balance rule for all of these: every new power source costs time, standing still, a detour or extra zombies. If
   in-run power rises, pay for it by trimming Safehouse ranks, which moves power from grinding to playing the map well.
 
+## Multiplayer (Steam)
+Co-op for 2–4 players. Full design and plan: [`docs/plans/multiplayer.md`](plans/multiplayer.md). Proposed: local co-op plus
+Steam Remote Play Together at launch, then native online co-op (deterministic lockstep over Steam's relay) as the first
+big update. The four open decisions are listed at the end of the plan.
+- [ ] M0: determinism audit, fixed logical view, desync harness
+- [ ] M1: multi-survivor sim, co-op rules (shared XP, revives, scaling), bot teammates
+- [ ] M2: local co-op (gamepads, shared camera) and Remote Play Together
+- [ ] M3: lockstep netcode, desync fuzz in CI
+- [ ] M4: Steam lobbies, invites, P2P transport, rich presence, rejoin
+- [ ] M5: co-op balance with bots, co-op achievements, Steam Playtest beta
+
 ## Steam prep
 - Controller support and a fullscreen toggle (neither exists yet). Test on Steam Deck.
 - Desktop wrapper: Electron with `steamworks.js` (Tauri is a smaller alternative). Ship Windows first, then
