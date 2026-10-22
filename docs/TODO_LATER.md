@@ -37,8 +37,14 @@ Everything P0–P3 from the review is fixed and re-verified (`tools/agents/revie
 - **Daily score formula** is written in two places: `80_meta.js` and the rules text in `21_ui_more.js`.
 - **Banner bounds:** `04_hud.js` copies the banner rectangle from `03_fx.js` to keep the call-in card clear. Exposing the bounds from FX would remove the duplication.
 
-- **snapfuzz** reports 5 restore diffs on one Quarantine/Silas case at t=905 (allyKinds, bosses, kills, stats, zombies). They
-  are there on the v1.0 build too, so they predate the playtest-1 work; worth a look.
+- **Balance bot and loot spots:** the bot heads for a loot spot whenever it's calm and turns back once 3 zombies are near,
+  so on St. Agnes it drifts into dead-end wards often and finishes only ~1.4 closets a run. It also never uses the
+  defibrillator. Clear rates didn't move (TUNING_LOG loot-2), but a bot that commits to a spot (or skips it) would measure
+  the loot economy better.
+
+- **snapfuzz** reports restore diffs that the v1.0 build has too, so they predate the playtest-1 work; worth a look:
+  - kills, zombies and stats (and so pickups) on the Quarantine/Silas cases, one or two timestamps per run;
+  - allyKinds on 15–19 St. Agnes timestamps: a restored run is missing one of the timed allies (bike, hound) 3 s later.
 
 ## Docs
 - DESIGN.md §16 holds the verification results from the last full matrix. Update it after the next balance pass.

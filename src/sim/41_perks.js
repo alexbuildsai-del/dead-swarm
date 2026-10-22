@@ -79,8 +79,12 @@
     name: 'Shrapnel', desc: 'Explosion kills burst into 3 shrapnel (10 damage).',
     apply(world, p) {
       const src = DS.makeSrc('perk_shrapnel', { el: 'phys', kb: 30, isAbility: true });
+      const live = [];   // expiry times of live shrapnel: a big blast chain never floods the projectile pool (at most 80 bursts, 240 shards, at once)
       world.on('kill', (z, s) => {
         if (!s || s.el !== 'blast' || s === src) return;
+        while (live.length && live[0] <= world.t) live.shift();
+        if (live.length >= 80) return;
+        live.push(world.t + 0.45);
         const a0 = world.rng.angle(), sp = 520;
         for (let i = 0; i < 3; i++) {
           const a = a0 + i * DS.TAU / 3;

@@ -129,6 +129,24 @@ DS.MapBase = class MapBase {
   flowDir(world, x, y) { return this.flow ? this.flow.dir(x, y) : null; }
   updateObjective() { }
   updateInteractables() { }   // loot spots (13_loot.js); maps that have them override this
+  /* maps with a fixed list of loot spots (this.lootSpots + this.loot): St. Agnes supply closets, Quarantine footlockers */
+  updateLootSpots(world, dt) {
+    const p = world.player, r = DS.TUNE.lootR; let spot = null;
+    if (!p.dead) for (const s of this.lootSpots) if (!this.loot.isDone(s.key) && DS.dist2(p.x, p.y, s.dx, s.dy) < r * r) { spot = s; break; }
+    this.loot.update(world, dt, spot);
+  }
+  addLootProps() { for (const s of this.lootSpots) this.props.push({ kind: 'lootbox', x: s.dx, y: s.dy, spot: s }); }
+  lootTarget(world, R) {
+    if (!this.lootSpots || this.loot.cd > 0) return null;
+    const p = world.player, g = this.gas, safe = g ? Math.min(g.r, g.to) - 120 : 0; let best = null, bd = R * R;
+    for (const s of this.lootSpots) {
+      if (this.loot.isDone(s.key)) continue;
+      const x = s.dx + s.nx * 16, y = s.dy + s.ny * 16, d = DS.dist2(p.x, p.y, x, y);
+      if (g && DS.dist2(x, y, g.x, g.y) > safe * safe) continue;   // not worth walking into the gas for
+      if (d < bd) { bd = d; best = { x, y, spot: s }; }
+    }
+    return best;
+  }
   get lit() { return this.dark || (!!this.duskAt && this.duskAt(this.w.t) > 0.05); }   // transient lights (muzzle flashes, blasts) are worth pushing
   rectsNear() { return []; }
   collide(e) {
@@ -557,6 +575,22 @@ DS.MapHospital = class MapHospital extends DS.MapTiles {
     for (const q of this.cps) this.props.push(q);
     this.objective.title = 'Code Blue';
     this.flicker = [];
+    // a supply closet on each ward's east wall, one row in (clear of every door and pillar)
+    this.loot = new DS.LootState();
+    this.lootSpots = rooms.map((rm, i) => ({ key: 'w' + i, dx: (rm[2] + 1) * T - 4, dy: (rm[1] + 1.5) * T, nx: -1, ny: 0, look: 'closet' }));
+    this.addLootProps();
+    // the nurse station's defibrillator: from 5:00, stand at it for 5 s once per run for a spare revive
+    this.defib = { kind: 'defib', x: 25.5 * T, y: 18.5 * T, r: 44, prog: 0, used: false, from: 300 };
+    this.props.push(this.defib);
+  }
+  updateInteractables(world, dt) {
+    this.updateLootSpots(world, dt);
+    const D = this.defib, p = world.player;
+    if (D.used || world.t < D.from) return;
+    if (!p.dead && DS.dist2(p.x, p.y, D.x, D.y) < D.r * D.r) {
+      D.prog += dt;
+      if (D.prog >= 5) { D.used = true; D.prog = 0; p.revives++; world.sound('heal', D.x, D.y); world.fx('text', p.x, p.y - 44, 18, 0, 0, '+1 REVIVE'); world.emit('defib'); }
+    } else if (D.prog > 0) D.prog = Math.max(0, D.prog - dt);
   }
   extraCollide(e) {
     const a = this.amb; if (!a || e === a) return false;
@@ -608,9 +642,11 @@ DS.MapHospital = class MapHospital extends DS.MapTiles {
     o.markers.length = 0;
     if (!a.done) { o.markers.push({ x: a.x, y: a.y, kind: 'ambulance', label: a.broken ? 'FIX' : wait ? 'REFUEL ' + DS.fmtTime(DS.OBJ_STAGES[this.seg]) : 'ESCORT' }); const cp = this.cps[this.seg]; if (cp) o.markers.push({ x: cp.x, y: cp.y, kind: 'checkpoint', label: 'CP' + (this.seg + 1) }); }
   }
-  serialize() { const a = this.amb; return { seg: this.seg, ax: a.x, ay: a.y, hp: a.hp, broken: a.broken, done: a.done }; }
+  serialize() { const a = this.amb; return { seg: this.seg, ax: a.x, ay: a.y, hp: a.hp, broken: a.broken, done: a.done, loot: this.loot.serialize(), defib: [this.defib.prog, this.defib.used ? 1 : 0] }; }
   deserialize(o) {
     if (!o) return; const a = this.amb; this.seg = o.seg || 0; a.x = o.ax; a.y = o.ay; a.hp = o.hp; a.broken = !!o.broken; a.done = !!o.done;
+    if (o.loot) this.loot.deserialize(o.loot);
+    if (Array.isArray(o.defib)) { this.defib.prog = +o.defib[0] || 0; this.defib.used = !!o.defib[1]; }
     for (let i = 0; i < this.cps.length; i++) this.cps[i].done = i < this.seg;
   }
 };
@@ -669,7 +705,17 @@ DS.MapQuarantine = class MapQuarantine extends DS.MapBase {
     this.nests = this.nestPos.map((n, i) => ({ i, x: n.x, y: n.y, z: null, id: 0, done: false, sealed: true, announced: false }));
     this.nestsDone = 0;
     this.objective.title = 'Burn the Nests';
+    // footlockers outside about one tent or container in three (whichever long side is open)
+    this.loot = new DS.LootState(); this.lootSpots = [];
+    this.rects.forEach((r, i) => {
+      if ((r.kind !== 'tent' && r.kind !== 'container') || DS.hash2(i, 7, 0x10075) % 3 !== 0) return;
+      for (const [dx, dy, nx, ny] of [[r.x + r.w / 2, r.y + r.h + 4, 0, 1], [r.x + r.w / 2, r.y - 4, 0, -1]]) {
+        if (!this.blockedCircle(dx + nx * 22, dy + ny * 22, 16) && !this.blockedCircle(dx + nx * 44, dy + ny * 44, 16)) { this.lootSpots.push({ key: 'q' + i, dx, dy, nx, ny, look: 'locker' }); break; }
+      }
+    });
+    this.addLootProps();
   }
+  updateInteractables(world, dt) { this.updateLootSpots(world, dt); }
   start(world) { for (const N of this.nests) this.spawnNest(world, N); }
   spawnNest(world, N) {
     const z = world.spawnZombie('nest', N.x, N.y);
@@ -741,12 +787,13 @@ DS.MapQuarantine = class MapQuarantine extends DS.MapBase {
     if (this.nestsDone >= 4) { world.serum += 1; world.emit('allNests'); }
   }
   serialize() {
-    return { gas: [this.gas.r, this.gas.from, this.gas.to, this.gas.t0, this.gas.t1, this.gas.stage, this.gas.warned],
+    return { gas: [this.gas.r, this.gas.from, this.gas.to, this.gas.t0, this.gas.t1, this.gas.stage, this.gas.warned], loot: this.loot.serialize(),
       nests: this.nests.map(N => { const z = this.nestZ(N); return N.done ? 0 : z ? Math.max(0.001, z.hp / z.maxHp) : 1; }), nestAnn: this.nests.map(N => N.announced ? 1 : 0) };
   }
   deserialize(o) {
     if (!o) return; const g = this.gas;
     if (o.gas) [g.r, g.from, g.to, g.t0, g.t1, g.stage, g.warned] = o.gas;
+    if (o.loot) this.loot.deserialize(o.loot);
     if (o.nests) o.nests.forEach((f, i) => {
       const N = this.nests[i]; if (!N) return; const z = this.nestZ(N);
       if (f <= 0) { N.done = true; if (z) { z.alive = false; z.hp = 0; } N.z = null; }

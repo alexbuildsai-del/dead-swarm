@@ -82,7 +82,7 @@ with sync_playwright() as p:
     pg.wait_for_timeout(2500)
     pg.evaluate("() => DS.Game.pause('user')"); shot('pause')
     click('[data-act=pSettings]'); shot('pause_settings'); click('[data-act=psBack]')
-    pg.evaluate("() => { DS.Game.unpause(); const w = DS.Game.world; w.stats.evolutions.push('akimbo','napalm'); w.stats.damage.ult_rook = 1234; w.scrap += 140; w.serum += 2; w.stats.generators = 3; w.stats.killsByType.brute = 3; w.cleared = true; w.t = 905; w.stats.bosses = 1; w.stats.bossKillHpPct = 0.05; w.evac = {state:'landed'}; w.stats.evacTime = 4; w.stats.callins = 2; w.holdBonus = 60; w.endRun('evac'); }")
+    pg.evaluate("() => { DS.Game.unpause(); const w = DS.Game.world; w.stats.evolutions.push('akimbo','napalm'); w.stats.damage.ult_rook = 1234; w.scrap += 140; w.serum += 2; w.stats.generators = 3; w.stats.killsByType.brute = 3; w.cleared = true; w.t = 905; w.stats.bosses = 1; w.stats.bossKillHpPct = 0.05; w.evac = {state:'landed', x: w.player.x, y: w.player.y, r: 90}; w.stats.evacTime = 4; w.stats.callins = 2; w.holdBonus = 60; w.endRun('evac'); }")
     pg.wait_for_timeout(1400); shot('end_early', False)
     pg.wait_for_timeout(4500); shot('end')
     pg.evaluate("() => { const b = document.querySelector('.m-end .m-body'); b.scrollTop = b.scrollHeight; }"); shot('end_bottom')

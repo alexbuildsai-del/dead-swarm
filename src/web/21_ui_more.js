@@ -107,7 +107,8 @@
         gcard(U.icon('magnet', 48), 'Magnet', 'Pulls every XP vial on the map to you.') +
         gcard(U.icon('grenade', 48), 'Grenade', 'Wipes out every zombie on screen. Bosses only take a dent.') +
         gcard(U.icon('cryo_pk', 48), 'Cryo canister', 'Freezes everything on screen for 4 seconds.') +
-        gcard('<span class="m-gc-q">⌂</span>', 'Porch-light houses', 'On Maple Hollow, a house with its porch light on has something inside. Stand at the door until the ring fills. Whatever lives there comes out first.') +
+        gcard('<span class="m-gc-q">⌂</span>', 'Loot spots', 'A lit porch, supply closet or footlocker has something inside. Stand at it until the ring fills. Whatever lives there comes out first.') +
+        gcard('<span class="m-gc-q">✚</span>', 'Defibrillator', 'At St. Agnes\'s nurse station. From 5:00, stand at it until it charges: one spare revive, once per run.') +
         gcard(U.icon('bless', 48), 'Blessing card', 'Heals 8. Only Father Silas leaves these behind. Anything with a red cross heals you.') +
         '</div><div class="m-gnote">' + U.icon('serum', 40) + '<p><b>Serum never drops on the floor.</b> Minibosses, final bosses and objectives add it straight to your total. Watch for the green <b>+1 SERUM</b> under the timer.</p></div>';
     }

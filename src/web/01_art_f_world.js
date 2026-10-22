@@ -318,21 +318,62 @@
     ctx.fillStyle = '#5c605b'; ctx.fillRect(x - 13, y - 3, 26, 6); ctx.strokeRect(x - 13, y - 3, 26, 6);
     ctx.fillStyle = looted ? '#3a3c3a' : '#fff3c4'; ctx.fillRect(lx - 3.5, ly - 3.5, 7, 7); ctx.strokeRect(lx - 3.5, ly - 3.5, 7, 7);
     if (looted) return;
-    const p = world.player; if (DS.dist2(p.x, p.y, x, y) > 340 * 340) return;
-    // the stand-here ring in front of the door, with a progress wedge while looting
-    const r = DS.TUNE.lootR, cx = x + s.nx * 16, cy = y + s.ny * 16, mine = L.key === s.key && L.prog > 0;
+    lootRing(ctx, L, s, t, world);
+  };
+  /* the stand-here ring in front of a loot spot, its progress wedge, and the LOOT / LOOTING / NEXT IN stamp */
+  function lootRing(ctx, L, s, t, world) {
+    const p = world.player; if (DS.dist2(p.x, p.y, s.dx, s.dy) > 340 * 340) return;
+    const r = DS.TUNE.lootR, cx = s.dx + s.nx * 16, cy = s.dy + s.ny * 16, mine = L.key === s.key && L.prog > 0;
     const k = mine ? DS.clamp(L.prog / DS.TUNE.lootTime, 0, 1) : 0;
     ctx.save(); ctx.globalAlpha = 0.2; ctx.fillStyle = C.yellow; ctx.beginPath(); ctx.arc(cx, cy, r, 0, TAU); ctx.fill();
     if (k > 0) { ctx.globalAlpha = 0.6; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, r, -PI / 2, -PI / 2 + k * TAU); ctx.closePath(); ctx.fill(); }
     ctx.restore();
     ring(ctx, cx, cy, r, INK, 3, null, 0.85);
     ring(ctx, cx + 1.2, cy + 1, r, C.yellow, 2, [9, 7], 1, -t * 20);
-    // stamp: LOOT, LOOTING n%, or the wait while the cooldown runs
     const label = L.cd > 0 ? 'NEXT IN ' + Math.ceil(L.cd) + 's' : mine ? 'LOOTING ' + Math.round(k * 100) + '%' : 'LOOT';
     ctx.save(); ctx.translate(cx, cy - r - 14); ctx.rotate(-0.05);
     ctx.font = '13px ' + DS.FONT.head; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     const tw = ctx.measureText(label).width + 12; ctx.fillStyle = INK; ctx.fillRect(-tw / 2, -9, tw, 18);
     ctx.fillStyle = L.cd > 0 ? C.paper : C.yellow; ctx.fillText(label, 0, 1); ctx.restore();
+  }
+  /* St. Agnes supply closet (against a ward wall) / Quarantine footlocker (outside a tent or container) */
+  K.PROP.lootbox = function (ctx, pr, t, world) {
+    const L = world.map.loot, s = pr.spot; if (!L || !s) return;
+    const looted = L.isDone(s.key), cl = s.look === 'closet';
+    const w = cl ? 14 : 34, h = cl ? 36 : 18, bx = s.dx + s.nx * (w / 2 + 2) - w / 2, by = s.dy + s.ny * (h / 2 + 2) - h / 2;
+    const x0 = cl ? bx : s.dx - w / 2, y0 = cl ? s.dy - h / 2 : by;
+    if (!looted) {
+      const k = 0.8 + 0.2 * sin(t * 4 + s.dx);
+      const g = ctx.createRadialGradient(s.dx, s.dy, 0, s.dx, s.dy, 50);
+      g.addColorStop(0, 'rgba(242,200,75,' + (0.45 * k).toFixed(3) + ')'); g.addColorStop(1, 'rgba(242,200,75,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(s.dx, s.dy, 50, 0, TAU); ctx.fill();
+    }
+    ctx.lineWidth = 1.6; ctx.strokeStyle = INK;
+    ctx.fillStyle = looted ? '#5c605b' : cl ? '#cfd2ca' : '#56664f'; ctx.fillRect(x0, y0, w, h); ctx.strokeRect(x0, y0, w, h);
+    if (cl) { ctx.fillStyle = looted ? '#3a3c3a' : C.red; ctx.fillRect(x0 + 4, y0 + 13, 6, 10); ctx.fillRect(x0 + 2, y0 + 16, 10, 4); }
+    else { ctx.fillStyle = looted ? '#3a3c3a' : C.yellow; ctx.fillRect(x0 + w / 2 - 3, y0 + 5, 6, 8); ctx.strokeRect(x0 + w / 2 - 3, y0 + 5, 6, 8); }
+    if (!looted) lootRing(ctx, L, s, t, world);
+  };
+  /* St. Agnes nurse station defibrillator: one spare revive per run, from 5:00 */
+  K.PROP.defib = function (ctx, D, t, world) {
+    const x = D.x, y = D.y, ready = !D.used && world.t >= D.from, k = DS.clamp(D.prog / 5, 0, 1);
+    if (ready) {
+      // yellow like every 'stand here' ring: red on the floor always means an attack
+      ctx.save(); ctx.globalAlpha = 0.2; ctx.fillStyle = C.yellow; ctx.beginPath(); ctx.arc(x, y, D.r, 0, TAU); ctx.fill();
+      if (k > 0) { ctx.globalAlpha = 0.6; ctx.beginPath(); ctx.moveTo(x, y); ctx.arc(x, y, D.r, -PI / 2, -PI / 2 + k * TAU); ctx.closePath(); ctx.fill(); }
+      ctx.restore();
+      ring(ctx, x, y, D.r, INK, 3, null, 0.85); ring(ctx, x + 1.2, y + 1, D.r, C.yellow, 2, [9, 7], 1, -t * 20);
+    }
+    ctx.lineWidth = 1.8; ctx.strokeStyle = INK;
+    ctx.fillStyle = D.used ? '#5c605b' : '#e6e2cf'; ctx.fillRect(x - 16, y - 12, 32, 22); ctx.strokeRect(x - 16, y - 12, 32, 22);
+    ctx.fillStyle = D.used ? '#3a3c3a' : C.red; ctx.fillRect(x - 3, y - 9, 6, 16); ctx.fillRect(x - 8, y - 4, 16, 6);
+    if (!ready && D.used) return;
+    const p = world.player; if (DS.dist2(p.x, p.y, x, y) > 360 * 360) return;
+    const label = !ready ? 'DEFIBRILLATOR · FROM ' + DS.fmtTime(D.from) : k > 0 ? 'CHARGING ' + Math.round(k * 100) + '%' : 'DEFIBRILLATOR · +1 REVIVE';
+    ctx.save(); ctx.translate(x, y - D.r - 14); ctx.rotate(-0.04);
+    ctx.font = '13px ' + DS.FONT.head; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const tw = ctx.measureText(label).width + 12; ctx.fillStyle = INK; ctx.fillRect(-tw / 2, -9, tw, 18);
+    ctx.fillStyle = ready ? C.yellow : C.paper; ctx.fillText(label, 0, 1); ctx.restore();
   };
 
   /* ---------------- generator 2's workbench (sim MapSuburbs.updateBench) ---------------- */

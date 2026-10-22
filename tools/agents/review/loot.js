@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-/* Lootable houses (sim/13_loot.js, Maple Hollow): every lit porch's door is reachable; the same seed loots the same
+/* Loot spots (sim/13_loot.js): every lit porch's door on Maple Hollow is reachable; the same seed loots the same
    houses with the same rewards; the global cooldown holds; a burst happens once per house; loot state survives a
-   snapshot mid-loot; nothing in the sim uses Math.random beyond picking a seed.
+   snapshot mid-loot; St. Agnes closets and Quarantine footlockers are reachable, lootable and saved; the defibrillator
+   gives one revive from 5:00; nothing in the sim uses Math.random beyond picking a seed.
    DS_OUT=build node tools/agents/review/loot.js */
 'use strict';
 const path = require('path'), fs = require('fs');
@@ -64,6 +65,31 @@ console.log('· snapshot mid-loot');
     const kills0 = w2.zombies.length; let burstAgain = 0; w2.on('lootBurst', () => burstAgain++);
     for (let i = 0; i < 120; i++) { if (w2.choice) w2.resolveChoice(0); w2.player.x = t.x; w2.player.y = t.y; w2.step(); }
     ok(burstAgain === 0 && w2.map.loot.prog === 0, 'a looted house never bursts or loots again');
+  }
+}
+
+console.log('· St. Agnes closets, the defibrillator, Quarantine footlockers');
+for (const map of ['hospital', 'quarantine']) {
+  const w = new DS.World({ map, survivor: 'rook', headless: true, seed: 9 }), m = w.map, p = w.player;
+  const bad = m.lootSpots.filter(s => m.blockedCircle(s.dx + s.nx * 18, s.dy + s.ny * 18, 14));
+  ok(m.lootSpots.length >= 6 && !bad.length, map + ': ' + m.lootSpots.length + ' loot spots, none blocked' + (bad.length ? ' (' + bad.map(s => s.key).join(' ') + ')' : ''));
+  const s = m.lootSpots[0];
+  for (let i = 0; i < 60 * 3; i++) { if (w.choice) w.resolveChoice(0); p.x = s.dx + s.nx * 16; p.y = s.dy + s.ny * 16; w.step(); }
+  ok(m.loot.isDone(s.key) && (w.stats.housesLooted | 0) === 1, map + ': standing at a spot for 2.5 s loots it');
+  DS.Snapshot.save(w);
+  const w2 = DS.Snapshot.restore(DS.Snapshot.load(), { headless: true, view: { w: 1200, h: 640 } });
+  ok(w2.map.loot.isDone(s.key) && w2.map.loot.cd > 0, map + ': looted spot and cooldown survive a snapshot');
+  if (map === 'hospital') {
+    const D = m.defib; p.x = D.x; p.y = D.y;
+    for (let i = 0; i < 60 * 6; i++) { if (w.choice) w.resolveChoice(0); p.x = D.x; p.y = D.y; p.invulnT = 1; w.step(); }
+    ok(!D.used, 'the defibrillator waits until ' + DS.fmtTime(D.from));
+    w.t = D.from; const r0 = p.revives; w.spawnPaused = true;
+    for (let i = 0; i < 60 * 6; i++) { if (w.choice) w.resolveChoice(0); p.x = D.x; p.y = D.y; p.invulnT = 1; w.step(); }
+    ok(D.used && p.revives === r0 + 1, 'then 5 s at it gives one spare revive');
+    for (let i = 0; i < 60 * 6; i++) { if (w.choice) w.resolveChoice(0); p.x = D.x; p.y = D.y; p.invulnT = 1; w.step(); }
+    ok(p.revives === r0 + 1, 'only once per run');
+    DS.Snapshot.save(w); const w3 = DS.Snapshot.restore(DS.Snapshot.load(), { headless: true, view: { w: 1200, h: 640 } });
+    ok(w3.map.defib.used, 'a used defibrillator stays used after a snapshot');
   }
 }
 

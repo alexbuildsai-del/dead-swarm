@@ -272,6 +272,8 @@ DS.HUD = {
         const [sx, sy] = at(s.dx, s.dy); ctx.fillStyle = C.yellow; ctx.fillRect(sx - 2.5, sy - 2.5, 5, 5); ctx.strokeStyle = C.ink; ctx.lineWidth = 1; ctx.strokeRect(sx - 2.5, sy - 2.5, 5, 5);
       }
     }
+    if (map.lootSpots) for (const s of map.lootSpots) if (!map.loot.isDone(s.key)) { const [sx, sy] = at(s.dx, s.dy); ctx.fillStyle = C.yellow; ctx.fillRect(sx - 2.5, sy - 2.5, 5, 5); ctx.strokeStyle = C.ink; ctx.lineWidth = 1; ctx.strokeRect(sx - 2.5, sy - 2.5, 5, 5); }
+    if (map.defib && !map.defib.used) { const [sx, sy] = at(map.defib.x, map.defib.y, true); ctx.fillStyle = world.t >= map.defib.from ? C.red : '#7c807a'; ctx.fillRect(sx - 1.5, sy - 4, 3, 8); ctx.fillRect(sx - 4, sy - 1.5, 8, 3); }
     if (map.bench && map.bench.on) { const [sx, sy] = at(map.bench.x, map.bench.y, true); ctx.fillStyle = map.bench.cd > 0 ? '#8a6a4a' : C.yellow; ctx.fillRect(sx - 4, sy - 3, 8, 6); ctx.strokeStyle = C.ink; ctx.lineWidth = 1.2; ctx.strokeRect(sx - 4, sy - 3, 8, 6); }
     if (map.gens) {   // Maple Hollow: every generator, coloured by state
       for (const g of map.gens) {

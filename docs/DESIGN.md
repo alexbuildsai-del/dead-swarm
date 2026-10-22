@@ -560,6 +560,8 @@ house waits 20 s (`TUNE.lootR`, `lootTime`, `lootCd`). Lit porches show on the m
 Bounded building, 56 × 40 tiles of 80 units: wards, waiting rooms, a 240-unit-wide main corridor loop and 160-unit
 side corridors. Zombies path with a flow field (40-unit cells, BFS from the survivor 4×/s). Flickering lights.
 Map modifier: zombie HP ×0.9, spawn budget ×0.9, zombie damage ×0.95.
+**Supply closets:** one on each ward's east wall (8), looted like Maple Hollow's houses (same rewards, burst and 20 s
+cooldown). **Defibrillator** at the nurse station: from 5:00, stand at it 5 s once per run for +1 revive.
 **Objective — Code Blue:** an ambulance drives a 3-checkpoint route around the main corridor loop while the survivor
 is within 220 of it (speed 62). Each leg only rolls from 1:00 / 5:30 / 10:30 ("refuelling" until then). It has 600 HP;
 zombies touching it chew 60% of their bite damage per second (× the zombie damage multiplier). At 0 HP it breaks down:
@@ -570,6 +572,8 @@ Night. 5,000 × 5,000 fenced field with shipping containers, tents and barricade
 Vision: flashlight cone (70°, 390 long) + 120 personal glow; 7 floodlight towers (r 260); explosions/fire/muzzle flashes
 light up briefly. Zombie eyes glow; Glowbacks glow UV; all telegraphs draw above the darkness.
 Map modifier: zombie HP ×1.08, spawn budget ×1.05.
+**Footlockers:** outside about one tent or container in three (15 on the current layout), on whichever long side is open;
+looted like Maple Hollow's houses and lit through the darkness.
 **Toxic gas** closes in: safe circle r 2,300 at the centre, shrinking (30 s each) at 2:00 → 1,900, 5:00 → 1,500,
 8:00 → 1,100, 11:00 → 800, 14:00 → 650. Outside: 12 HP/s (6 every 0.5 s, ignores armor). Lou warns 15 s ahead.
 While a final boss is alive the gas stops shrinking (a shrink in progress pauses; later stages wait).
@@ -636,7 +640,7 @@ below 40% HP and spaced 50 s instead of 25 s while more than 260 zombies are ali
 | 9 | Momentum | +20% damage while moving | start |
 | 10 | Thick Skull | every 12 s, the next hit is fully blocked | start |
 | 11 | Cold Blood | slowed or frozen zombies take +40% damage | Evolve Flash Freeze |
-| 12 | Shrapnel | explosion kills burst into 3 shrapnel (10 power dmg) | Evolve Carpet Bomb |
+| 12 | Shrapnel | explosion kills burst into 3 shrapnel (10 power dmg); at most 80 bursts in the air at once | Evolve Carpet Bomb |
 | 13 | Scavenger King | +50% pickup radius; magnets and food twice as common | Collect 5,000 Scrap (lifetime) |
 | 14 | Vampiric Rounds | crits heal 1 HP (max 4/s) | Evolve Reaper Chainsaw |
 | 15 | Chain Reaction | every 20th kill fires a 5-jump lightning chain (30 power dmg) | Evolve Storm Grid |

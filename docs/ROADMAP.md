@@ -56,11 +56,13 @@ Tick a box and add a one-line note when an item lands.
   - Generator 1 powers **street lights**: zombies in the light are slowed and take extra damage.
   - Generator 2 powers a **workbench**: stand on it for 3 s to upgrade an item, once a minute.
   - Generator 3 powers a **relay mast**: call-in rewards are doubled.
-- [ ] **Loot spots on the other maps**:
+- [x] **Loot spots on the other maps** (done: closets, defibrillator and footlockers; fuel drums moved to Later, below):
   - St. Agnes: supply closets in the wards, and a defibrillator station that gives one revive.
   - Quarantine: footlockers in tents and containers, and fuel drums that explode when shot.
 
 ## Later: more map ideas
+- **Fuel drums (Quarantine)** and car alarms both need a shootable-prop system (a drum or car that weapons can hit and that
+  explodes). Build that once and use it for both.
 - **Car alarms and gas tanks**: shoot a marked car and its alarm pulls zombies in for 4 s before the tank explodes.
   A gas station on some corners gives one huge explosion per run.
 - **Drivable cars**: keys from a house or crate let you drive a car for 12 s and plow through the horde. This is the

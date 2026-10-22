@@ -361,6 +361,7 @@ DS.Renderer = class Renderer {
     gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(0.7, 'rgba(0,0,0,0.85)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
     g.fillStyle = gr; g.beginPath(); g.moveTo(sx, sy); g.arc(sx, sy, L * sc, fa - half, fa + half); g.closePath(); g.fill();
     for (const l of ML) light(l.x, l.y, l.r, 0.95);
+    if (world.map.lootSpots) for (const q of world.map.lootSpots) if (!world.map.loot.isDone(q.key)) light(q.dx + q.nx * 12, q.dy + q.ny * 12, 95, 0.85);
     for (const l of world.lightPts) light(l.x, l.y, l.r, Math.min(1, l.t * 6));
     for (const z of world.zombies) if (z.alive && (z.type === 'glowback' || z.boss || (z.affixes && z.affixes.indexOf('irradiated') >= 0))) light(z.x, z.y, z.r * 3, 0.5);
     for (const a of world.allies) if (a.alive && a.light) light(a.x, a.y, a.light, 0.7);
