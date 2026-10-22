@@ -39,7 +39,8 @@ Tick a box and add a one-line note when an item lands.
   - Add a subtitle size setting.
 - [x] **Minimap** (done; Settings → Screen → Minimap): a corner minimap showing streets or walls, the active objective, crates, evac and bosses, plus a
   bigger off-screen arrow. It has an on/off setting.
-- [ ] **Lootable houses (Maple Hollow)**:
+- [x] **Lootable houses (Maple Hollow)** (done: `sim/13_loot.js`, test `tools/agents/review/loot.js`; the bot loots ~5–6 per
+  run, balance logged as loot-1 in `results/TUNING_LOG.md`):
   - About 1 in 3 houses has its porch light on.
   - Stand at the door for 2.5 s to loot it.
   - Rewards: canned food, XP, a magnet, a mini crate or a little Scrap.

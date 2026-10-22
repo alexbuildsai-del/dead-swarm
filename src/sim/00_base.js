@@ -155,6 +155,7 @@ DS.TUNE = {
   crate5: 0.03, crate3: 0.15,  // supply-crate multi-reward odds (× luck², × luck)
   evoMinTime: 375,             // supply crates carry evolutions only from 6:15
   bossEnrageFinal: 150, bossEnrageMini: 100, // seconds before a boss enrages (Infection 6+: 120 s and ×2 damage)
+  lootR: 45, lootTime: 2.5, lootCd: 20, // loot spots: reach from the door, seconds to loot, global cooldown after a loot
   maxSpit: 3, maxAcid: 4, maxCharge: 4, maxGurney: 2, gurneyDmg: 9, // at most this many live ranged telegraphs of each kind (readability)
 };
 

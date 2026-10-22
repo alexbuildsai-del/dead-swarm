@@ -40,7 +40,7 @@ function runJob(job) {
     dmg, weapons: o.weapons.map(x => x.id + (x.evo ? '*' : '')), gear: o.gear.map(g => g.id + ':' + g.level), perks: o.perks, evos: o.stats.evolutions,
     bossTTK: finalSpawnT >= 0 && finalKillT >= 0 ? Math.round(finalKillT - finalSpawnT) : -1, finalSpawnT: Math.round(finalSpawnT),
     minis: o.stats.minibosses, crates: o.stats.crates, dmgTaken: Math.round(o.stats.damageTaken), healed: Math.round(o.stats.healed), objectives: o.stats.objectives,
-    callins: o.stats.callins, maxZ: o.stats.maxZombies, killedBy: o.killedBy || null, dmgBy: Object.fromEntries(Object.entries(o.stats.dmgBy || {}).map(([k, v]) => [k, Math.round(v)])), evoT: o.stats.evoTimes || null, perMin: minuteHp, ms: Date.now() - t0
+    callins: o.stats.callins, houses: o.stats.housesLooted | 0, maxZ: o.stats.maxZombies, killedBy: o.killedBy || null, dmgBy: Object.fromEntries(Object.entries(o.stats.dmgBy || {}).map(([k, v]) => [k, Math.round(v)])), evoT: o.stats.evoTimes || null, perMin: minuteHp, ms: Date.now() - t0
   };
 }
 process.on('message', m => {

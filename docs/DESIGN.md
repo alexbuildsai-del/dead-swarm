@@ -537,6 +537,11 @@ Zombies path with a moving 64 × 64 flow field (40-unit cells) centred on the su
 **Objective — Power the Grid:** 3 generators at (900, −700), (−1100, 300), (300, 1200), coming online in order at
 1:00 / 5:30 / 10:30 (each also needs the previous one done). Stand in the circle (r 110): 30 s cumulative charge each
 (no decay). While charging, +40% spawn budget. Each: crate + 15 Scrap, and the generator's flood lamp comes on. All three: +1 Serum.
+**Lootable houses** (`sim/13_loot.js`): about one house in three has its porch light on (fixed per block, so the same
+streets pay every run). Stand within 45 of the front door (north wall) for 2.5 s: when you start, 3–6 shamblers /
+sprinters / splitters / joggers burst out; when the ring fills the house goes dark and drops one reward: first-aid tin
+(heals 60) 30, XP vial worth half the current level 34, magnet 14, supply crate 12, 5 Scrap 10. After a loot, every
+house waits 20 s (`TUNE.lootR`, `lootTime`, `lootCd`). Lit porches show on the minimap.
 
 ### 9.2 St. Agnes Hospital (clear Maple Hollow)
 Bounded building, 56 × 40 tiles of 80 units: wards, waiting rooms, a 240-unit-wide main corridor loop and 160-unit

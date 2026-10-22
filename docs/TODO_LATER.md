@@ -32,5 +32,8 @@ Everything P0–P3 from the review is fixed and re-verified (`tools/agents/revie
 - **Daily score formula** is written in two places: `80_meta.js` and the rules text in `21_ui_more.js`.
 - **Banner bounds:** `04_hud.js` copies the banner rectangle from `03_fx.js` to keep the call-in card clear. Exposing the bounds from FX would remove the duplication.
 
+- **snapfuzz** reports 5 restore diffs on one Quarantine/Silas case at t=905 (allyKinds, bosses, kills, stats, zombies). They
+  are there on the v1.0 build too, so they predate the playtest-1 work; worth a look.
+
 ## Docs
 - DESIGN.md §16 holds the verification results from the last full matrix. Update it after the next balance pass.

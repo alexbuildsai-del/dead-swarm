@@ -303,6 +303,38 @@
     ctx.globalAlpha = a0;
   };
 
+  /* ---------------- porch light on a lootable house (sim/13_loot.js) ---------------- */
+  K.PROP.porch = function (ctx, pr, t, world) {
+    const L = world.map.loot, s = pr.spot; if (!L || !s) return;
+    const looted = L.isDone(s.key), x = s.dx, y = s.dy, lx = x + 19, ly = y - 7;
+    // the lamp beside the door: warm and flickering while there's something inside, dark once looted
+    if (!looted) {
+      const k = 0.85 + 0.15 * sin(t * 7 + x) * sin(t * 2.3);
+      const g = ctx.createRadialGradient(lx, ly, 0, lx, ly, 46);
+      g.addColorStop(0, 'rgba(255,236,170,' + (0.75 * k).toFixed(3) + ')'); g.addColorStop(1, 'rgba(242,200,75,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(lx, ly, 46, 0, TAU); ctx.fill();
+    }
+    ctx.lineWidth = 1.4; ctx.strokeStyle = INK;
+    ctx.fillStyle = '#5c605b'; ctx.fillRect(x - 13, y - 3, 26, 6); ctx.strokeRect(x - 13, y - 3, 26, 6);
+    ctx.fillStyle = looted ? '#3a3c3a' : '#fff3c4'; ctx.fillRect(lx - 3.5, ly - 3.5, 7, 7); ctx.strokeRect(lx - 3.5, ly - 3.5, 7, 7);
+    if (looted) return;
+    const p = world.player; if (DS.dist2(p.x, p.y, x, y) > 340 * 340) return;
+    // the stand-here ring in front of the door, with a progress wedge while looting
+    const r = DS.TUNE.lootR, cx = x + s.nx * 16, cy = y + s.ny * 16, mine = L.key === s.key && L.prog > 0;
+    const k = mine ? DS.clamp(L.prog / DS.TUNE.lootTime, 0, 1) : 0;
+    ctx.save(); ctx.globalAlpha = 0.2; ctx.fillStyle = C.yellow; ctx.beginPath(); ctx.arc(cx, cy, r, 0, TAU); ctx.fill();
+    if (k > 0) { ctx.globalAlpha = 0.6; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, r, -PI / 2, -PI / 2 + k * TAU); ctx.closePath(); ctx.fill(); }
+    ctx.restore();
+    ring(ctx, cx, cy, r, INK, 3, null, 0.85);
+    ring(ctx, cx + 1.2, cy + 1, r, C.yellow, 2, [9, 7], 1, -t * 20);
+    // stamp: LOOT, LOOTING n%, or the wait while the cooldown runs
+    const label = L.cd > 0 ? 'NEXT IN ' + Math.ceil(L.cd) + 's' : mine ? 'LOOTING ' + Math.round(k * 100) + '%' : 'LOOT';
+    ctx.save(); ctx.translate(cx, cy - r - 14); ctx.rotate(-0.05);
+    ctx.font = '13px ' + DS.FONT.head; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const tw = ctx.measureText(label).width + 12; ctx.fillStyle = INK; ctx.fillRect(-tw / 2, -9, tw, 18);
+    ctx.fillStyle = L.cd > 0 ? C.paper : C.yellow; ctx.fillText(label, 0, 1); ctx.restore();
+  };
+
   /* ---------------- supply drop (parachute crate) ---------------- */
   function chuteArt() {
     return () => {

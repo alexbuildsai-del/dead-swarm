@@ -123,10 +123,12 @@ DS.MapBase = class MapBase {
     if (this.flow && this.flowT <= 0) { this.flowT = 0.25; this.refreshFlow(world); }
     this.unstick(world, dt);
     this.updateObjective(world, dt);
+    this.updateInteractables(world, dt);
   }
   refreshFlow(world) { this.flow.compute(world.player.x, world.player.y); }
   flowDir(world, x, y) { return this.flow ? this.flow.dir(x, y) : null; }
   updateObjective() { }
+  updateInteractables() { }   // loot spots (13_loot.js); maps that have them override this
   rectsNear() { return []; }
   collide(e) {
     const rs = this.rectsNear(e.x, e.y, e.r); let hit = false;
@@ -271,6 +273,8 @@ DS.MapSuburbs = class MapSuburbs extends DS.MapBase {
     this.streetLights = [];
     this._near = [];
     this.objective.title = 'Power the Grid';
+    this.loot = new DS.LootState();
+    this.porches = []; this.porchAt = null;
   }
   blockAt(bx, by) {
     const k = bx * 73856093 ^ by * 19349663;
@@ -378,10 +382,42 @@ DS.MapSuburbs = class MapSuburbs extends DS.MapBase {
     o.markers.length = 0;
     if (next && !next.locked) o.markers.push({ x: next.x, y: next.y, kind: 'generator', label: Math.round(next.charge * 100) + '%' });
   }
+  /* ---- porch-light houses: about one in three is lootable, fixed per block so players learn the streets.
+     The front door is on the house's north wall (the stepping stones in 01_art_g_maps lead to it). ---- */
+  lootSpot(b) {
+    if (b.park || !b.rects.length || b.rects[0].kind !== 'house' || DS.hash2(b.bx, b.by, 0x10075) % 3 !== 0) return null;
+    if (!b.spot) { const h = b.rects[0]; b.spot = { key: b.bx + ',' + b.by, dx: h.x + h.w * 0.7, dy: h.y - 4, nx: 0, ny: -1 }; }
+    return b.spot;
+  }
+  updateInteractables(world, dt) {
+    const p = world.player, B = DS.SUB.B, bx = Math.floor(p.x / B), by = Math.floor(p.y / B), r = DS.TUNE.lootR;
+    const s = this.lootSpot(this.blockAt(bx, by));
+    this.loot.update(world, dt, s && !p.dead && DS.dist2(p.x, p.y, s.dx, s.dy) < r * r ? s : null);
+    // the lit porches around the survivor, drawn as props (rebuilt when they cross into another block)
+    const key = bx + ',' + by;
+    if (this.porchAt !== key) {
+      this.porchAt = key; this.porches.length = 0;
+      for (let j = by - 1; j <= by + 1; j++) for (let i = bx - 1; i <= bx + 1; i++) { const q = this.lootSpot(this.blockAt(i, j)); if (q) this.porches.push({ kind: 'porch', x: q.dx, y: q.dy, spot: q }); }
+      this.props.length = 0; for (const g of this.gens) this.props.push(g); for (const q of this.porches) this.props.push(q);
+    }
+  }
+  /* nearest unlooted porch within R (bot + HUD use it); null while the loot cooldown runs */
+  lootTarget(world, R) {
+    if (this.loot.cd > 0) return null;
+    const p = world.player, B = DS.SUB.B, n = Math.ceil(R / B);
+    const bx0 = Math.floor(p.x / B), by0 = Math.floor(p.y / B);
+    let best = null, bd = R * R;
+    for (let j = by0 - n; j <= by0 + n; j++) for (let i = bx0 - n; i <= bx0 + n; i++) {
+      const s = this.lootSpot(this.blockAt(i, j)); if (!s || this.loot.isDone(s.key)) continue;
+      const x = s.dx + s.nx * 16, y = s.dy + s.ny * 16, d = DS.dist2(p.x, p.y, x, y);
+      if (d < bd) { bd = d; best = { x, y, spot: s }; }
+    }
+    return best;
+  }
   /* director asks: is the survivor charging something (+40% budget)? */
   get pressure() { return this.charging ? 1.4 : 1; }
-  serialize() { return { gens: this.gens.map(g => [g.charge, g.done ? 1 : 0, g.announced ? 1 : 0]), genDone: this.genDone }; }
-  deserialize(o) { if (!o || !o.gens) return; o.gens.forEach((g, i) => { if (this.gens[i]) { this.gens[i].charge = g[0]; this.gens[i].done = !!g[1]; this.gens[i].announced = !!g[2]; } }); this.genDone = o.genDone || 0; this.w.stats.generators = this.genDone; }
+  serialize() { return { gens: this.gens.map(g => [g.charge, g.done ? 1 : 0, g.announced ? 1 : 0]), genDone: this.genDone, loot: this.loot.serialize() }; }
+  deserialize(o) { if (o && o.loot) this.loot.deserialize(o.loot); if (!o || !o.gens) return; o.gens.forEach((g, i) => { if (this.gens[i]) { this.gens[i].charge = g[0]; this.gens[i].done = !!g[1]; this.gens[i].announced = !!g[2]; } }); this.genDone = o.genDone || 0; this.w.stats.generators = this.genDone; }
 };
 
 /* ==========================================================================

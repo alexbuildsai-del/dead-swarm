@@ -264,6 +264,13 @@ DS.HUD = {
     };
     const pulse = (wx, wy, col, clamp) => { const [sx, sy] = at(wx, wy, clamp), q = (t * 1.2) % 1; ctx.beginPath(); ctx.arc(sx, sy, 6 + q * 7, 0, DS.TAU); ctx.globalAlpha = 1 - q; ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.stroke(); ctx.globalAlpha = 1; };
     for (const k2 of world.pickups) if (k2.kind === 'crate') { const [sx, sy] = at(k2.x, k2.y); ctx.fillStyle = '#c49c62'; ctx.fillRect(sx - 3, sy - 2.5, 6, 5); ctx.strokeStyle = C.ink; ctx.lineWidth = 1; ctx.strokeRect(sx - 3, sy - 2.5, 6, 5); }
+    if (map.lootSpot && DS.SUB) {   // Maple Hollow: lit porches (lootable houses not yet looted)
+      const B = DS.SUB.B;
+      for (let by = Math.floor((p.y - range) / B); by <= Math.floor((p.y + range) / B); by++) for (let bx = Math.floor((p.x - range) / B); bx <= Math.floor((p.x + range) / B); bx++) {
+        const s = map.lootSpot(map.blockAt(bx, by)); if (!s || map.loot.isDone(s.key)) continue;
+        const [sx, sy] = at(s.dx, s.dy); ctx.fillStyle = C.yellow; ctx.fillRect(sx - 2.5, sy - 2.5, 5, 5); ctx.strokeStyle = C.ink; ctx.lineWidth = 1; ctx.strokeRect(sx - 2.5, sy - 2.5, 5, 5);
+      }
+    }
     if (map.gens) {   // Maple Hollow: every generator, coloured by state
       for (const g of map.gens) {
         const live = !g.done && !g.locked;

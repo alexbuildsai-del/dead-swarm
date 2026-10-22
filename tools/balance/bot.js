@@ -187,6 +187,14 @@ class Bot {
       else if (w.map.id === 'quarantine') return { x: m.x, y: m.y, w: d > 240 ? 9 : 1 };
       else if (d < 2200) return { x: m.x, y: m.y, w: d > 60 ? 9 : 2, stay: d < 60 };
     }
+    // a lit porch nearby, when it is calm enough to stand at the door for a few seconds
+    if (w.map.lootTarget && hpk > 0.55 && !w.bosses.some(b => b.alive)) {
+      const L = w.map.lootTarget(w, 650);
+      if (L) {
+        let near = 0; for (const z of w.zombies) if (z.alive && (z.x - p.x) ** 2 + (z.y - p.y) ** 2 < 160 * 160 && ++near >= 3) break;
+        if (near < 3) { const d = Math.hypot(L.x - p.x, L.y - p.y); return { x: L.x, y: L.y, w: 8, stay: d < 30 }; }
+      }
+    }
     // gas: drift toward safe centre
     if (w.map.gas) { const g = w.map.gas; const d = Math.hypot(p.x - g.x, p.y - g.y); if (d > g.to * 0.7) return { x: g.x, y: g.y, w: 6 }; }
     // xp

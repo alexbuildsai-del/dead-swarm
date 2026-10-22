@@ -8,7 +8,7 @@ const SRC = path.join(ROOT, 'src');
 const OUT = path.resolve(ROOT, process.env.DS_OUT || 'build');
 // DS_ONLY=comma list of filename prefixes: build only the engine core + those files (lets agents work in isolation)
 const ONLY = (process.env.DS_ONLY || '').split(',').map(s => s.trim()).filter(Boolean);
-const CORE_SIM = /^(00|01|10|11|12|9\d)_/;
+const CORE_SIM = /^(00|01|10|11|12|13|9\d)_/;
 const CORE_WEB = /^(00_|01_art_placeholder|02_|03_|04_|05_|06_|9\d_)/;
 const args = process.argv.slice(2);
 const exclude = new Set((process.env.DS_EXCLUDE || '').split(',').filter(Boolean));

@@ -801,6 +801,7 @@
   };
   R.grenade = (v, t) => { boom(v, t, 1.8, 0.85, { crackle: true, debris: true }); N(v, t, { ft: 'highpass', f: 2000, f2: 400, d: 1.2, v: 0.2 }); };
   R.cryo_pickup = (v, t) => R.flash_freeze(v, t, 1);
+  R.door_bang = (v, t) => { thump(v, t, 70, 0.22, 0.9); N(v, t, { ft: 'lowpass', f: 700, q: 1, d: 0.18, v: 0.7 }); N(v, t + 0.09, { ft: 'bandpass', f: 1400, q: 4, d: 0.06, v: 0.3 }); };
   R.crate_drop = (v, t) => { thump(v, t, 120, 0.15, 0.6); N(v, t, { ft: 'bandpass', f: 500, q: 1.5, d: 0.1, v: 0.5 }); N(v, t + 0.06, { ft: 'bandpass', f: 900, q: 3, d: 0.05, v: 0.2 }); };
   R.crate_open = (v, t) => {
     N(v, t, { ft: 'bandpass', f: 600, f2: 1600, q: 8, d: 0.25, a: 0.1, v: 0.18 });
@@ -1067,6 +1068,7 @@
   D('pickup_magnet', 0.5, 2, 0.7, 0, 1, 'g');
   D('grenade', 0.5, 3, 0.85, 0, 1, 'g');
   D('crate_drop', 0.15, 1, 0.6, 1, 1, '');
+  D('door_bang', 0.3, 1, 0.8, 1, 1, '');
   D('crate_open reel_stop reel_jackpot perk', 0.06, 3, 0.7, 0, 3, 'gu');
   D('evolve', 0.5, 3, 0.8, 0, 1, 'gu');
   D('death revive', 0.5, 3, 0.85, 0, 1, 'g');
