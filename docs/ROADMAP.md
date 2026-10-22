@@ -116,7 +116,9 @@ big update. The four open decisions are listed at the end of the plan.
   - Steam: $100, refunded once the game makes $1,000.
   - Epic: $100 per game, and the developer keeps 88% of sales.
 - **Plan** (the Vampire Survivors route):
-  - Put a free browser **demo** (Maple Hollow plus part of the Safehouse) on itch.io and later CrazyGames.
+  - [x] Put a free browser **demo** on itch.io (built: `DS_DEMO=1`, `tools/release/itch.sh`; page text
+    `docs/itch-page.md`; art `tools/press/kit.py`). The demo has Maple Hollow on Normal (Nights 1–3), Rook and Juno,
+    and Safehouse rank 1. GitHub Pages serves it too. CrazyGames later.
   - Have it link to the Steam page for wishlists, and sell the full game on Steam.
   - Don't put the *full* game up for free on the web.
 - **Price:**

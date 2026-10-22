@@ -299,10 +299,12 @@
     if (d.costs) return d.costs[r - 1];
     return M.round5(d.base * M.COST_MULT * (1 + 0.75 * (r - 1)));
   };
-  M.rankTotal = function (id) { const d = M.SH[id]; let t = 0; for (let r = 1; r <= d.max; r++) t += M.rankCost(id, r); return t; };
+  M.rankTotal = function (id) { let t = 0; for (let r = 1; r <= M.rankCap(id); r++) t += M.rankCost(id, r); return t; };
   M.safehouseTotal = function (cur) { let t = 0; for (const d of M.SAFEHOUSE) if (d.cur === (cur || 'scrap')) t += M.rankTotal(d.id); return t; };
-  M.rank = (save, id) => (save && save.safehouse && save.safehouse[id]) | 0;
-  M.nextCost = function (save, id) { const r = M.rank(save, id); const d = M.SH[id]; return r >= d.max ? null : M.rankCost(id, r + 1); };
+  /* the demo stops every upgrade at DS.DEMO_SCOPE.rankCap (a full-game save imported into the demo is clamped too) */
+  M.rankCap = id => DS.DEMO ? Math.min(M.SH[id].max, DS.DEMO_SCOPE.rankCap) : M.SH[id].max;
+  M.rank = (save, id) => { const r = (save && save.safehouse && save.safehouse[id]) | 0; return DS.DEMO && M.SH[id] ? Math.min(r, M.rankCap(id)) : r; };
+  M.nextCost = function (save, id) { const r = M.rank(save, id); return r >= M.rankCap(id) ? null : M.rankCost(id, r + 1); };
   M.spent = function (save, cur) { let t = 0; for (const d of M.SAFEHOUSE) if (d.cur === (cur || 'scrap')) for (let r = 1; r <= M.rank(save, d.id); r++) t += M.rankCost(d.id, r); return t; };
   M.ranksOwned = function (save) { let n = 0; for (const d of M.SAFEHOUSE) n += M.rank(save, d.id); return n; };
   M.canBuy = function (save, id) {
@@ -358,14 +360,16 @@
     mira: { how: 'Clear Maple Hollow', ach: 'clean_getaway' },
     silas: { how: 'Clear any map on Hard', ach: 'hardened' }
   };
+  if (DS.DEMO) for (const id in M.SURVIVOR_UNLOCK) if (DS.DEMO_SCOPE.survivors.indexOf(id) < 0) M.SURVIVOR_UNLOCK[id] = { how: DS.FULL_GAME, full: true };
   M.survivorUnlocked = function (save, id) {
+    if (DS.DEMO && DS.DEMO_SCOPE.survivors.indexOf(id) < 0) return false;
     if (id === 'rook' || id === 'juno') return true;
     if (!save) return false;
     if (id === 'tomas') return save.survivorsBought.indexOf('tomas') >= 0;
     const u = M.SURVIVOR_UNLOCK[id]; return !!(u && u.ach && save.achievements[u.ach]);
   };
   M.buySurvivor = function (save, id) {
-    if (id !== 'tomas') return { ok: false, error: 'unknown' };
+    if (id !== 'tomas' || DS.DEMO) return { ok: false, error: 'unknown' };
     if (M.survivorUnlocked(save, id)) return { ok: false, error: 'owned' };
     if (save.scrap < M.TOMAS_COST) return { ok: false, error: 'funds', cost: M.TOMAS_COST, cur: 'scrap' };
     save.scrap -= M.TOMAS_COST; save.survivorsBought.push('tomas');
@@ -408,22 +412,25 @@
   M.nightsOffered = (save, map, diff) => map === 'suburbs' && (diff || 'normal') === 'normal' && M.nightsDone(save) < 3;
   M.anyClearOn = (save, diff) => MAPS.some(m => M.clearCount(save, m, diff) > 0);
   M.mapUnlocked = function (save, map) {
+    if (DS.DEMO && DS.DEMO_SCOPE.maps.indexOf(map) < 0) return false;
     if (map === 'suburbs') return true;
     if (map === 'hospital') return M.anyClear(save, 'suburbs');
     if (map === 'quarantine') return M.anyClear(save, 'hospital');
     return false;
   };
-  M.mapUnlockHow = map => map === 'hospital' ? 'Clear Maple Hollow on any difficulty' : map === 'quarantine' ? 'Clear St. Agnes on any difficulty' : '';
+  M.mapUnlockHow = map => DS.DEMO && DS.DEMO_SCOPE.maps.indexOf(map) < 0 ? DS.FULL_GAME : map === 'hospital' ? 'Clear Maple Hollow on any difficulty' : map === 'quarantine' ? 'Clear St. Agnes on any difficulty' : '';
   M.diffUnlocked = function (save, map, diff) {
     if (!M.mapUnlocked(save, map)) return false;
+    if (DS.DEMO && DS.DEMO_SCOPE.diffs.indexOf(diff) < 0) return false;
     if (diff === 'normal') return true;
     if (diff === 'hard') return M.clearCount(save, map, 'normal') > 0;
     if (diff === 'nightmare') return M.clearCount(save, map, 'hard') > 0;
     return false;
   };
-  M.diffUnlockHow = (map, diff) => diff === 'hard' ? 'Clear ' + M.name('mapShort', map) + ' on Normal' : diff === 'nightmare' ? 'Clear ' + M.name('mapShort', map) + ' on Hard' : '';
+  M.diffUnlockHow = (map, diff) => DS.DEMO && DS.DEMO_SCOPE.diffs.indexOf(diff) < 0 ? DS.FULL_GAME : diff === 'hard' ? 'Clear ' + M.name('mapShort', map) + ' on Normal' : diff === 'nightmare' ? 'Clear ' + M.name('mapShort', map) + ' on Hard' : '';
   /* highest selectable infection level (0 = infection locked) */
   M.infectionMax = function (save) {
+    if (DS.DEMO) return 0;
     if (!save || !save.achievements.nightmare_fuel) return 0;
     return Math.min(10, Math.max(1, (save.infectionCleared | 0) + 1));
   };
@@ -560,7 +567,7 @@
       case 'unlock': {
         const v = r.value;
         if (v.kind === 'infection') return 'Infection levels';
-        if (v.kind === 'survivor') return 'Survivor: ' + M.name('survivor', v.id);
+        if (v.kind === 'survivor') return 'Survivor: ' + M.name('survivor', v.id) + (DS.DEMO && DS.DEMO_SCOPE.survivors.indexOf(v.id) < 0 ? ' (full game)' : '');
         return ({ weapon: 'Weapon: ', gear: 'Gear: ', perk: 'Perk: ' })[v.kind] + M.name(v.kind, v.id);
       }
     }
@@ -834,6 +841,12 @@
      ====================================================================== */
   M.buildRunConfig = function (sel, save) {
     sel = sel || {}; save = save || M.data || M.defaultSave();
+    if (DS.DEMO) {   // the demo only ever starts what it contains: no Daily, no locked map, survivor or difficulty
+      sel = Object.assign({}, sel, { daily: null, infection: 0 });
+      if (!M.mapUnlocked(save, sel.map || save.last.map)) sel.map = DS.DEMO_SCOPE.maps[0];
+      if (!M.survivorUnlocked(save, sel.survivor || save.last.survivor)) sel.survivor = DS.DEMO_SCOPE.survivors[0];
+      if (DS.DEMO_SCOPE.diffs.indexOf(sel.difficulty || 'normal') < 0) sel.difficulty = DS.DEMO_SCOPE.diffs[0];
+    }
     const meta = {}; for (const k of M.STAT_RANKS) meta[k] = M.rank(save, k);
     const st = save.settings || M.SETTINGS_DEFAULT;
     if (sel.daily) {

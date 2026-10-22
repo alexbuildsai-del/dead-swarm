@@ -147,6 +147,7 @@
     const clips = [];
     if (r.nightClear) { const N = M.NIGHTS[r.nightClear - 1]; clips.push({ k: 'clear', ico: 'trophy', h: 'Night survived', t: M.name('mapShort', s.map) + ' — Night ' + r.nightClear, sub: '+' + N.scrap + ' Scrap · +' + N.serum + ' Serum' }); }
     for (const fc of r.firstClears) clips.push({ k: 'clear', ico: 'trophy', h: 'First clear', t: M.name('mapShort', fc.map) + ' on ' + M.name('difficulty', fc.difficulty), sub: '+5 Serum' });
+    if (DS.DEMO && r.firstClears.length) clips.push({ k: 'clear demo', ico: 'trophy', h: 'That\'s the demo', t: 'Thanks for playing', sub: U.FULL_GAME_TXT });
     for (const a of r.newAchievements) clips.push({ k: 'ach', ico: 'trophy', h: 'Achievement', t: a.name, sub: a.desc + ' — ' + a.rewards.map(M.rewardText).join(' + ') });
     for (const u of r.unlocks) clips.push({ k: 'unlock ' + u.kind, ico: unlockIcon(u), h: u.text, t: u.name, portrait: u.kind === 'survivor' ? u.id : null });
     for (const e of r.newEvos) clips.push({ k: 'evo', ico: e, h: 'Evolution discovered', t: M.name('evo', e), sub: M.evoRecipe(e) });

@@ -12,11 +12,21 @@ between runs, and K-DED 88.1 "The Last Signal": a pirate-radio DJ who talks you 
 No dependencies. `src/sim/*` is pure game logic that also runs in Node; `src/web/*` is rendering, audio, input and
 menus. Files load in name order and share the `DS` namespace. `src/index.template.html` receives the CSS and JS.
 
-## Playtest builds
+## Builds: the full game and the free demo
 
-Every push to `main` (or the current Claude branch) runs `.github/workflows/pages.yml`: it builds the game, publishes it
-to GitHub Pages (https://alexbuildsai-del.github.io/dead-swarm/) and attaches `dead-swarm-itch.zip` to the run for
-uploading to itch.io as an HTML5 game.
+- **The full game:** `node tools/build.js` → `build/index.html`.
+- **The free web demo:** `DS_DEMO=1 DS_OUT=build/demo node tools/build.js` → `build/demo/index.html`.
+  - Contents: Maple Hollow on Normal, Rook and Juno, Safehouse rank 1.
+  - Everything else shows as "Full game" (`DS.DEMO`, gates in `src/sim/80_meta.js`). Dev URL flags and the debug menu
+    are off.
+- **Both zips at once:** `bash tools/release/itch.sh` builds both and zips them into `build/release/`:
+  - `dead-swarm-demo-itch.zip` for itch.io;
+  - `dead-swarm-full.zip` for private playtests.
+- **Press kit:** `python3 tools/press/kit.py` makes the itch page art in `build/press/` (see `tools/press/README.md`).
+  The page text is in `docs/itch-page.md`.
+
+Every push to `main` (or the current Claude branch) runs `.github/workflows/pages.yml`. It publishes **the demo** to
+GitHub Pages (https://alexbuildsai-del.github.io/dead-swarm/) and attaches both zips to the run.
 
 ## Layout
 

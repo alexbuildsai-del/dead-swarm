@@ -10,6 +10,9 @@ are in `docs/TODO_LATER.md`. Tick the ROADMAP box when an item lands.
 ```bash
 node tools/build.js                    # → build/index.html (the game), build/sim.js (headless sim), build/dead-swarm.html (claude.ai artifact body)
 DS_OUT=build/dev node tools/build.js   # build somewhere else (keep build/bal untouched while balance runs read it)
+DS_DEMO=1 DS_OUT=build/demo node tools/build.js   # the free web demo (DS.DEMO: Maple Hollow/Normal, Rook+Juno, Safehouse rank 1)
+bash tools/release/itch.sh             # both builds → build/release/dead-swarm-demo-itch.zip + dead-swarm-full.zip
+python3 tools/press/kit.py             # itch page art (screenshots, GIF, logo, cover, banner, icon) → build/press/
 open build/index.html                  # play; dev params: ?run=hospital&surv=ines&t=10&give=stormgrid,cleaver:5&spawn=bull:5&boss=surgeon&god=1&q=low
 ```
 Run every script from the repo root. Scripts read `DS_OUT` (default `build`; review scripts default to `build/review`)
@@ -66,6 +69,9 @@ python3 tools/shot.py "run=suburbs&god=1&t=8" /tmp/deadswarm/x.png 6 844 390   #
   does anything when the page runs as a claude.ai artifact; anywhere else it's a no-op.
 
 ## Shipping
+- **The free demo** (`DS_DEMO=1`) is what GitHub Pages and itch.io serve. Its gates are all in `M.*Unlocked`, `M.rankCap`
+  and `buildRunConfig` (`80_meta.js`), so new content stays out of the demo unless `DS.DEMO_SCOPE` lists it. Run
+  `node tools/agents/review/demo.js` and `python3 tools/agents/review/demo.py` after touching unlocks.
 - `build/index.html` runs as-is from any static host or straight from disk.
 - `build/dead-swarm.html` is the same page without the html/head/body skeleton, for publishing as a claude.ai artifact.
   The published artifact declares the `db` and `user` capabilities for the account save. Republishing happens from a

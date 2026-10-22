@@ -128,7 +128,8 @@
         gcard(U.icon('scrap', 48), 'Scrap → Safehouse', 'Every run pays Scrap, even a short one. Spend it in the Safehouse on permanent upgrades: more health, speed, damage, rerolls. Refunds are free.') +
         gcard(U.icon('serum', 48), 'Serum → Serum lab', 'Rare. Minibosses give 1, final bosses 2, a finished objective 1, and your first clear of a map +5. Spend it on Second Wind, Head Start and Extra Choice.') +
         gcard('<span class="m-gc-q">N1</span>', 'Nights', 'New to Maple Hollow? Start with Night 1: it ends with the 5:00 boss and a ride home. Each Night you survive opens a longer one and pays Scrap and Serum the first time. Night 3 is the full fifteen minutes.') +
-        gcard('<span class="m-gc-q">⚑</span>', 'New maps and survivors', 'Clear Maple Hollow to open St. Agnes Hospital and recruit Mira. Clearing a map on Normal opens Hard for it. Some survivors cost Scrap; others unlock from what you do.') +
+        (DS.DEMO ? gcard('<span class="m-gc-q">⚑</span>', 'The full game', U.FULL_GAME_TXT) :
+        gcard('<span class="m-gc-q">⚑</span>', 'New maps and survivors', 'Clear Maple Hollow to open St. Agnes Hospital and recruit Mira. Clearing a map on Normal opens Hard for it. Some survivors cost Scrap; others unlock from what you do.')) +
         gcard('<span class="m-gc-q">?</span>', 'Field Notes', 'Everything you meet gets written up: zombies, bosses, weapons, evolutions and perks.') +
         '</div>';
     }
@@ -183,6 +184,7 @@
      ====================================================================== */
   U.S.daily = {
     render() {
+      if (DS.DEMO) return U.page('Daily Outbreak', '<p class="m-lede">' + esc(U.FULL_GAME_TXT) + '</p>', { cls: 'p-daily' });
       const s = M.data, key = M.todayKey(), d = M.dailyFor(key), best = s.daily.best[String(key)];
       const si = U.survInfo(d.survivor);
       const past = []; for (let i = 1; i <= 7; i++) { const k = M.keyAdd(key, -i); past.push({ k, v: s.daily.best[String(k)], d: M.dailyFor(k) }); }

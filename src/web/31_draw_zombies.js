@@ -355,7 +355,7 @@
   try {
     const q = new URLSearchParams(location.search);
     const zev = q.get('zev'), zel = q.get('zelite');
-    if (zev || zel) {
+    if ((zev || zel) && !DS.DEMO) {
       const go = () => {
         const w = curWorld(); if (!w || !w.player) return setTimeout(go, 100);
         if (zel) for (const tok of zel.split(',')) {

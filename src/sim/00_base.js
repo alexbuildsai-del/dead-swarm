@@ -7,6 +7,11 @@
 var DS = (typeof globalThis !== 'undefined' ? globalThis : this).DS = ((typeof globalThis !== 'undefined' ? globalThis : this).DS || {});
 
 DS.VERSION = '1.0.0';
+/* the free web demo (DS_DEMO=1 node tools/build.js): Maple Hollow on Normal, Rook and Juno, Safehouse rank 1; everything
+   else shows as "Full game". The gates live in sim/80_meta.js, the stamps and teasers in web/21_ui_*. */
+DS.DEMO = typeof DS_DEMO !== 'undefined' && !!DS_DEMO;
+DS.DEMO_SCOPE = { maps: ['suburbs'], diffs: ['normal'], survivors: ['rook', 'juno'], rankCap: 1 };
+DS.FULL_GAME = 'In the full game, coming to Steam';
 DS.DT = 1 / 60;
 DS.TAU = Math.PI * 2;
 

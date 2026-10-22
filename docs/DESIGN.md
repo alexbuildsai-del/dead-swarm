@@ -801,6 +801,17 @@ Bestiary (21 zombies + 9 bosses, unlocked on first kill, lore line + stats), Wea
 every run, purchase and setting change. Run snapshot `deadswarm.run` every 10 s and on tab hide → "Resume run" on the
 menu. Export = `DS1:` + base64(JSON) + checksum; Import validates and migrates. Reset requires typing RESET.
 
+### 13.10 The free web demo (`DS_DEMO=1`)
+- **Scope:** `DS.DEMO_SCOPE`. Maple Hollow on Normal (Nights 1–3 and the full run), Rook and Juno, and every Safehouse
+  and Serum-lab upgrade capped at rank 1 (`M.rankCap`).
+- **Locked in the demo:** St. Agnes, Quarantine, Hard, Nightmare, Infection, the Daily Outbreak, Tomas, Ines, Mira and
+  Silas. They show as "Full game" with a "Coming to Steam" teaser, and a survivor reward reads "(full game)".
+- **Imported saves:** a full-game save imported into the demo is clamped at run start (`buildRunConfig`).
+- **Same save format,** so demo progress can move to the full game with the export code.
+- **Main menu:** a FREE DEMO stamp, and "The full game" replaces the Daily row.
+- **End of the demo:** the first Maple Hollow clear adds a "That's the demo" clipping on the end screen.
+- **Off in the demo:** the dev URL flags (`?run=`…) and the version-stamp debug menu.
+
 ---
 
 ## 14. UI & feel

@@ -12,7 +12,7 @@ DS.boot = async function () {
   DS.Game.init();
   const q = new URLSearchParams(location.search);
   if (bootEl) { bootEl.classList.add('gone'); setTimeout(() => bootEl.remove(), 600); }
-  if (q.get('run')) {
+  if (q.get('run') && !DS.DEMO) {   // dev URL flags; the demo ignores them
     const cfg = { map: q.get('run'), survivor: q.get('surv') || 'rook', difficulty: q.get('diff') || 'normal', seed: +q.get('seed') || 0 };
     const w = DS.Game.start(DS.Meta && DS.Meta.buildRunConfig ? DS.Meta.buildRunConfig(cfg) : cfg);
     const n = +q.get('stress') || 0;

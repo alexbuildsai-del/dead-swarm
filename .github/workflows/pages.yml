@@ -1,5 +1,6 @@
-# Builds the game and publishes build/index.html to GitHub Pages.
-# Also attaches dead-swarm-itch.zip (index.html at the zip root) to each run for uploading to itch.io.
+# Builds the free web demo (DS_DEMO=1) and publishes it to GitHub Pages: the full game is not free on the web.
+# Each run also attaches two zips (index.html at the root): dead-swarm-demo-itch (upload to itch.io) and
+# dead-swarm-full (the full game, for private playtests).
 name: Deploy to GitHub Pages
 
 on:
@@ -24,17 +25,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Build
-        run: node tools/build.js
-      - name: Collect site
+      - name: Build the demo and the full game
+        run: bash tools/release/itch.sh
+      - name: Collect site (the demo)
         run: |
           mkdir -p site
-          cp build/index.html site/index.html
-          (cd site && zip -q ../dead-swarm-itch.zip index.html)
+          cp build/demo/index.html site/index.html
       - uses: actions/upload-artifact@v4
         with:
-          name: dead-swarm-itch
-          path: dead-swarm-itch.zip
+          name: dead-swarm-demo-itch
+          path: build/release/dead-swarm-demo-itch.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dead-swarm-full
+          path: build/release/dead-swarm-full.zip
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

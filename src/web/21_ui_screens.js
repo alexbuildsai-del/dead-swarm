@@ -7,7 +7,8 @@
 
   /* ---------- shared bits ---------- */
   U.mapThumb = (id, cls) => '<span class="m-mapthumb mt-' + esc(id) + ' ' + (cls || '') + '" aria-hidden="true"><i></i></span>';
-  U.lockBadge = (txt) => '<span class="m-lock">' + U.icon('lock', 32) + (txt ? '<span>' + esc(txt) + '</span>' : '') + '</span>';
+  U.lockBadge = (txt) => DS.DEMO && txt === DS.FULL_GAME ? '<span class="m-lock full">' + U.stamp('Full game', 'red', 'sm') + '<span>Coming to Steam</span></span>' :
+    '<span class="m-lock">' + U.icon('lock', 32) + (txt ? '<span>' + esc(txt) + '</span>' : '') + '</span>';
   function validSel(sel) {
     const s = M.data, L = Object.assign({}, s.last, sel || {});
     if (!M.mapUnlocked(s, L.map)) L.map = 'suburbs';
@@ -40,7 +41,7 @@
       const diffs = M.DIFFS.map(d => {
         const un = M.diffUnlocked(s, L.map, d), on = L.difficulty === d, D = DS.DIFFICULTY[d];
         return '<button class="m-diff d-' + d + (on ? ' sel' : '') + (un ? '' : ' locked') + '" data-act="diff" data-id="' + d + '" aria-pressed="' + on + '"' + (un ? '' : ' aria-disabled="true" data-why="' + esc(M.diffUnlockHow(L.map, d)) + '"') + '>' +
-          '<b>' + esc(D.name) + '</b><small>' + (un ? 'Scrap ' + U.multTxt(D.scrap) : 'locked') + '</small></button>';
+          '<b>' + esc(D.name) + '</b><small>' + (un ? 'Scrap ' + U.multTxt(D.scrap) : M.diffUnlockHow(L.map, d) === DS.FULL_GAME ? 'full game' : 'locked') + '</small></button>';
       }).join('');
       let nights = '';
       if (L.stage) {
@@ -65,7 +66,7 @@
         const un = M.survivorUnlocked(s, id), on = L.survivor === id, mi = M.masteryInfo(s, id);
         const why = M.SURVIVOR_UNLOCK[id].how;
         return '<button class="m-sv' + (on ? ' sel' : '') + (un ? '' : ' locked') + '" data-act="surv" data-id="' + id + '" aria-pressed="' + on + '" aria-label="' + esc(M.name('survivor', id)) + (un ? '' : ', locked') + '"' + (un ? '' : ' aria-disabled="true" data-why="' + esc(why) + '"') + '>' +
-          U.img(U.portraitURL(id, mi.outfit, 128), 'm-por', '') + (un ? '<span class="m-sv-m">M' + mi.level + '</span>' : U.lockBadge()) + '</button>';
+          U.img(U.portraitURL(id, mi.outfit, 128), 'm-por', '') + (un ? '<span class="m-sv-m">M' + mi.level + '</span>' : M.SURVIVOR_UNLOCK[id].full ? '<span class="m-lock full sv">' + U.stamp('Full game', 'red', 'sm') + '</span>' : U.lockBadge()) + '</button>';
       }).join('');
       const si = U.survInfo(L.survivor), mi = M.masteryInfo(s, L.survivor);
       const sw = mi.alt ? si.alt : si.start;
@@ -177,7 +178,7 @@
       const s = M.data;
       const row = d => {
         const r = M.rank(s, d.id), c = M.nextCost(s, d.id), can = c !== null && s[d.cur] >= c;
-        const btn = c === null ? '<span class="m-maxed">MAXED</span>' :
+        const btn = c === null ? (r < d.max ? '<span class="m-maxed full">FULL GAME</span>' : '<span class="m-maxed">MAXED</span>') :
           '<button class="m-buy' + (can ? '' : ' poor') + '" data-act="buy" data-id="' + d.id + '"' + (can ? '' : ' aria-disabled="true" data-why="Need ' + fmt(c - s[d.cur]) + ' more ' + (d.cur === 'serum' ? 'Serum' : 'Scrap') + '."') + ' aria-label="Buy ' + esc(d.name) + ' rank ' + (r + 1) + ' for ' + c + ' ' + d.cur + '">' + U.icon(d.cur, 32) + '<b>' + fmt(c) + '</b></button>';
         const tot = d.id === 'reroll' || d.id === 'banish' || d.id === 'skip' || d.cur === 'serum' ? '' : '<span class="m-sh-now">' + (r ? 'now ' + totalTxt(d, r) : '') + '</span>';
         return '<li class="m-shrow' + (c === null ? ' max' : '') + '"><div class="m-sh-n"><b>' + esc(d.name) + '</b><span>' + esc(d.per) + '</span>' + tot + '</div>' + U.pips(r, d.max) + btn + '</li>';

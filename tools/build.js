@@ -12,6 +12,8 @@ const CORE_SIM = /^(00|01|10|11|12|13|9\d)_/;
 const CORE_WEB = /^(00_|01_art_placeholder|02_|03_|04_|05_|06_|9\d_)/;
 const args = process.argv.slice(2);
 const exclude = new Set((process.env.DS_EXCLUDE || '').split(',').filter(Boolean));
+// DS_DEMO=1: the free web demo (DS.DEMO in sim/00_base.js); same code, the gates read this flag
+const DEMO = process.env.DS_DEMO === '1';
 
 function keep(f, core) {
   if (exclude.has(f)) return false;
@@ -28,7 +30,7 @@ function bundle(files) {
 fs.mkdirSync(OUT, { recursive: true });
 const simFiles = listJs(path.join(SRC, 'sim'), CORE_SIM);
 const webFiles = listJs(path.join(SRC, 'web'), CORE_WEB);
-const simJs = bundle(simFiles);
+const simJs = (DEMO ? 'globalThis.DS_DEMO = 1;\n' : '') + bundle(simFiles);
 fs.writeFileSync(path.join(OUT, 'sim.js'), simJs + '\nif (typeof module !== "undefined") module.exports = globalThis.DS;\n');
 
 const cssFiles = fs.existsSync(path.join(SRC, 'web')) ? fs.readdirSync(path.join(SRC, 'web')).filter(f => f.endsWith('.css') && keep(f, /^00_/)).sort().map(f => path.join(SRC, 'web', f)) : [];
@@ -41,7 +43,7 @@ const tpl = fs.readFileSync(path.join(SRC, 'index.template.html'), 'utf8');
 const js = simJs + '\n;\n' + bundle(webFiles);
 // guard against a literal </script> inside the bundle
 const safeJs = js.replace(/<\/script/gi, '<\\/script');
-const html = tpl.replace('/*__CSS__*/', () => css).replace('/*__JS__*/', () => safeJs);
+const html = tpl.replace('/*__CSS__*/', () => css).replace('/*__JS__*/', () => safeJs).replace('<title>Dead Swarm</title>', () => DEMO ? '<title>Dead Swarm (Demo)</title>' : '<title>Dead Swarm</title>');
 fs.writeFileSync(path.join(OUT, 'index.html'), html);
 // artifact variant: the claude.ai publisher supplies <!doctype>/<html>/<head>/<body>, so emit only the page content
 {
@@ -53,4 +55,4 @@ fs.writeFileSync(path.join(OUT, 'index.html'), html);
   fs.writeFileSync(path.join(OUT, 'dead-swarm.html'), page);
 }
 const kb = n => (n / 1024).toFixed(1) + ' KB';
-console.log(`sim.js ${kb(simJs.length)} (${simFiles.length} files) · index.html ${kb(html.length)} (${webFiles.length} web files, ${cssFiles.length} css)`);
+console.log(`${DEMO ? 'DEMO · ' : ''}sim.js ${kb(simJs.length)} (${simFiles.length} files) · index.html ${kb(html.length)} (${webFiles.length} web files, ${cssFiles.length} css)`);

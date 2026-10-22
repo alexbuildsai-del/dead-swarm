@@ -31,6 +31,16 @@
   U.icon = (id, size, cls) => U.img(U.iconURL(id, size || 64), 'm-ico ' + (cls || ''), '');
   U.clearArtCache = () => cache.clear();
 
+  /* ---------------- the demo's "full game" teaser (main menu row, Field Guide, end of the demo) ---------------- */
+  U.FULL_GAME_TXT = 'This demo is Maple Hollow on Normal, with Rook and Juno. The full game adds St. Agnes Hospital and the Quarantine Zone, Hard and Nightmare, four more survivors, the whole Safehouse and the Daily Outbreak. Coming to Steam.';
+  U.fullGameModal = function () {
+    const li = t => '<li>' + t + '</li>';
+    U.modal('<h2 class="m-h2 red">The full game</h2><p>' + (M.anyClear(M.data, 'suburbs') ? 'You beat the demo. ' : '') + 'This free demo is Maple Hollow on Normal, with Rook and Juno and the first rank of every Safehouse upgrade. The full game adds:</p>' +
+      '<ul class="m-fg">' + li('<b>St. Agnes Hospital</b> and <b>the Quarantine Zone</b>, each with its own objective and bosses') + li('<b>Hard</b> and <b>Nightmare</b>, then ten Infection levels') +
+      li('<b>Four more survivors</b>: Tomas, Ines, Mira and Father Silas') + li('<b>The whole Safehouse</b> and Serum lab') + li('<b>The Daily Outbreak</b>, the same run for everyone each day') + '</ul>' +
+      '<p class="m-small">Coming to Steam. Your demo progress can come along: Settings → Export save code.</p><div class="m-row"><button class="m-btn" data-act="closeModal">Back to the zine</button></div>', 'm-fgm');
+    U.snd('ui_click');
+  };
   /* ---------------- ransom-note title ---------------- */
   function hashStr(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
   U.ransom = function (text, cls) {
@@ -279,9 +289,10 @@
     catch (e) { console.error(e); try { DS.Snapshot.clear(); } catch (_) { } U.showMain(); U.toast('Could not restore that run.', 'bad'); }
   };
 
-  /* ---------------- debug menu: tap the version stamp 5× ---------------- */
+  /* ---------------- debug menu: tap the version stamp 5× (never in the demo) ---------------- */
   let taps = [];
   U.verTap = function () {
+    if (DS.DEMO) return;
     const t = Date.now(); taps = taps.filter(x => t - x < 2500); taps.push(t);
     if (taps.length >= 5) { taps = []; U.openDebug(); } else if (taps.length >= 3) U.toast((5 - taps.length) + ' more…');
   };
@@ -294,6 +305,7 @@
     U.snd('radio_static');
   };
   U.debugAct = function (v) {
+    if (DS.DEMO) return;
     const w = DS.Game && DS.Game.state === 'run' ? DS.Game.world : null, s = M.data;
     switch (v) {
       case 'scrap': s.scrap += 1000; M.save(); U.toast('+1,000 Scrap'); break;
@@ -383,7 +395,7 @@
       const issue = s.lifetime.runs + 1;
       return '<div class="m-main">' +
         '<section class="m-cover">' +
-          '<div class="m-issue-row"><p class="m-issue">Issue ' + issue + ', free to the living</p><button class="m-ver" data-act="ver" aria-label="Version ' + esc(DS.VERSION) + '">v' + esc(DS.VERSION) + '</button></div>' +
+          '<div class="m-issue-row"><p class="m-issue">Issue ' + issue + ', free to the living</p>' + (DS.DEMO ? U.stamp('Free demo', 'red', 'sm m-demo') : '') + '<button class="m-ver" data-act="ver" aria-label="Version ' + esc(DS.VERSION) + '">v' + esc(DS.VERSION) + (DS.DEMO ? ' demo' : '') + '</button></div>' +
           '<h1 class="m-mast" aria-label="Dead Swarm"><span>DEAD</span> <span>SWARM</span></h1>' +
           '<p class="m-tagline"><span>a survival zine for the last people listening</span></p>' +
           '<div class="m-cta">' +
@@ -400,11 +412,12 @@
         '<nav class="m-toc m-sheet" aria-label="Menu">' +
           '<div class="m-toc-head"><span class="m-toc-title">In this issue</span>' + U.wallet() + '</div>' +
           row('survivors', 'Survivors', nSurv + ' of 6 recruited') +
-          row('safehouse', 'Safehouse', ranks + ' of ' + M.SAFEHOUSE.reduce((n, d) => n + d.max, 0) + ' ranks', afford ? 'can afford ' + afford : '') +
+          row('safehouse', 'Safehouse', ranks + ' of ' + M.SAFEHOUSE.reduce((n, d) => n + M.rankCap(d.id), 0) + ' ranks', afford ? 'can afford ' + afford : '') +
           row('armory', 'Armory', nArm + ' of 28 unlocked') +
           row('notes', 'Field Notes', nNotes + ' of 30 sighted') +
           row('achievements', 'Achievements', M.achievementCount(s) + ' of 79') +
-          row('daily', 'Daily Outbreak', dBest !== undefined ? 'best today ' + fmt(dBest) : esc(M.name('survivor', d.survivor)) + ' in ' + esc(M.name('mapShort', d.map)), dBest === undefined ? 'new today' : '') +
+          (DS.DEMO ? '<button class="m-toc-row full" data-act="fullgame"><span class="m-toc-name">The full game</span><span class="m-lead" aria-hidden="true"></span><span class="m-toc-info">' + (M.anyClear(s, 'suburbs') ? 'you beat the demo' : 'coming to Steam') + '</span></button>' :
+          row('daily', 'Daily Outbreak', dBest !== undefined ? 'best today ' + fmt(dBest) : esc(M.name('survivor', d.survivor)) + ' in ' + esc(M.name('mapShort', d.map)), dBest === undefined ? 'new today' : '')) +
           row('settings', 'Settings', M.storageOk ? 'sound, controls, save' : 'saving is blocked') +
         '</nav>' +
       '</div>';
@@ -414,6 +427,7 @@
     act: {
       resume() { U.resumeRun(); },
       radio() { U.radioNext(true); },
+      fullgame() { U.fullGameModal(); },
       // the very first PLAY opens the Field Guide, which ends in LET'S GO → the play screen
       go(b) { const s = M.data, to = b.dataset.to; if (to === 'play' && !s.flags.guideSeen && !s.lifetime.runs) U.go('guide', { next: 'play' }); else U.globalAct.go(b); }
     }
