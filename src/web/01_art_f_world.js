@@ -335,6 +335,31 @@
     ctx.fillStyle = L.cd > 0 ? C.paper : C.yellow; ctx.fillText(label, 0, 1); ctx.restore();
   };
 
+  /* ---------------- generator 2's workbench (sim MapSuburbs.updateBench) ---------------- */
+  K.PROP.workbench = function (ctx, b, t, world) {
+    const x = b.x, y = b.y, T = DS.TUNE, k = DS.clamp(b.prog / T.benchTime, 0, 1), ready = b.cd <= 0;
+    // ring + progress wedge
+    ctx.save(); ctx.globalAlpha = ready ? 0.2 : 0.1; ctx.fillStyle = C.yellow; ctx.beginPath(); ctx.arc(x, y, b.r, 0, TAU); ctx.fill();
+    if (k > 0) { ctx.globalAlpha = 0.6; ctx.beginPath(); ctx.moveTo(x, y); ctx.arc(x, y, b.r, -PI / 2, -PI / 2 + k * TAU); ctx.closePath(); ctx.fill(); }
+    ctx.restore();
+    ring(ctx, x, y, b.r, INK, 3, null, 0.85);
+    if (ready) ring(ctx, x + 1.2, y + 1, b.r, C.yellow, 2, [9, 7], 1, -t * 20);
+    // a sawhorse table with a vice, a toolbox and a work lamp
+    ctx.save(); ctx.globalAlpha = 0.4; ctx.fillStyle = INK; ctx.fillRect(x - 24, y - 6, 52, 22); ctx.restore();
+    ctx.lineWidth = 2; ctx.strokeStyle = INK;
+    ctx.fillStyle = '#8a6a4a'; ctx.fillRect(x - 28, y - 12, 56, 20); ctx.strokeRect(x - 28, y - 12, 56, 20);
+    ctx.fillStyle = '#6e5440'; ctx.fillRect(x - 28, y - 2, 56, 3);
+    ctx.fillStyle = '#5c605b'; ctx.fillRect(x - 22, y - 18, 12, 8); ctx.strokeRect(x - 22, y - 18, 12, 8);
+    ctx.fillStyle = C.red; ctx.fillRect(x + 4, y - 18, 18, 9); ctx.strokeRect(x + 4, y - 18, 18, 9);
+    ctx.fillStyle = ready ? '#fff3c4' : '#3a3c3a'; ctx.beginPath(); ctx.arc(x + 20, y - 26, 4, 0, TAU); ctx.fill(); ctx.stroke();
+    const p = world.player; if (DS.dist2(p.x, p.y, x, y) > 360 * 360) return;
+    const label = !ready ? 'READY IN ' + Math.ceil(b.cd) + 's' : k > 0 ? 'UPGRADING ' + Math.round(k * 100) + '%' : 'WORKBENCH';
+    ctx.save(); ctx.translate(x, y - b.r - 14); ctx.rotate(-0.04);
+    ctx.font = '13px ' + DS.FONT.head; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const tw = ctx.measureText(label).width + 12; ctx.fillStyle = INK; ctx.fillRect(-tw / 2, -9, tw, 18);
+    ctx.fillStyle = ready ? C.yellow : C.paper; ctx.fillText(label, 0, 1); ctx.restore();
+  };
+
   /* ---------------- supply drop (parachute crate) ---------------- */
   function chuteArt() {
     return () => {

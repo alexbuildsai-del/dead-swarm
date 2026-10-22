@@ -79,7 +79,7 @@
     if (z) { const da = DS.angDiff(cur, Math.atan2(z.y - pr.y, z.x - pr.x)); na = cur + DS.clamp(da, -3.2 * dt, 3.2 * dt); }
     pr.vx = Math.cos(na) * want; pr.vy = Math.sin(na) * want;
     pr.x += pr.vx * dt; pr.y += pr.vy * dt;
-    if (world.map.dark && ((world.tick + pr.id) & 3) === 0) W.light(world, pr.x, pr.y, pr.r * 3.2, 0.09);
+    if (world.map.lit && ((world.tick + pr.id) & 3) === 0) W.light(world, pr.x, pr.y, pr.r * 3.2, 0.09);
     return true;
   }
   def({
@@ -254,7 +254,7 @@
         if (z.alive && !z.boss && !z.def.structure && z.hp < z.maxHp * L.execute) { z.hp = 0; world.emit('execute', z, inst.src); world.killZombie(z, inst.src, 0); }
       }
       if (!first) { d.hitT = world.t; world.sound('reaper', p.x, p.y, 0.55); }
-      if (world.map.dark) W.light(world, p.x, p.y, R * 1.5, 0.3);
+      if (world.map.lit) W.light(world, p.x, p.y, R * 1.5, 0.3);
     },
     destroy(world, inst) { if (inst.data.onExec) world.off('execute', inst.data.onExec); }
   });
@@ -383,7 +383,7 @@
         W.lemni(b.ph, d.a, d.rot, d.tmp);
         const nx = p.x + d.tmp.x, ny = p.y + d.tmp.y, mx = nx - b.x, my = ny - b.y, ml = Math.sqrt(mx * mx + my * my) || 1;
         b.px = b.x; b.py = b.y; b.x = nx; b.y = ny; b.ang += dt * 16;
-        if (world.map.dark && ((world.tick + i) & 3) === 0) W.light(world, nx, ny, 90, 0.09);
+        if (world.map.lit && ((world.tick + i) & 3) === 0) W.light(world, nx, ny, 90, 0.09);
         const k = world.zombiesIn(nx, ny, r, B1);
         for (let j = 0; j < k; j++) {
           const z = B1[j]; if (!z.alive || z.hidden) continue;
@@ -675,7 +675,7 @@
             const dx = z.x - p.x, dy = z.y - p.y, l = Math.sqrt(dx * dx + dy * dy) || 1; world.hit(z, L.dmg, inst.src, dx / l, dy / l); break;
           }
         }
-        if (world.map.dark) for (let k = 0; k < n; k++) { const a = d.ang + k * TAU / n; W.light(world, p.x + Math.cos(a) * R * 0.6, p.y + Math.sin(a) * R * 0.6, R * 1.1, 0.14); }
+        if (world.map.lit) for (let k = 0; k < n; k++) { const a = d.ang + k * TAU / n; W.light(world, p.x + Math.cos(a) * R * 0.6, p.y + Math.sin(a) * R * 0.6, R * 1.1, 0.14); }
         if (((world.tick / 6) | 0) % 6 === 0 && (world.tick % 6) === 0) world.sound('dragon_breath', p.x, p.y, 0.5);
       }
       d.st -= dt;

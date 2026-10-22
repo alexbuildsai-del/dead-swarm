@@ -253,6 +253,7 @@ DS.HUD = {
       for (let by = Math.floor((p.y - range) / B); by <= Math.floor((p.y + range) / B); by++) for (let bx = Math.floor((p.x - range) / B); bx <= Math.floor((p.x + range) / B); bx++) {
         const [sx, sy] = at(bx * B + inset, by * B + inset);
         ctx.fillStyle = ((bx * 3 + by * 5) & 1) ? '#76866a' : '#7f8f6a'; ctx.fillRect(sx, sy, s, s);
+        if (map.powered && map.genDone && map.powered(bx, by)) { ctx.fillStyle = 'rgba(242,200,75,0.3)'; ctx.fillRect(sx, sy, s, s); }
       }
     }
     if (map.gas) { const [gx, gy] = at(map.gas.x, map.gas.y); ctx.beginPath(); ctx.arc(gx, gy, map.gas.r * k, 0, DS.TAU); ctx.strokeStyle = C.red; ctx.lineWidth = 2; ctx.stroke(); }
@@ -271,6 +272,7 @@ DS.HUD = {
         const [sx, sy] = at(s.dx, s.dy); ctx.fillStyle = C.yellow; ctx.fillRect(sx - 2.5, sy - 2.5, 5, 5); ctx.strokeStyle = C.ink; ctx.lineWidth = 1; ctx.strokeRect(sx - 2.5, sy - 2.5, 5, 5);
       }
     }
+    if (map.bench && map.bench.on) { const [sx, sy] = at(map.bench.x, map.bench.y, true); ctx.fillStyle = map.bench.cd > 0 ? '#8a6a4a' : C.yellow; ctx.fillRect(sx - 4, sy - 3, 8, 6); ctx.strokeStyle = C.ink; ctx.lineWidth = 1.2; ctx.strokeRect(sx - 4, sy - 3, 8, 6); }
     if (map.gens) {   // Maple Hollow: every generator, coloured by state
       for (const g of map.gens) {
         const live = !g.done && !g.locked;

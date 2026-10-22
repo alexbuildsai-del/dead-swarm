@@ -24,6 +24,8 @@ These were parked so the game could be playtested first. None of them blocks a r
 ## QA leftovers
 Everything P0–P3 from the review is fixed and re-verified (`tools/agents/review/FINDINGS.md`, fix log at the bottom). The leftovers are minor:
 - **First-use hitches** still reach 60–135 ms in the elite-wave and boss scenarios on headless software canvas. The target was 50 ms. Sprite builds per frame are now 0–8, so the remaining cost is canvas rasterisation. Re-measure on a real phone with GPU canvas before doing more.
+- **Dusk on Maple Hollow** adds the darkness pass Quarantine already pays (headless render 3.7–4.0 ms against Quarantine's
+  3.5 ms). Check on a phone; if it costs too much, render the dark layer at quarter resolution on low quality.
 - **High quality at DPR 2** in headless Chromium runs at about 41 fps with 700 zombies. Auto quality steps down, and low quality holds 60 fps. Check on real devices.
 - **Short portrait phones** (375×667 and smaller): four level-up cards can't all fit above the DASH/ULT corner. The buttons are hidden and inert while an overlay is open and taps have a 350 ms grace, so nothing can be picked blind, but a tidier layout would help.
 - **Test scripts:**

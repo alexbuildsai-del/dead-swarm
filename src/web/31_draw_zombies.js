@@ -330,7 +330,7 @@
       ctx.globalAlpha = 1;
     }
     // dark map: re-draw dangerous projectiles above the darkness so they stay readable
-    if (w.map.dark) {
+    if (w.map.dark || (w.map.duskAt && w.map.duskAt(w.t) > 0.3)) {
       for (const h of w.hostiles) {
         if (!h.alive || h.lob || (h.draw !== 'spore' && h.draw !== 'bile')) continue;
         R.toScreen(h.x, h.y, tmp); if (tmp.x < -20 || tmp.y < -20 || tmp.x > W + 20 || tmp.y > Hh + 20) continue;

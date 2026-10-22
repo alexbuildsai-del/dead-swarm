@@ -543,6 +543,13 @@ Zombies path with a moving 64 × 64 flow field (40-unit cells) centred on the su
 **Objective — Power the Grid:** 3 generators at (900, −700), (−1100, 300), (300, 1200), coming online in order at
 1:00 / 5:30 / 10:30 (each also needs the previous one done). Stand in the circle (r 110): 30 s cumulative charge each
 (no decay). While charging, +40% spawn budget. Each: crate + 15 Scrap, and the generator's flood lamp comes on. All three: +1 Serum.
+**Evening and the powered grid:** daylight until 3:00, then dusk (`MapSuburbs.duskAt`: depth 0.55 by 8:00, 0.7 by 12:00;
+render only — the darkness layer, with pickups and telegraphs drawn above it). Every finished generator powers the
+blocks within 1,200 of it: their street lamps (about half the blocks have one, by the crossing) light a 210 radius, and
+zombies in that light move 20% slower and take ×1.15 damage (`TUNE.lampR`, `powerR`, `litSlow`, `litDmg`; `z.lit`).
+Generator 2 also powers a **workbench** 140 east of it: stand on it 3 s for a one-reward supply crate, then 60 s
+cooldown (`TUNE.benchTime`, `benchCd`). Generator 3 fixes K-DED's **relay**: call-in rewards (crate, Scrap, ult charge)
+double. Powered blocks are tinted on the minimap.
 **Lootable houses** (`sim/13_loot.js`): about one house in three has its porch light on (fixed per block, so the same
 streets pay every run). Stand within 45 of the front door (north wall) for 2.5 s: when you start, 3–6 shamblers /
 sprinters / splitters / joggers burst out; when the ring fills the house goes dark and drops one reward: first-aid tin

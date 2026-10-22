@@ -117,6 +117,7 @@
         gcard(U.icon('crate', 48), 'Supply crates', 'A crate spins up 1 to 5 rewards at once, applied straight away.') +
         gcard('<span class="m-gc-q">EVO</span>', 'Evolutions', 'From 6:15, a crate can turn a level-5 weapon into its evolution if you also carry its partner gear. Level-up cards show which gear pairs with which weapon.') +
         gcard('<span class="m-gc-q">1/3</span>', 'Perks', 'After each miniboss (5:00 and 10:00) pick 1 of 3 perks. They last for the rest of the night.') +
+        gcard('<span class="m-gc-q">⚡</span>', 'Powered streets', 'On Maple Hollow, every generator you power lights the street lamps around it. Zombies in the light move slower and take more damage. Generator 2 also powers a workbench (stand on it for an upgrade, once a minute) and generator 3 fixes Lou\'s relay, so call-ins pay double.') +
         gcard('<span class="m-gc-q">☎</span>', 'Lou\'s call-ins', 'Every few minutes Lou puts a listener on air with a short challenge. Win it for a supply crate, Scrap and Air Support charge. Lose it and nothing bad happens.') +
         '</div>';
     }

@@ -129,6 +129,7 @@ DS.MapBase = class MapBase {
   flowDir(world, x, y) { return this.flow ? this.flow.dir(x, y) : null; }
   updateObjective() { }
   updateInteractables() { }   // loot spots (13_loot.js); maps that have them override this
+  get lit() { return this.dark || (!!this.duskAt && this.duskAt(this.w.t) > 0.05); }   // transient lights (muzzle flashes, blasts) are worth pushing
   rectsNear() { return []; }
   collide(e) {
     const rs = this.rectsNear(e.x, e.y, e.r); let hit = false;
@@ -275,7 +276,63 @@ DS.MapSuburbs = class MapSuburbs extends DS.MapBase {
     this.objective.title = 'Power the Grid';
     this.loot = new DS.LootState();
     this.porches = []; this.porchAt = null;
+    // generator 2 powers a workbench beside it (open park lawn): stand on it to upgrade something, once a minute
+    this.bench = { kind: 'workbench', x: this.gens[1].x + 140, y: this.gens[1].y, r: 44, prog: 0, cd: 0, on: false };
   }
+  /* ---- evening: daylight until 3:00, dusk by 8:00, dark by 12:00 (render only; pure in t) ---- */
+  duskAt(t) {
+    const m = t / 60; if (m <= 3) return 0;
+    if (m < 8) { const k = (m - 3) / 5; return 0.55 * k * k * (3 - 2 * k); }
+    return Math.min(0.7, 0.55 + (m - 8) / 4 * 0.15);
+  }
+  /* ---- powered streets: each finished generator lights the blocks within TUNE.powerR of it ---- */
+  powered(bx, by) {
+    const B = DS.SUB.B, cx = bx * B + B / 2, cy = by * B + B / 2, R = DS.TUNE.powerR;
+    for (const g of this.gens) if (g.done && DS.dist2(g.x, g.y, cx, cy) < R * R) return true;
+    return false;
+  }
+  /* a block's street lamp head (half the blocks have one, at their corner by the crossing), or null */
+  lampOf(b) {
+    if (b.lamp === undefined) { const d = b.decor.find(q => q.kind === 'streetlight'); b.lamp = d ? { x: d.x + 36, y: d.y + 32 } : null; }
+    return b.lamp;
+  }
+  /* is (x, y) inside a powered lamp's light? Only the lamp at the nearest crossing can reach it. */
+  litAt(x, y) {
+    if (!this.genDone) return false;
+    const B = DS.SUB.B, ix = Math.round(x / B), iy = Math.round(y / B);
+    if (!this.powered(ix, iy)) return false;
+    const L = this.lampOf(this.blockAt(ix, iy)), r = DS.TUNE.lampR;
+    return !!L && DS.dist2(x, y, L.x, L.y) < r * r;
+  }
+  /* light sources for the dusk layer: powered lamps, finished generators' flood lamps, lit porches */
+  duskLights(world, out) {
+    out.length = 0;
+    const p = world.player, B = DS.SUB.B, bx0 = Math.round(p.x / B), by0 = Math.round(p.y / B), r = DS.TUNE.lampR;
+    if (this.genDone) for (let j = by0 - 2; j <= by0 + 2; j++) for (let i = bx0 - 2; i <= bx0 + 2; i++) {
+      if (!this.powered(i, j)) continue; const L = this.lampOf(this.blockAt(i, j)); if (L) out.push({ x: L.x, y: L.y, r, a: 1, warm: 1, head: 1 });
+    }
+    for (const g of this.gens) if (g.done) out.push({ x: g.x - 52, y: g.y - 20, r: 260, a: 1, warm: 1 });
+    for (const q of this.porches) if (!this.loot.isDone(q.spot.key)) out.push({ x: q.spot.dx + 19, y: q.spot.dy - 7, r: 120, a: 0.95, warm: 1 });
+    if (this.bench.on) out.push({ x: this.bench.x, y: this.bench.y, r: 130, a: 0.9, warm: 1 });
+    return out;
+  }
+  /* generator 3 restores the K-DED relay: call-in rewards double */
+  get relay() { return this.gens[2].done; }
+  updateBench(world, dt) {
+    const b = this.bench, p = world.player;
+    if (!b.on) { if (this.gens[1].done) { b.on = true; this.porchAt = null; world.emit('benchOnline'); } else return; }
+    if (b.cd > 0) b.cd = Math.max(0, b.cd - dt);
+    const on = !p.dead && b.cd <= 0 && DS.dist2(p.x, p.y, b.x, b.y) < b.r * b.r;
+    if (on) {
+      b.prog += dt;
+      if (b.prog >= DS.TUNE.benchTime) {
+        b.prog = 0; b.cd = DS.TUNE.benchCd; world.stats.benchUses = (world.stats.benchUses | 0) + 1;
+        world.queueChoice({ type: 'crate', min: 1 }); world.sound('crate_drop', b.x, b.y, 0.8); world.emit('bench');
+      }
+    } else if (b.prog > 0) b.prog = Math.max(0, b.prog - dt);
+  }
+  /* the workbench, when it is ready and within R (bot) */
+  benchTarget(world, R) { const b = this.bench, p = world.player; return b.on && b.cd <= 0 && DS.dist2(p.x, p.y, b.x, b.y) < R * R ? b : null; }
   blockAt(bx, by) {
     const k = bx * 73856093 ^ by * 19349663;
     let b = this.blocks.get(k);
@@ -369,7 +426,7 @@ DS.MapSuburbs = class MapSuburbs extends DS.MapBase {
           g.charge = 1; g.done = true; this.genDone++; world.stats.generators = this.genDone;
           world.sound('gen_done', g.x, g.y);
           world.shake(6);
-          this.objectiveDone(world, 'GENERATOR ' + this.genDone + '/3');
+          this.objectiveDone(world, 'GENERATOR ' + this.genDone + '/3'); this.porchAt = null;
           if (this.genDone === 3) { world.serum += 1; world.emit('allGenerators'); }
         }
       }
@@ -393,12 +450,13 @@ DS.MapSuburbs = class MapSuburbs extends DS.MapBase {
     const p = world.player, B = DS.SUB.B, bx = Math.floor(p.x / B), by = Math.floor(p.y / B), r = DS.TUNE.lootR;
     const s = this.lootSpot(this.blockAt(bx, by));
     this.loot.update(world, dt, s && !p.dead && DS.dist2(p.x, p.y, s.dx, s.dy) < r * r ? s : null);
+    this.updateBench(world, dt);
     // the lit porches around the survivor, drawn as props (rebuilt when they cross into another block)
     const key = bx + ',' + by;
     if (this.porchAt !== key) {
       this.porchAt = key; this.porches.length = 0;
       for (let j = by - 1; j <= by + 1; j++) for (let i = bx - 1; i <= bx + 1; i++) { const q = this.lootSpot(this.blockAt(i, j)); if (q) this.porches.push({ kind: 'porch', x: q.dx, y: q.dy, spot: q }); }
-      this.props.length = 0; for (const g of this.gens) this.props.push(g); for (const q of this.porches) this.props.push(q);
+      this.props.length = 0; for (const g of this.gens) this.props.push(g); for (const q of this.porches) this.props.push(q); if (this.bench.on) this.props.push(this.bench);
     }
   }
   /* nearest unlooted porch within R (bot + HUD use it); null while the loot cooldown runs */
@@ -416,8 +474,12 @@ DS.MapSuburbs = class MapSuburbs extends DS.MapBase {
   }
   /* director asks: is the survivor charging something (+40% budget)? */
   get pressure() { return this.charging ? 1.4 : 1; }
-  serialize() { return { gens: this.gens.map(g => [g.charge, g.done ? 1 : 0, g.announced ? 1 : 0]), genDone: this.genDone, loot: this.loot.serialize() }; }
-  deserialize(o) { if (o && o.loot) this.loot.deserialize(o.loot); if (!o || !o.gens) return; o.gens.forEach((g, i) => { if (this.gens[i]) { this.gens[i].charge = g[0]; this.gens[i].done = !!g[1]; this.gens[i].announced = !!g[2]; } }); this.genDone = o.genDone || 0; this.w.stats.generators = this.genDone; }
+  serialize() { return { gens: this.gens.map(g => [g.charge, g.done ? 1 : 0, g.announced ? 1 : 0]), genDone: this.genDone, loot: this.loot.serialize(), bench: [this.bench.prog, this.bench.cd, this.bench.on ? 1 : 0] }; }
+  deserialize(o) {
+    if (o && o.loot) this.loot.deserialize(o.loot);
+    if (o && Array.isArray(o.bench)) { this.bench.prog = +o.bench[0] || 0; this.bench.cd = +o.bench[1] || 0; this.bench.on = !!o.bench[2]; }
+    this.porchAt = null;
+    if (!o || !o.gens) return; o.gens.forEach((g, i) => { if (this.gens[i]) { this.gens[i].charge = g[0]; this.gens[i].done = !!g[1]; this.gens[i].announced = !!g[2]; } }); this.genDone = o.genDone || 0; this.w.stats.generators = this.genDone; }
 };
 
 /* ==========================================================================

@@ -22,6 +22,7 @@ DS.Zombie = class Zombie {
     // per-type fields: cleared here so a pooled object never inherits them from its previous life
     this.pose = ''; this.ghost = false; this.sealed = false; this.aura = null; this.cdMul = 1; this.atkCdMul = 1; this.affixT = 0;
     this.phase = 0; this.windMul = 1; this.spin = 0; this.lift = 0; this.stuckT = 0; this.wallHit = false;
+    this.lit = false;   // standing in a powered street lamp's light (Maple Hollow)
   }
 };
 
@@ -315,6 +316,7 @@ DS.World = class World extends DS.Emitter {
     if (z.def.resist && z.def.resist[src.el] !== undefined) d *= z.def.resist[src.el];
     if (z.def.flatArmor) d = Math.max(d * 0.25, d - z.def.flatArmor);
     d *= z.dmgTakenMul;
+    if (z.lit) d *= DS.TUNE.litDmg;
     if (z.boss) d *= src.bossMul;
     for (let i = 0; i < this.dmgMods.length; i++) d = this.dmgMods[i](this, z, d, src, crit);
     if (z.frozenT > 0 && z.frozenBy === 'flashfreeze') d *= 2;
@@ -704,6 +706,7 @@ DS.World = class World extends DS.Emitter {
       if (z.buffT > 0) z.buffT -= dt;
       let dx = p.x - z.x, dy = p.y - z.y; let d2 = dx * dx + dy * dy; let d = Math.sqrt(d2) || 0.001;
       z.dx = dx; z.dy = dy; z.d = d;
+      if (map.litAt && ((this.tick + i) & 7) === 0) z.lit = !z.boss && map.litAt(z.x, z.y);
       // recycle far zombies
       if (d2 > recycleD2 && !z.noRecycle && !z.boss) { this.recycle(z); continue; }
       const frozen = z.frozenT > 0, stunned = z.stunT > 0;
@@ -716,7 +719,7 @@ DS.World = class World extends DS.Emitter {
           let ux, uy;
           if (flow && d > 90) { const f = map.flowDir(this, z.x, z.y); if (f) { ux = f.x; uy = f.y; } else { ux = dx / d; uy = dy / d; } }
           else { ux = dx / d; uy = dy / d; }
-          let sp = z.spd * z.spdMul * spdMulG * (1 + (z.buffT > 0 ? z.buffAmt : 0)) * (1 - z.slowAmt);
+          let sp = z.spd * z.spdMul * spdMulG * (1 + (z.buffT > 0 ? z.buffAmt : 0)) * (1 - z.slowAmt) * (z.lit ? 1 - T.litSlow : 1);
           const keep = z.def.keep;
           if (keep) {
             if (d < keep[0]) { ux = -ux; uy = -uy; sp *= 0.85; }

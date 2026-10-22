@@ -155,6 +155,8 @@ DS.TUNE = {
   crate5: 0.03, crate3: 0.15,  // supply-crate multi-reward odds (× luck², × luck)
   evoMinTime: 375,             // supply crates carry evolutions only from 6:15
   bossEnrageFinal: 150, bossEnrageMini: 100, // seconds before a boss enrages (Infection 6+: 120 s and ×2 damage)
+  lampR: 210, powerR: 1200, litSlow: 0.2, litDmg: 1.15, // powered street lamps (Maple Hollow): light radius, generator reach, zombies in the light: −20% speed, ×1.15 damage taken
+  benchTime: 3, benchCd: 60,  // generator 2's workbench: seconds to use it, cooldown
   lootR: 45, lootTime: 2.5, lootCd: 20, // loot spots: reach from the door, seconds to loot, global cooldown after a loot
   maxSpit: 3, maxAcid: 4, maxCharge: 4, maxGurney: 2, gurneyDmg: 9, // at most this many live ranged telegraphs of each kind (readability)
 };

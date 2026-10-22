@@ -187,6 +187,11 @@ class Bot {
       else if (w.map.id === 'quarantine') return { x: m.x, y: m.y, w: d > 240 ? 9 : 1 };
       else if (d < 2200) return { x: m.x, y: m.y, w: d > 60 ? 9 : 2, stay: d < 60 };
     }
+    // generator 2's workbench when it is ready (an upgrade every minute)
+    if (w.map.benchTarget && hpk > 0.5 && !w.bosses.some(b => b.alive)) {
+      const b = w.map.benchTarget(w, 1400);
+      if (b) { const d = Math.hypot(b.x - p.x, b.y - p.y); return { x: b.x, y: b.y, w: 9, stay: d < 26 }; }
+    }
     // a lit porch nearby, when it is calm enough to stand at the door for a few seconds
     if (w.map.lootTarget && hpk > 0.55 && !w.bosses.some(b => b.alive)) {
       const L = w.map.lootTarget(w, 650);

@@ -349,9 +349,10 @@
       this.removeProp();
       if (won) {
         w.stats.callins++;
-        w.queueChoice({ type: 'crate', min: 1 });
-        w.addScrap(12);
-        w.player.ultCharge = Math.min(DS.TUNE.ultNeed, w.player.ultCharge + DS.TUNE.ultNeed * 0.25);
+        const k = w.map.relay ? 2 : 1;   // Maple Hollow's generator 3 restores the relay: call-in rewards double
+        for (let i = 0; i < k; i++) w.queueChoice({ type: 'crate', min: 1 });
+        w.addScrap(12 * k);
+        w.player.ultCharge = Math.min(DS.TUNE.ultNeed, w.player.ultCharge + DS.TUNE.ultNeed * 0.25 * k);
         w.sound('callin_win');
         w.fx('text', w.player.x, w.player.y - 44, 18, 0, 0, 'CALL-IN COMPLETE');
       } else {
@@ -374,7 +375,7 @@
       if (r === 1) return this.finish(true);
       if (r === -1) return this.finish(false);
       if (c.timeLeft <= 0) { c.timeLeft = 0; return this.finish(def.timeout ? def.timeout(this, w, c) === 1 : false); }
-      if (w.fxOn && w.map.dark && this.prop) w.lightPts.push({ x: this.prop.x, y: this.prop.y, r: (this.prop.r || 60) * 2.4, t: DS.DT * 1.5 });
+      if (w.fxOn && w.map.lit && this.prop) w.lightPts.push({ x: this.prop.x, y: this.prop.y, r: (this.prop.r || 60) * 2.4, t: DS.DT * 1.5 });
       if (!c.hurried && def.hurry && c.timeLeft <= 5) { c.hurried = true; if (c.progress < 0.8 && this.lrng.next() < 0.6) this.line('callinHurry', 1, null, 3); }
     }
 

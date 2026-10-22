@@ -163,7 +163,7 @@
       a.volleyT -= dt;
       while (a.volleyT <= 0) { a.volleyT += 0.15; rookStrafe(world, p, a); }
       if (p.empUlt) { a.missileT -= dt; if (a.missileT <= 0) { a.missileT += 1.5; rookMissiles(world, p, a); } }
-      if (world.fxOn && world.map.dark) world.lightPts.push({ x: a.gx, y: a.gy + 60, r: 200, t: DS.DT * 1.5 });
+      if (world.fxOn && world.map.lit) world.lightPts.push({ x: a.gx, y: a.gy + 60, r: 200, t: DS.DT * 1.5 });
     },
     ultEnd(world, p) { p.sv.air = null; }
   });
@@ -268,7 +268,7 @@
       }
       if (p.empUlt) { b.boomT -= dt; if (b.boomT <= 0) { b.boomT += 0.5; world.explode(p.x, p.y, 120, 80 * pw, s.srcBoom); world.sound('explosion', p.x, p.y, 0.6); } }
       if ((world.tick & 1) === 0) world.fx('ds_exhaust', p.x - cx * 18, p.y - cy * 18 + 4, b.ang);
-      if (world.fxOn && world.map.dark) world.lightPts.push({ x: p.x + cx * 70, y: p.y + cy * 70, r: 150, t: DS.DT * 1.5 });
+      if (world.fxOn && world.map.lit) world.lightPts.push({ x: p.x + cx * 70, y: p.y + cy * 70, r: 150, t: DS.DT * 1.5 });
     },
     ultEnd(world, p) { const s = p.sv; if (s.bike) s.bike.hits.clear(); s.bike = null; }
   });
@@ -349,7 +349,7 @@
     ultTick(world, p, dt) {
       const s = p.sv, L = s.lock; if (!L) return;
       L.t += dt;
-      if (world.fxOn && world.map.dark) world.lightPts.push({ x: p.x, y: p.y, r: 180, t: DS.DT * 1.5 });
+      if (world.fxOn && world.map.lit) world.lightPts.push({ x: p.x, y: p.y, r: 180, t: DS.DT * 1.5 });
       if (p.empUlt) { L.waveT -= dt; if (L.waveT <= 0) { L.waveT += 1; tomasWave(world, p); } }
       // taunt pull
       let n = near(world, p.x, p.y, 600, QB);

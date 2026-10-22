@@ -149,14 +149,9 @@ DS.Renderer = class Renderer {
     for (const pr of world.map.props) if (inView(pr.x, pr.y, 160)) DS.Art.drawProp(ctx, pr, t, world);
     if (world.props) for (const pr of world.props) if (inView(pr.x, pr.y, 160)) DS.Art.drawProp(ctx, pr, t, world);
     if (world.evac && world.evac.state !== 'away') DS.Art.drawHeli(ctx, world.evac, t, world, 'pad');
-    // pickups
-    for (const k of world.pickups) {
-      if (!k.alive) continue;
-      const x = k.px + (k.x - k.px) * alpha, y = k.py + (k.y - k.py) * alpha;
-      if (inView(x, y, 30)) DS.Art.drawPickup(ctx, k, x, y, t);
-    }
-    // telegraphs on the ground (non-dark maps)
-    if (!world.map.dark) this.drawTelegraphs(ctx, world, t);
+    // dusk on Maple Hollow (map.duskAt); on any dark map, loot and telegraphs are drawn above the darkness instead
+    const dusk = !world.map.dark && world.map.duskAt ? world.map.duskAt(world.t) : 0, darkish = world.map.dark || dusk > 0.02;
+    if (!darkish) { this.drawPickups(ctx, world, alpha, t, inView); this.drawTelegraphs(ctx, world, t); }
     // allies on the ground layer
     for (const a of world.allies) { if (!a.alive || a.layer !== 'ground') continue; this.drawAlly(ctx, a, alpha, t, world, inView); }
     // y-sorted entities: zombies, allies, survivor
@@ -209,7 +204,11 @@ DS.Renderer = class Renderer {
     // heli body above everything
     if (world.evac && world.evac.state !== 'away') DS.Art.drawHeli(ctx, world.evac, t, world, 'body');
     // darkness + gas
-    if (world.map.dark) { this.drawDarkness(world, alpha, t); ctx.setTransform(s, 0, 0, s, -cx * s + this.cv.width / 2, -cy * s + this.cv.height / 2); this.drawEyes(ctx, world, alpha, t); this.drawTelegraphs(ctx, world, t); }
+    if (darkish) {
+      this.drawDarkness(world, alpha, t, dusk); ctx.setTransform(s, 0, 0, s, -cx * s + this.cv.width / 2, -cy * s + this.cv.height / 2);
+      if (world.map.dark || dusk > 0.35) this.drawEyes(ctx, world, alpha, t);
+      this.drawPickups(ctx, world, alpha, t, inView); this.drawTelegraphs(ctx, world, t);
+    }
     if (world.map.gas) this.drawGas(ctx, world, t);
     if (DS.FXS) DS.FXS.drawWorldTop(ctx, t, dt, this);
     // screen space
@@ -217,6 +216,13 @@ DS.Renderer = class Renderer {
     if (DS.FXS) DS.FXS.drawScreen(ctx, t, dt, this);
   }
 
+  drawPickups(ctx, world, alpha, t, inView) {
+    for (const k of world.pickups) {
+      if (!k.alive) continue;
+      const x = k.px + (k.x - k.px) * alpha, y = k.py + (k.y - k.py) * alpha;
+      if (inView(x, y, 30)) DS.Art.drawPickup(ctx, k, x, y, t);
+    }
+  }
   drawZombie(ctx, z, alpha, t, world) {
     const x = z.px + (z.x - z.px) * alpha, y = z.py + (z.y - z.py) * alpha;
     if (z.boss) DS.Art.drawBoss(ctx, z, x, y, t, world); else DS.Art.drawZombie(ctx, z, x, y, t, world);
@@ -324,15 +330,15 @@ DS.Renderer = class Renderer {
     }
   }
 
-  /* ---------------- darkness (Quarantine Zone) ---------------- */
-  drawDarkness(world, alpha, t) {
+  /* ---------------- darkness: Quarantine's night, or Maple Hollow's dusk (dusk = depth 0…0.7) ---------------- */
+  drawDarkness(world, alpha, t, dusk) {
     const g = this.darkCtx, W = this.darkCv.width, H = this.darkCv.height, sc = this.zoom * 0.5;
     const p = world.player;
     const toX = x => (x - this.camX) * sc + W / 2, toY = y => (y - this.camY) * sc + H / 2;
     g.globalCompositeOperation = 'source-over';
     g.setTransform(1, 0, 0, 1, 0, 0);
-    const depth = world.darkness !== undefined ? world.darkness : 0.93;
-    g.fillStyle = 'rgba(6,9,8,' + depth + ')'; g.fillRect(0, 0, W, H);
+    const depth = dusk ? dusk : world.darkness !== undefined ? world.darkness : 0.93;
+    g.fillStyle = dusk ? 'rgba(14,20,40,' + depth.toFixed(3) + ')' : 'rgba(6,9,8,' + depth + ')'; g.fillRect(0, 0, W, H);
     g.globalCompositeOperation = 'destination-out';
     const light = (x, y, r, a) => {
       const sx = toX(x), sy = toY(y), sr = r * sc; if (sx < -sr || sy < -sr || sx > W + sr || sy > H + sr) return;
@@ -341,7 +347,9 @@ DS.Renderer = class Renderer {
       g.fillStyle = gr; g.beginPath(); g.arc(sx, sy, sr, 0, DS.TAU); g.fill();
     };
     const ppx = p.px + (p.x - p.px) * alpha, ppy = p.py + (p.y - p.py) * alpha;
-    light(ppx, ppy, 120 * (world.lightMul || 1), 1);
+    light(ppx, ppy, (dusk ? 190 : 120) * (world.lightMul || 1), 1);
+    const ML = dusk ? world.map.duskLights(world, this._duskL || (this._duskL = [])) : world.map.lights;
+    if (dusk) { this.drawDuskLights(g, world, ML, light); return this.finishDark(world, ML, toX, toY, sc, dusk); }
     // flashlight cone
     const want = Math.atan2(p.facingY, p.facingX);
     if (this.flashAng === undefined) this.flashAng = want;
@@ -352,7 +360,7 @@ DS.Renderer = class Renderer {
     const gr = g.createRadialGradient(sx, sy, 10, sx, sy, L * sc);
     gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(0.7, 'rgba(0,0,0,0.85)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
     g.fillStyle = gr; g.beginPath(); g.moveTo(sx, sy); g.arc(sx, sy, L * sc, fa - half, fa + half); g.closePath(); g.fill();
-    for (const l of world.map.lights) light(l.x, l.y, l.r, 0.95);
+    for (const l of ML) light(l.x, l.y, l.r, 0.95);
     for (const l of world.lightPts) light(l.x, l.y, l.r, Math.min(1, l.t * 6));
     for (const z of world.zombies) if (z.alive && (z.type === 'glowback' || z.boss || (z.affixes && z.affixes.indexOf('irradiated') >= 0))) light(z.x, z.y, z.r * 3, 0.5);
     for (const a of world.allies) if (a.alive && a.light) light(a.x, a.y, a.light, 0.7);
@@ -360,6 +368,29 @@ DS.Renderer = class Renderer {
     g.globalCompositeOperation = 'source-over';
     const ctx = this.ctx; ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.drawImage(this.darkCv, 0, 0, this.cv.width, this.cv.height);
+  }
+  drawDuskLights(g, world, ML, light) {
+    for (const l of ML) light(l.x, l.y, l.r, l.a || 0.95);
+    for (const l of world.lightPts) light(l.x, l.y, l.r, Math.min(1, l.t * 6));
+    for (const a of world.allies) if (a.alive && a.light) light(a.x, a.y, a.light, 0.7);
+    if (world.evac && world.evac.state !== 'away') light(world.evac.x, world.evac.y, 220, 0.9);
+  }
+  /* blit the dusk layer, then warm the lamp pools and light the lamp heads (screen space) */
+  finishDark(world, ML, toX, toY, sc, dusk) {
+    this.darkCtx.globalCompositeOperation = 'source-over';
+    const ctx = this.ctx, k = this.cv.width / this.darkCv.width; ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(this.darkCv, 0, 0, this.cv.width, this.cv.height);
+    const warm = Math.min(1, dusk / 0.55) * (this.q === 2 ? 0.7 : 1);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    for (const l of ML) {
+      if (!l.warm) continue;
+      const x = toX(l.x) * k, y = toY(l.y) * k, r = l.r * sc * k; if (x < -r || y < -r || x > this.cv.width + r || y > this.cv.height + r) continue;
+      const gr = ctx.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, 'rgba(255,200,110,' + (0.16 * warm).toFixed(3) + ')'); gr.addColorStop(1, 'rgba(255,200,110,0)');
+      ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r, 0, DS.TAU); ctx.fill();
+    }
+    ctx.restore();
+    ctx.fillStyle = '#fff3c4'; ctx.strokeStyle = DS.COL.ink; ctx.lineWidth = Math.max(1, k);
+    for (const l of ML) if (l.head) { const x = toX(l.x) * k, y = toY(l.y) * k, w = 16 * sc * k, h = 9 * sc * k; ctx.fillRect(x - w / 2, y - h / 2, w, h); ctx.strokeRect(x - w / 2, y - h / 2, w, h); }
   }
   drawEyes(ctx, world, alpha, t) {
     const p = world.player;

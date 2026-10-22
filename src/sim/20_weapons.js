@@ -281,7 +281,7 @@
       }
       d.swT = world.t; d.swAng = base; d.side = -d.side; d.arcs = n;
       world.sound('chainsaw', p.x, p.y, 0.6);
-      if (world.map.dark) W.light(world, p.x + Math.cos(base) * R * 0.6, p.y + Math.sin(base) * R * 0.6, R * 1.4, 0.12);
+      if (world.map.lit) W.light(world, p.x + Math.cos(base) * R * 0.6, p.y + Math.sin(base) * R * 0.6, R * 1.4, 0.12);
     }
   });
 
@@ -347,11 +347,11 @@
         if (!z) break;
         d.firsts[b % 16] = z.id;
         W.chain(world, p.x, p.y - 12, z, L.jumps, L.jr * p.stats.area, L.dmg, inst.src, fc);
-        if (world.map.dark) W.light(world, z.x, z.y, 120, 0.15);
+        if (world.map.lit) W.light(world, z.x, z.y, 120, 0.15);
       }
       d.castT = world.t; d.castN = n;
       world.sound('tesla', p.x, p.y, 0.6);
-      if (world.map.dark) W.light(world, p.x, p.y, 160, 0.12);
+      if (world.map.lit) W.light(world, p.x, p.y, 160, 0.12);
     }
   });
 
@@ -490,7 +490,7 @@
   /* =========================================================== 5.11 ROCKET PODS */
   function rocketUpdate(world, pr, dt) {
     pr.x += pr.vx * dt; pr.y += pr.vy * dt;
-    if (world.fxOn && world.map.dark && (world.tick & 3) === 0) world.lightPts.push({ x: pr.x, y: pr.y, r: 70, t: 0.08 });
+    if (world.fxOn && world.map.lit && (world.tick & 3) === 0) world.lightPts.push({ x: pr.x, y: pr.y, r: 70, t: 0.08 });
     return true;
   }
   function rocketNoop() { }
@@ -665,7 +665,7 @@
         }
       }
       d.fc = false;
-      if (world.map.dark) for (let k = 0; k < n; k++) { const a = d.ang + k * TAU / n; W.light(world, p.x + Math.cos(a) * R * 0.6, p.y + Math.sin(a) * R * 0.6, R * 1.1, 0.14); }
+      if (world.map.lit) for (let k = 0; k < n; k++) { const a = d.ang + k * TAU / n; W.light(world, p.x + Math.cos(a) * R * 0.6, p.y + Math.sin(a) * R * 0.6, R * 1.1, 0.14); }
     }
   });
 
