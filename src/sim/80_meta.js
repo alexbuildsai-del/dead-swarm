@@ -341,6 +341,16 @@
   M.MAPS = MAPS; M.DIFFS = DIFFS;
   M.clearCount = (save, map, diff) => (save && save.clears[map] ? save.clears[map][diff] | 0 : 0);
   M.anyClear = (save, map) => DIFFS.some(d => M.clearCount(save, map, d) > 0);
+  /* Nights: Maple Hollow's on-ramp on Normal. Night 1 ends with evac after the 5:00 miniboss, Night 2 after the 10:00 one,
+     Night 3 is the full run. Each Night opens the next; surviving Night 1 / 2 the first time pays once. Any Maple Hollow
+     clear counts as all three done, so older saves skip the on-ramp. Progress: save.flags.nightsSuburbs (0–2). */
+  M.NIGHTS = [
+    { stage: 1, boss: 'm5', scrap: 60, serum: 2, ends: 'ends at the 5:00 boss' },
+    { stage: 2, boss: 'm10', scrap: 120, serum: 3, ends: 'ends at the 10:00 boss' },
+    { stage: 3, boss: 'final', scrap: 0, serum: 0, ends: 'the full night: 15:00 and the final boss' }
+  ];
+  M.nightsDone = save => M.anyClear(save, 'suburbs') ? 3 : clampInt(save.flags && save.flags.nightsSuburbs, 0, 2);
+  M.nightsOffered = (save, map, diff) => map === 'suburbs' && (diff || 'normal') === 'normal' && M.nightsDone(save) < 3;
   M.anyClearOn = (save, diff) => MAPS.some(m => M.clearCount(save, m, diff) > 0);
   M.mapUnlocked = function (save, map) {
     if (map === 'suburbs') return true;
@@ -555,6 +565,7 @@
     for (const k of M.INK_ORDER) if (M.inkUnlocked(save, k)) out.push('ink:' + k);
     for (const k of M.PAPER_ORDER) if (M.paperUnlocked(save, k)) out.push('paper:' + k);
     for (const t of M.titles(save)) out.push('title:' + t);
+    const nd = M.nightsDone(save); for (let n = 2; n <= Math.min(3, nd + 1); n++) out.push('night:suburbs:' + n);
     return out;
   };
   M.describeUnlock = function (key) {
@@ -571,6 +582,7 @@
       case 'ink': o.name = M.name('ink', id); o.text = 'Splat ink (Settings)'; break;
       case 'paper': o.name = M.name('paper', id); o.text = 'Paper stock (Settings)'; break;
       case 'title': o.name = '"' + id + '"'; o.text = 'New title (Survivors)'; break;
+      case 'night': { const n = parts[2] | 0, N = M.NIGHTS[n - 1]; o.name = M.name('mapShort', id) + ' — Night ' + n; o.text = N ? 'Next Night: ' + N.ends : 'Next Night'; o.night = n; break; }
     }
     return o;
   };
@@ -672,6 +684,7 @@
       if (DS.SURVIVOR_ORDER.indexOf(l.survivor) >= 0) s.last.survivor = l.survivor;
       if (DIFFS.indexOf(l.difficulty) >= 0) s.last.difficulty = l.difficulty;
       s.last.infection = clampInt(l.infection, 0, 10);
+      if (l.stage !== undefined) s.last.stage = clampInt(l.stage, 0, 3);   // absent = pick the next Night; 0 = the full run
     }
     if (isObj(raw.settings)) {
       const st = raw.settings, D = M.SETTINGS_DEFAULT;
@@ -683,6 +696,7 @@
       void D;
     }
     if (isObj(raw.flags)) for (const k in raw.flags) if (typeof raw.flags[k] === 'boolean' || typeof raw.flags[k] === 'number') s.flags[k] = raw.flags[k];
+    if (s.flags.nightsSuburbs !== undefined) s.flags.nightsSuburbs = clampInt(s.flags.nightsSuburbs, 0, 2);
     // derived consistency
     s.lifetime.peakRanks = Math.max(s.lifetime.peakRanks, M.ranksOwned(s));
     if (!M.inkUnlocked(s, s.settings.ink)) s.settings.ink = 'red';
@@ -778,8 +792,11 @@
     }
     const surv = sel.survivor || save.last.survivor || 'rook';
     const mi = M.masteryInfo(save, surv);
+    const map = sel.map || save.last.map || 'suburbs', diff = sel.difficulty || 'normal';
+    // a Night only on Maple Hollow / Normal while the on-ramp is open; no stage (or 0) = the full run (balance tools rely on it)
+    const stage = sel.stage && M.nightsOffered(save, map, diff) ? clampInt(sel.stage, 1, M.nightsDone(save) + 1) : 0;
     return {
-      map: sel.map || save.last.map || 'suburbs', survivor: surv, difficulty: sel.difficulty || 'normal', infection: clampInt(sel.infection, 0, 10),
+      map, survivor: surv, difficulty: diff, infection: stage === 1 || stage === 2 ? 0 : clampInt(sel.infection, 0, 10), stage,
       seed: sel.seed | 0, meta, unlocked: M.unlockedSets(save),
       revives: M.rank(save, 'secondwind'), rerolls: M.rank(save, 'reroll'), banishes: M.rank(save, 'banish'), skips: M.rank(save, 'skip'),
       headStart: 2 * M.rank(save, 'headstart'), extraChoice: M.rank(save, 'extrachoice') > 0,
@@ -832,7 +849,8 @@
     if (runSerum) res.serumItems.push({ label: 'Collected in the run', n: runSerum });
     let serum = runSerum;
     // ---- clears
-    if (s.cleared && !s.daily && MAPS.indexOf(s.map) >= 0) {
+    const night = s.stage === 1 || s.stage === 2;   // a Night 1 / 2 run never counts as a map clear
+    if (s.cleared && !night && !s.daily && MAPS.indexOf(s.map) >= 0) {
       const diff = DIFFS.indexOf(s.difficulty) >= 0 ? s.difficulty : 'normal';
       const c = save.clears[s.map];
       if (!(c[diff] > 0)) { res.firstClear = true; res.firstClears.push({ map: s.map, difficulty: diff }); serum += 5; res.serumItems.push({ label: 'First clear: ' + M.name('mapShort', s.map) + ' (' + M.name('difficulty', diff) + ')', n: 5 }); }
@@ -840,6 +858,16 @@
       if (save.clearsBy[s.survivor] !== undefined) save.clearsBy[s.survivor]++;
       const inf = s.infection | 0;
       if (inf > (save.infectionCleared | 0) && save.achievements.nightmare_fuel && inf <= M.infectionMax(save)) save.infectionCleared = inf;
+    }
+    // ---- Nights: surviving Night 1 / 2 the first time pays once and opens the next one
+    if (night && s.stageClear && !s.daily && s.map === 'suburbs' && (s.difficulty || 'normal') === 'normal') {
+      res.nightSurvived = s.stage;
+      if (s.stage > M.nightsDone(save)) {
+        const N = M.NIGHTS[s.stage - 1];
+        save.flags.nightsSuburbs = s.stage; save.last.stage = s.stage + 1;
+        save.scrap += N.scrap; Lf.scrap += N.scrap; res.scrap += N.scrap; res.nightScrap = N.scrap; res.nightClear = s.stage;
+        serum += N.serum; res.serumItems.push({ label: 'First time surviving Night ' + s.stage, n: N.serum });
+      }
     }
     // ---- mastery
     if (save.mastery[s.survivor]) {
@@ -894,7 +922,7 @@
       objectives: 0, generators: 0, ambulance: false, nests: 0, holdOutSec: 0, bossKillHpPct: 1, evacTime: -1, weaponsOwned: 3, revived: 0, perksTaken: [], bossKills: [], miniKills: []
     }, o.stats || {});
     const s = Object.assign({ result: 'death', cleared: false, time: 300, kills: stats.kills, level: stats.level, scrap: 0, scrapRun: 0, evacBonus: 0, holdBonus: 0,
-      serum: 0, map: 'suburbs', survivor: 'rook', difficulty: 'normal', infection: 0, daily: null, xp: stats.xpGained, weapons: [], gear: [], perks: [] }, o);
+      serum: 0, map: 'suburbs', survivor: 'rook', difficulty: 'normal', infection: 0, daily: null, xp: stats.xpGained, weapons: [], gear: [], perks: [], stage: 0, stageClear: false }, o);
     s.stats = stats; if (o.kills !== undefined) stats.kills = o.kills; else s.kills = stats.kills;
     if (o.level !== undefined) stats.level = o.level; s.damage = Object.assign({}, stats.damage, o.damage || {});
     return s;

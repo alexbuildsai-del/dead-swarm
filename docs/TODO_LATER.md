@@ -15,6 +15,9 @@ These were parked so the game could be playtested first. None of them blocks a r
   - Carpet Bomb: 44
 - **Mid meta on Nightmare is 0% (n=54).** "Well under" is met, but it might feel like a wall. Consider a gentler Nightmare step for players with partial meta.
 - **Bulls are the top killer at 21% of deaths.** Watch this in playtests.
+- **Faster economy after playtest 1:** Nights bonuses, lootable houses and earlier clears roughly double Scrap per run in
+  the first 10 campaign runs (see nights-1 in `results/TUNING_LOG.md`). Mid meta on Normal was already above target, so
+  re-check it in the next matrix and trim Safehouse per-rank effects if needed.
 - **Re-run the verification matrix after these changes:** `tools/balance/final.sh <tag>`, then `node tools/balance/tables.js results/<tag>_all.jsonl`.
 - **Economy:** full Safehouse took 24–26 runs in two campaigns at cost ×1.2; it is now ×1.3 (total 14,515), so expect about 28–30 runs. Re-check that with two campaigns.
 

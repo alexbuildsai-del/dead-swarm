@@ -257,7 +257,7 @@
     let cfg;
     try { cfg = sel.daily ? M.buildRunConfig({ daily: sel.daily }, M.data) : M.buildRunConfig(sel, M.data); }
     catch (e) { console.error(e); U.toast('Could not build the run: ' + e.message, 'bad'); return; }
-    if (!sel.daily) M.remember({ map: cfg.map, survivor: cfg.survivor, difficulty: cfg.difficulty, infection: cfg.infection });
+    if (!sel.daily) M.remember({ map: cfg.map, survivor: cfg.survivor, difficulty: cfg.difficulty, infection: cfg.infection, stage: cfg.stage | 0 });
     U.lastSel = sel;
     try { if (DS.Snapshot) DS.Snapshot.clear(); } catch (e) { }
     U.hide();
@@ -273,7 +273,7 @@
   };
   U.resumeRun = function () {
     const i = U.snapInfo(); if (!i) { U.toast('That run is gone.'); U.refresh(); return; }
-    U.lastSel = i.daily ? { daily: M.dailyFor(i.daily.key) } : { map: i.map, survivor: i.survivor, difficulty: i.difficulty, infection: i.snap.cfg.infection | 0 };
+    U.lastSel = i.daily ? { daily: M.dailyFor(i.daily.key) } : { map: i.map, survivor: i.survivor, difficulty: i.difficulty, infection: i.snap.cfg.infection | 0, stage: i.snap.cfg.stage | 0 };
     U.hide();
     try { DS.Game.start(i.snap.cfg, i.snap); }
     catch (e) { console.error(e); try { DS.Snapshot.clear(); } catch (_) { } U.showMain(); U.toast('Could not restore that run.', 'bad'); }
@@ -368,6 +368,7 @@
       const surv = M.survivorUnlocked(s, L.survivor) ? L.survivor : 'rook';
       const map = M.mapUnlocked(s, L.map) ? L.map : 'suburbs';
       const diff = M.diffUnlocked(s, map, L.difficulty) ? L.difficulty : 'normal';
+      const night = U.validSel ? U.validSel({}).stage : 0;
       const snap = U.snapInfo();
       const nSurv = DS.SURVIVOR_ORDER.filter(id => M.survivorUnlocked(s, id)).length;
       const S = M.unlockedSets(s);
@@ -387,7 +388,7 @@
           '<p class="m-tagline"><span>a survival zine for the last people listening</span></p>' +
           '<div class="m-cta">' +
             (snap ? '<button class="m-resume" data-act="resume"><b>Resume run</b><span>' + esc(M.name('survivor', snap.survivor)) + ', ' + esc(M.name('mapShort', snap.map)) + ', ' + DS.fmtTime(snap.t) + '</span></button>' : '') +
-            '<button class="m-sticker m-play" data-act="go" data-to="play"><span class="m-play-big">PLAY</span><span class="m-play-sub">' + esc(M.name('survivor', surv)) + ', ' + esc(M.name('mapShort', map)) + ', ' + esc(M.name('difficulty', diff)) + '</span></button>' +
+            '<button class="m-sticker m-play" data-act="go" data-to="play"><span class="m-play-big">PLAY</span><span class="m-play-sub">' + esc(M.name('survivor', surv)) + ', ' + esc(M.name('mapShort', map)) + ', ' + (night ? 'Night ' + night : esc(M.name('difficulty', diff))) + '</span></button>' +
             '<button class="m-eye" data-act="go" data-to="guide" aria-label="Field Guide: how to play"><svg viewBox="0 0 32 20" aria-hidden="true"><path d="M2 10 C8 1, 24 1, 30 10 C24 19, 8 19, 2 10 Z"/><circle cx="16" cy="10" r="4.6"/></svg><span>How to play</span></button>' +
           '</div>' +
           '<div class="m-radio" data-act="radio" role="button" tabindex="0" aria-label="Lou Vesper on K-DED 88.1. Tap for the next line.">' +

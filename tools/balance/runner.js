@@ -8,7 +8,7 @@ if (process.env.DS_TUNE) Object.assign(DS.TUNE, JSON.parse(process.env.DS_TUNE))
 function makeCfg(job) {
   if (DS.Meta && DS.Meta.profileSave && DS.Meta.buildRunConfig && !process.env.DS_FALLBACK_PROFILES) {
     const save = DS.Meta.profileSave(job.prof);
-    const cfg = DS.Meta.buildRunConfig({ map: job.map, survivor: job.surv, difficulty: job.diff, infection: job.inf || 0 }, save);
+    const cfg = DS.Meta.buildRunConfig({ map: job.map, survivor: job.surv, difficulty: job.diff, infection: job.inf || 0, stage: job.stage || 0 }, save);
     cfg.seed = job.seed; cfg.headless = true; return cfg;
   }
   return fallbackCfg(DS, job);
@@ -36,7 +36,7 @@ function runJob(job) {
   const o = w.over;
   const dmg = {}; for (const k in o.damage) dmg[k] = Math.round(o.damage[k]);
   return {
-    job, result: err ? 'error' : o.result, err, cleared: o.cleared, t: Math.round(w.t), kills: o.kills, level: o.level, scrap: o.scrap, serum: o.serum,
+    job, result: err ? 'error' : o.result, err, cleared: o.cleared, stage: o.stage | 0, win: o.stage === 1 || o.stage === 2 ? !!o.stageClear : !!o.cleared, t: Math.round(w.t), kills: o.kills, level: o.level, scrap: o.scrap, serum: o.serum,
     dmg, weapons: o.weapons.map(x => x.id + (x.evo ? '*' : '')), gear: o.gear.map(g => g.id + ':' + g.level), perks: o.perks, evos: o.stats.evolutions,
     bossTTK: finalSpawnT >= 0 && finalKillT >= 0 ? Math.round(finalKillT - finalSpawnT) : -1, finalSpawnT: Math.round(finalSpawnT),
     minis: o.stats.minibosses, crates: o.stats.crates, dmgTaken: Math.round(o.stats.damageTaken), healed: Math.round(o.stats.healed), objectives: o.stats.objectives,

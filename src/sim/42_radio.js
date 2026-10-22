@@ -179,7 +179,8 @@
         if (z.def && z.def.kind === 'mini' && !z.parentId) this.line('miniDown', 1);
       });
       w.on('cleared', () => { this.clearedPend = true; });
-      w.on('evacLanded', () => { this.line(w.holdOut ? 'evacLandedHold' : 'evacLanded', 2); });
+      w.on('stageClear', () => { this.clearedPend = 'nightClear'; });
+      w.on('evacLanded', () => { this.line(w.holdOut ? 'evacLandedHold' : !w.canHoldOut() && DS.RADIO.evacLandedNight ? 'evacLandedNight' : 'evacLanded', 2); });
       w.on('holdMinute', k => { this.line('holdMinute', 1, { k }); });
       w.on('eliteKill', z => { if (z !== this.wantedZ && z.tag !== 2 && this.lrng.next() < 0.35) this.chatter('eliteKill', 60); });
       w.on('eventEnd', () => { this.blockedUntil = Math.max(this.blockedUntil, w.t + 6); });   // breathing room after a set-piece
@@ -399,11 +400,12 @@
       }
       // final boss down: celebrate instead of the core's evacIncoming line (the HUD shows the evac timer)
       if (this.clearedPend) {
-        this.clearedPend = false;
+        const pend = this.clearedPend; this.clearedPend = false;
         const inc = DS.RADIO.evacIncoming || [], q = w.radioQ;
         for (let i = q.length - 1; i >= 0; i--) if (w.t - q[i].t < 0.1 && inc.indexOf(q[i].text) >= 0) q.splice(i, 1);
         this.q.length = 0;
-        this.sayNow('cleared', this.fmt('cleared'), 3, 5.8);
+        const key = typeof pend === 'string' && DS.RADIO[pend] ? pend : 'cleared';
+        this.sayNow(key, this.fmt(key), 3, 5.8);
         if (this.active) this.finish(false, true);
       }
       // call-ins

@@ -88,6 +88,12 @@ any difficulty). Each level adds its modifier on top of all lower ones and **+20
     evac bonus).
 - Death: run ends, all Scrap earned is kept (no evac bonus). Second Wind revives first if owned.
 - Clear = final boss killed (unlocks follow-on content even if you then die in Hold Out).
+- **Nights** (Maple Hollow on Normal, until the map is cleared): the on-ramp for new players. Night 1 ends when the 5:00
+  miniboss dies, Night 2 when the 10:00 one dies; Night 3 is the full run above. The ending boss's crate opens on the
+  spot and its XP flies in; the chopper lands as usual but waits on the pad (no Hold Out); no new elites or set pieces
+  after the clear. Each Night opens the next. First survival of Night 1: +60 Scrap, +2 Serum; Night 2: +120 Scrap, +3
+  Serum. A Night never counts as a map clear (no first-clear Serum, no unlocks); Night 3 does. Any Maple Hollow clear
+  (older saves) counts as all Nights done. Progress: `save.flags.nightsSuburbs`; the run's `cfg.stage`.
 
 ---
 

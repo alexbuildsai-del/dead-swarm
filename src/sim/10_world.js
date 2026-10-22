@@ -106,7 +106,7 @@ DS.World = class World extends DS.Emitter {
     this.cfg = cfg = Object.assign({
       map: 'suburbs', survivor: 'rook', difficulty: 'normal', infection: 0, seed: 0, headless: false,
       meta: {}, unlocked: null, mastery: null, daily: null, view: { w: 1140, h: 545 }, perksStart: null,
-      revives: 0, headStart: 0, rerolls: 0, banishes: 0, skips: 0, extraChoice: false, ink: 'red'
+      revives: 0, headStart: 0, rerolls: 0, banishes: 0, skips: 0, extraChoice: false, ink: 'red', stage: 0
     }, cfg || {});
     this.rng = new DS.RNG(cfg.seed || ((Math.random() * 4294967296) >>> 0));
     this.seed = this.rng.s;
@@ -149,6 +149,9 @@ DS.World = class World extends DS.Emitter {
 
     this.mapMod = Object.assign({ hp: 1, spawn: 1, dmg: 1 }, (DS.MAPS[cfg.map] || DS.MAPS.suburbs).mod || {});
     this.map = (DS.MAPS[cfg.map] || DS.MAPS.suburbs).create(this);
+    // Nights (the Maple Hollow on-ramp): Night 1 ends with evac after the 5:00 miniboss, Night 2 after the 10:00 one;
+    // Night 3 (and stage 0) is the full run. The director skips the bosses a Night never reaches.
+    this.stage = DS.clamp(cfg.stage | 0, 0, 3); this.stageSlot = this.stage === 1 ? 'm5' : this.stage === 2 ? 'm10' : null; this.stageClear = false;
     this.player = new DS.Player(this, cfg);
     this.director = DS.Director ? new DS.Director(this) : null;
     this.radio = DS.RadioSim ? new DS.RadioSim(this) : null;
@@ -430,10 +433,19 @@ DS.World = class World extends DS.Emitter {
       if (!this.cleared) { this.cleared = true; this.emit('cleared'); this.startEvac(); }
     } else if (def.kind === 'mini') {
       this.stats.minibosses++; this.stats.miniKills.push(z.type);
-      this.dropPickup('crate', z.x, z.y, 3);
+      // the boss that ends a Night: its crate opens on the spot and its XP flies in, so boarding loses nothing
+      const nightEnd = this.stageSlot && !this.stageClear && !z.parentId && this.director && this.director.bossDone[this.stageSlot] &&
+        !this.bosses.some(b => b.alive && b.def.kind === 'mini');
+      if (nightEnd) this.queueChoice({ type: 'crate', min: 3 }); else this.dropPickup('crate', z.x, z.y, 3);
       this.addScrap(12); this.serum += 1;
       this.player.ultCharge += 60;
-      if (!z.parentId) this.queuePerkChoice();
+      if (!z.parentId && !nightEnd) this.queuePerkChoice();
+      if (nightEnd) {
+        this.stageClear = true;
+        for (const q of this.pickups) if (q.alive && q.kind === 'xp') q.homing = true;
+        if (this.director && this.director.onStageClear) this.director.onStageClear();
+        this.emit('stageClear', this.stage); this.startEvac();
+      }
     } else if (def.kind === 'sub') {
       // split-offs (Sporelings) — just xp
     }
@@ -550,7 +562,8 @@ DS.World = class World extends DS.Emitter {
       const inR = DS.dist2(p.x, p.y, e.x, e.y) < e.r * e.r;
       if (inR) { e.board += dt; e.awayT = 0; if (e.board >= 3) { if (this.stats.evacTime < 0) this.stats.evacTime = this.t - e.landedAt; this.endRun('evac'); return; } }
       else { e.board = Math.max(0, e.board - dt * 2); }
-      if (!this.holdOut) {
+      if (!this.canHoldOut()) this.input.holdOut = false;   // a Night's chopper waits on the pad until you board
+      else if (!this.holdOut) {
         if (this.input.holdOut) { this.input.holdOut = false; this.beginHoldOut(); return; }
         if (!inR) { // "walk away for 20 s": heading for the pad never counts against you
           const d = Math.sqrt(DS.dist2(p.x, p.y, e.x, e.y)), closing = e.lastD !== undefined && d < e.lastD - 20 * dt;
@@ -571,6 +584,7 @@ DS.World = class World extends DS.Emitter {
       }
     }
   }
+  canHoldOut() { return !this.stageSlot; }
   beginHoldOut() {
     const e = this.evac; this.holdOut = true; this.holdT = 0; e.state = 'away'; e.t = 0; e.board = 0;
     this.say(DS.RADIO.holdOut ? this.rng.pick(DS.RADIO.holdOut) : 'You\'re staying? You beautiful lunatic.', 3);
@@ -598,7 +612,7 @@ DS.World = class World extends DS.Emitter {
       result, cleared: this.cleared, time: this.t, kills: this.stats.kills, level: this.player.level,
       scrap: Math.floor(runScrap + evacBonus + hold), scrapRun: runScrap, evacBonus, holdBonus: hold, holdBonusRaw: this.holdBonus,
       serum: this.serum, stats: this.stats, map: this.cfg.map, survivor: this.cfg.survivor, difficulty: this.cfg.difficulty,
-      infection: this.cfg.infection, daily: this.cfg.daily, seed: this.seed,
+      infection: this.cfg.infection, daily: this.cfg.daily, seed: this.seed, stage: this.stage, stageClear: this.stageClear,
       weapons: this.player.weapons.map(w => ({ id: w.def.id, level: w.level, evo: !!w.def.evolved, dmg: Math.round(w.dmg) })),
       gear: this.player.gear.map(g => ({ id: g.id, level: g.level })), perks: this.player.perks.slice(),
       damage: Object.assign({}, this.stats.damage), xp: this.stats.xpGained, killedBy: result === 'death' ? (this.lastHitBy || '?') : null

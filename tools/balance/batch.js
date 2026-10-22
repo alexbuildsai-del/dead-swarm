@@ -14,13 +14,14 @@ function report(rows, title) {
   const errs = rows.filter(r => r.result === 'error'); if (errs.length) out.push('ERRORS: ' + errs.length + ' e.g. ' + errs[0].err);
   const group = (keyFn) => { const g = new Map(); for (const r of rows) { const k = keyFn(r); if (!g.has(k)) g.set(k, []); g.get(k).push(r); } return [...g.entries()].sort(); };
   const line = (k, rs) => {
-    const cl = rs.filter(r => r.cleared).length, dead = rs.filter(r => !r.cleared);
+    const won = r => r.win !== undefined ? r.win : r.cleared;   // a Night (stage 1/2) counts as won when its boss falls
+    const cl = rs.filter(won).length, dead = rs.filter(r => !won(r));
     const dm = dead.length ? (dead.reduce((s, r) => s + r.t, 0) / dead.length / 60).toFixed(1) : '-';
     const ttk = rs.filter(r => r.bossTTK > 0); const tt = ttk.length ? Math.round(ttk.reduce((s, r) => s + r.bossTTK, 0) / ttk.length) + 's' : '-';
     const reach = rs.filter(r => r.finalSpawnT > 0).length;
     return `${k.padEnd(34)} n=${String(rs.length).padStart(3)} clear=${pct(cl, rs.length).padStart(4)} reach15=${pct(reach, rs.length).padStart(4)} deathMin=${String(dm).padStart(4)} lvl=${(rs.reduce((s, r) => s + r.level, 0) / rs.length).toFixed(0).padStart(3)} kills=${Math.round(rs.reduce((s, r) => s + r.kills, 0) / rs.length).toString().padStart(5)} scrap=${Math.round(rs.reduce((s, r) => s + r.scrap, 0) / rs.length).toString().padStart(4)} bossTTK=${tt}`;
   };
-  out.push('-- by profile/difficulty'); for (const [k, rs] of group(r => r.job.prof + ' ' + r.job.diff + (r.job.inf ? ' inf' + r.job.inf : ''))) out.push(line(k, rs));
+  out.push('-- by profile/difficulty'); for (const [k, rs] of group(r => r.job.prof + ' ' + r.job.diff + (r.job.inf ? ' inf' + r.job.inf : '') + (r.stage ? ' N' + r.stage : ''))) out.push(line(k, rs));
   out.push('-- by profile/difficulty/map'); for (const [k, rs] of group(r => r.job.prof + ' ' + r.job.diff + ' ' + r.job.map)) out.push(line(k, rs));
   out.push('-- by profile/difficulty/survivor'); for (const [k, rs] of group(r => r.job.prof + ' ' + r.job.diff + ' ' + r.job.surv)) out.push(line(k, rs));
   // weapon damage share
@@ -42,10 +43,10 @@ function report(rows, title) {
 }
 if (o.report) { const rows = fs.readFileSync(o.report, 'utf8').trim().split('\n').filter(Boolean).map(l => JSON.parse(l)); console.log(report(rows, o.report)); process.exit(0); }
 const maps = list(o.maps, ['suburbs']), survs = list(o.survs, ['rook', 'juno']), diffs = list(o.diffs, ['normal']), profs = list(o.profs, ['fresh']);
-const infs = list(o.infs, ['0']).map(Number);
+const infs = list(o.infs, ['0']).map(Number), stages = list(o.stages, ['0']).map(Number);   // --stages 1,2,3: Nights (Maple Hollow, Normal, while the profile has no clear)
 const n = +o.n || 4, W = +o.workers || 2, seed0 = +o.seed || 1000;
 const jobs = [];
-for (const prof of profs) for (const diff of diffs) for (const inf of infs) for (const map of maps) for (const surv of survs) for (let i = 0; i < n; i++) jobs.push({ prof, diff, inf, map, surv, seed: seed0 + i * 7 + jobs.length * 131, skill: o.skill ? +o.skill : 1, holdOut: +o.holdOut || 0 });
+for (const prof of profs) for (const diff of diffs) for (const inf of infs) for (const stage of stages) for (const map of maps) for (const surv of survs) for (let i = 0; i < n; i++) jobs.push({ prof, diff, inf, stage, map, surv, seed: seed0 + i * 7 + jobs.length * 131, skill: o.skill ? +o.skill : 1, holdOut: +o.holdOut || 0 });
 const outFile = o.out || 'results/run_' + Date.now() + '.jsonl';
 fs.mkdirSync(path.dirname(outFile), { recursive: true });
 const outS = fs.createWriteStream(outFile, { flags: 'a' });

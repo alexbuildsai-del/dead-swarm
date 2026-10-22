@@ -46,6 +46,7 @@
       this.bag = [];
       this.ev = null;                         // active event {id, t, d:{...}}
       this.bossDone = { m5: false, m10: false, final: false };
+      this.applyStage();
       this.bossAt = {};                       // boss id -> spawn time (enrage, event blocking)
       this.lastBossT = -999;
       this.spawned = 0; this.spawnedMin = []; this.typeMin = [];
@@ -111,6 +112,10 @@
       const z = this.spawn(type, Object.assign({ elite: this.affixCount() }, opts || {}));
       return z;
     }
+    /* a Night never reaches the bosses after its own: mark them done so nothing spawns or blocks events for them */
+    applyStage() { const s = this.w.stage; if (s === 1) { this.bossDone.m10 = true; this.bossDone.final = true; } else if (s === 2) this.bossDone.final = true; }
+    /* the Night's boss is down and the chopper is coming: no more set pieces or elites, end any event running */
+    onStageClear() { if (this.ev) this.endEvent(this.w); }
     bossActive() { return this.w.bosses.length > 0; }
     finalActive() { const b = this.w.bosses; for (let i = 0; i < b.length; i++) if (b[i].def.kind === 'final') return true; return false; }
     holdMul() { return this.w.holdOut ? 1 + 0.15 * (this.w.holdT / 60) : 1; }
@@ -120,8 +125,8 @@
       const m = world.minuteF, T = DS.TUNE;
       if (!this.started) { // a run that starts late (dev ?t=, debug skip) doesn't replay bosses it has long passed
         this.started = true;
-        if (world.t > 320) this.bossDone.m5 = true;
-        if (world.t > 620) this.bossDone.m10 = true;
+        if (world.t > 320 && world.stageSlot !== 'm5') this.bossDone.m5 = true;     // …but never the boss that ends a Night
+        if (world.t > 620 && world.stageSlot !== 'm10') this.bossDone.m10 = true;
       }
       this.alive = this.countAlive();
       // active event always advances (Siren must be able to end even while spawns are paused)
@@ -156,14 +161,14 @@
 
       // ---- elites (first at 1:00, then 70 s ± 10 / elite rate)
       this.eliteT -= dt;
-      if (this.eliteT <= 0) {
+      if (this.eliteT <= 0 && !world.stageClear) {
         const rateE = world.diff.elite * world.inf.elite;
         this.eliteT = (T.eliteInterval + world.rng.range(-10, 10)) / rateE;
         if (alive < cap + 20) this.spawnElite();
       }
 
       // ---- set-piece events (90 s ± 10, never within 25 s of a boss spawn)
-      if (!this.ev) {
+      if (!this.ev && !world.stageClear) {
         this.eventT -= dt;
         if (this.eventT <= 0) {
           const t = world.t, near = (bt) => t > bt - 25 && t < bt + 25;
@@ -274,6 +279,7 @@
       if (o.bossAt) this.bossAt = Object.assign({}, o.bossAt);
       this.lastBossT = o.lastBossT !== undefined ? o.lastBossT : -999;
       this.spawned = o.spawned || 0;
+      this.applyStage();
       this.ev = null; this.started = true;
       if (o.ev && DS.EVENTS[o.ev.id]) {
         const E = DS.EVENTS[o.ev.id];

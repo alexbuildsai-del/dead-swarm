@@ -14,6 +14,10 @@
     if (!M.survivorUnlocked(s, L.survivor)) L.survivor = 'rook';
     if (!M.diffUnlocked(s, L.map, L.difficulty)) L.difficulty = 'normal';
     L.infection = Math.min(L.infection | 0, M.infectionMax(s));
+    // Nights: offered on Maple Hollow / Normal until the full run is cleared. No stage → the next Night not yet survived;
+    // an explicit 0 (Retry of a full run) stays the full run. Elsewhere the stage is dropped, so coming back picks a Night again.
+    if (M.nightsOffered(s, L.map, L.difficulty)) { if (L.stage !== 0) { const nd = M.nightsDone(s); L.stage = DS.clamp((L.stage | 0) || nd + 1, 1, nd + 1); } }
+    else delete L.stage;
     return L;
   }
   U.validSel = validSel;
@@ -38,9 +42,19 @@
         return '<button class="m-diff d-' + d + (on ? ' sel' : '') + (un ? '' : ' locked') + '" data-act="diff" data-id="' + d + '" aria-pressed="' + on + '"' + (un ? '' : ' aria-disabled="true" data-why="' + esc(M.diffUnlockHow(L.map, d)) + '"') + '>' +
           '<b>' + esc(D.name) + '</b><small>' + (un ? 'Scrap ' + U.multTxt(D.scrap) : 'locked') + '</small></button>';
       }).join('');
+      let nights = '';
+      if (L.stage) {
+        const nd = M.nightsDone(s);
+        nights = '<h2 class="m-h2">Which night <small>start with Night 1</small></h2><div class="m-diffs m-nights">' + M.NIGHTS.map(N => {
+          const n = N.stage, un = n <= nd + 1, on = L.stage === n, done = n <= nd;
+          const sub = !un ? 'locked' : n === 3 ? '15 min + final boss' : (n === 1 ? '5 min' : '10 min') + (done ? ' · survived' : ' · +' + N.serum + ' Serum');
+          return '<button class="m-diff m-night' + (on ? ' sel' : '') + (un ? '' : ' locked') + (done ? ' done' : '') + '" data-act="night" data-id="' + n + '" aria-pressed="' + on + '"' +
+            (un ? '' : ' aria-disabled="true" data-why="Survive Night ' + (n - 1) + ' first."') + '><b>Night ' + n + (done ? ' ✓' : '') + '</b><small>' + sub + '</small></button>';
+        }).join('') + '</div>';
+      }
       const im = M.infectionMax(s);
       let inf = '';
-      if (im > 0) {
+      if (im > 0 && !(L.stage === 1 || L.stage === 2)) {
         const lv = L.infection | 0;
         const mods = []; for (let i = 1; i <= lv; i++) mods.push(DS.INFECTION_TEXT[i]);
         inf = '<div class="m-inf"><span class="m-lab">Infection</span><div class="m-step"><button data-act="inf" data-d="-1" aria-label="Lower infection"' + (lv <= 0 ? ' disabled' : '') + '>−</button>' +
@@ -58,12 +72,12 @@
       const mult = U.scrapMult(L.difficulty, L.infection);
       return U.page('Play', '<div class="m-play-grid">' +
         '<section class="m-col"><h2 class="m-h2">Where</h2><div class="m-maps">' + maps + '</div>' +
-          '<h2 class="m-h2">How bad</h2><div class="m-diffs">' + diffs + '</div>' + inf + '</section>' +
+          '<h2 class="m-h2">How bad</h2><div class="m-diffs">' + diffs + '</div>' + nights + inf + '</section>' +
         '<section class="m-col"><h2 class="m-h2">Who</h2><div class="m-svs">' + survs + '</div>' +
           '<div class="m-svinfo"><b>' + esc(si.fullName) + '</b> <span class="m-role">' + esc(si.role) + '</span>' +
             '<p>' + esc(si.passive.name) + ': ' + esc(si.passive.desc) + '</p>' +
             '<p class="m-sw">' + U.icon(sw, 32) + 'Starts with ' + esc(M.name('weapon', sw)) + (mi.talent ? ' · Talent ' + mi.talent + ': ' + esc(si.talents[mi.talent].name) : '') + '</p></div>' +
-          '<button class="m-sticker m-start" data-act="start"><span class="m-play-big">START</span><span class="m-play-sub">Scrap ' + U.multTxt(mult) + ' · ' + esc(M.name('mapShort', L.map)) + '</span></button>' +
+          '<button class="m-sticker m-start" data-act="start"><span class="m-play-big">START</span><span class="m-play-sub">' + (L.stage === 1 || L.stage === 2 ? 'Night ' + L.stage + ' · ' + esc(M.NIGHTS[L.stage - 1].ends) : 'Scrap ' + U.multTxt(mult) + ' · ' + esc(M.name('mapShort', L.map))) + '</span></button>' +
         '</section></div>', { cls: 'p-play', right: U.wallet() });
     },
     act: {
@@ -71,6 +85,7 @@
       diff(b) { const a = cur().args; a.sel.difficulty = b.dataset.id; M.remember(a.sel); U.snd('ui_click'); U.refresh(); },
       inf(b) { const a = cur().args; a.sel.infection = Math.max(0, Math.min(M.infectionMax(M.data), (a.sel.infection | 0) + (+b.dataset.d))); M.remember(a.sel); U.snd('ui_click'); U.refresh(); },
       surv(b) { const a = cur().args; a.sel.survivor = b.dataset.id; M.remember(a.sel); U.snd('ui_click'); U.refresh(); },
+      night(b) { const a = cur().args; a.sel.stage = +b.dataset.id; a.sel = validSel(a.sel); M.remember(a.sel); U.snd('ui_click'); U.refresh(); },
       start() { const a = cur().args; U.snd('radio_tune'); U.startRun(validSel(a.sel)); }
     }
   };

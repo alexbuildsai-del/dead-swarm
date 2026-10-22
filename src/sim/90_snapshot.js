@@ -27,7 +27,7 @@ DS.Snapshot = {
     const r2 = v => Math.round(v * 100) / 100;
     const snap = {
       v: this.V, savedAt: Date.now(), cfg: this.cfgOut(w.cfg), rng: w.rng.s, t: w.t, tick: w.tick,
-      scrap: w.scrap, serum: w.serum, holdBonus: w.holdBonus, cleared: w.cleared, holdOut: w.holdOut, holdT: w.holdT,
+      scrap: w.scrap, serum: w.serum, holdBonus: w.holdBonus, cleared: w.cleared, stageClear: w.stageClear, holdOut: w.holdOut, holdT: w.holdT,
       evac: w.evac ? Object.assign({}, w.evac) : null, lastHitT: w.lastHitT,
       stats: JSON.parse(JSON.stringify(w.stats)),
       player: {
@@ -86,7 +86,7 @@ DS.Snapshot = {
     p.facingX = SP.facingX || 1; p.facingY = SP.facingY || 0; p.invulnT = 2;
     // world state
     w.t = snap.t; w.tick = snap.tick; w.minute = (w.t / 60) | 0;
-    w.scrap = snap.scrap; w.serum = snap.serum; w.holdBonus = snap.holdBonus; w.cleared = snap.cleared; w.holdOut = snap.holdOut; w.holdT = snap.holdT;
+    w.scrap = snap.scrap; w.serum = snap.serum; w.holdBonus = snap.holdBonus; w.cleared = snap.cleared; w.stageClear = !!snap.stageClear; w.holdOut = snap.holdOut; w.holdT = snap.holdT;
     w.evac = snap.evac; w.lastHitT = snap.lastHitT || w.t;
     Object.assign(w.stats, snap.stats);
     if (w.map.deserialize) w.map.deserialize(snap.map);

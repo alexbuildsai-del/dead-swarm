@@ -412,6 +412,11 @@ DS.RADIO = DS.RADIO || {};
     'Miniboss down! Lou is doing a little dance on the water tower. Carefully.',
     'Down goes the bruiser! Grab the goodies, {name}.'
   ]);
+  add('nightClear', [
+    'That\'s the night, {name}! Night {night} in {map} is in the books. Chopper\'s on its way.',
+    'It\'s down, and that\'s your shift done. Get to the chopper, sugar. Tomorrow night is longer.',
+    'Night {night} survived! Lou is lighting a candle on the water tower. Get to the pad.'
+  ]);
   add('cleared', [
     'THAT\'S IT! The big one\'s dead! {name}, you absolute legend. K-DED is in your debt.',
     'It\'s down! It\'s actually down! {map} is going to sleep a little easier tonight.',
@@ -461,6 +466,11 @@ DS.RADIO = DS.RADIO || {};
     'Chopper\'s down! Three seconds in the ring and you\'re gone. Or hold out for bonus scrap.',
     'Ride\'s here, sugar. Board it, or wave it off and keep the party going.',
     'Pad\'s hot, rotors spinning. Your choice: wheels up or Hold Out. Lou won\'t judge.'
+  ]);
+  add('evacLandedNight', [
+    'Bird\'s on the pad. Three seconds in the ring and tonight\'s over, {name}.',
+    'Chopper\'s down! Get in the ring. The night is yours.',
+    'Ride\'s here, sugar. Climb aboard. Tomorrow night runs longer.'
   ]);
   add('evacLandedHold', [
     'Chopper\'s back on the ground. Thirty seconds. Your call, sugar.',
@@ -639,6 +649,11 @@ DS.RADIO = DS.RADIO || {};
     'Chopper\'s climbing, {name}\'s waving, and I\'m crying into the microphone. Beautiful.',
     'That\'s a clean getaway from {map}. K-DED signing off this chapter. Come back soon.'
   ]);
+  add('evacNight', [
+    '{name} is in the air! Night {night} done. The next one runs longer, so rest up.',
+    'Wheels up! {name} survived the night with {kills} notches on the belt. Come back tomorrow.',
+    'Clean getaway from {map}. That\'s Night {night}. Lou\'s marking it on the calendar.'
+  ]);
   add('evacHold', [
     '{name} cashed out after {k} minutes of Hold Out! Every scrap banked. You maniac.',
     'Overtime survivor {name} is airborne! The pilot wants your autograph.',
@@ -679,6 +694,7 @@ DS.radioFormat = function (line, world, extra) {
       case 'name': return p && p.surv ? (p.surv.name || 'friend') : 'friend';
       case 'map': return md ? (md.short || md.name || 'town') : 'town';
       case 'kills': return world ? String(world.stats.kills) : '';
+      case 'night': return world ? String(world.stage || 3) : '';
       case 'level': return p ? String(p.level) : '';
       case 'time': return world ? DS.fmtTime(world.t) : '';
       case 'k': return world ? String(Math.max(1, (world.holdT / 60) | 0)) : '';
@@ -691,7 +707,7 @@ DS.radioFormat = function (line, world, extra) {
 DS.radioEndLine = function (summary, world, rng) {
   const R = DS.RADIO; let key = 'death';
   if (summary) {
-    if (summary.result === 'evac') key = summary.holdBonusRaw > 0 ? 'evacHold' : 'evac';
+    if (summary.result === 'evac') key = summary.holdBonusRaw > 0 ? 'evacHold' : summary.stage === 1 || summary.stage === 2 ? 'evacNight' : 'evac';
     else if (summary.result === 'quit') key = 'quit';
     else key = (world && world.holdOut) ? 'deathHold' : 'death';
   }

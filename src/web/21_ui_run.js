@@ -98,6 +98,7 @@
     runReveal(summary, res);
   };
   function resultStamp(s) {
+    if (s.result === 'evac' && s.stageClear && (s.stage === 1 || s.stage === 2)) return { t: 'NIGHT ' + s.stage + ' SURVIVED', c: 'yellow', sub: s.stage === 1 ? 'Night 2 runs to the 10:00 boss.' : 'Night 3 is the full fifteen minutes.' };
     if (s.result === 'evac') return { t: 'EVACUATED', c: 'yellow', sub: s.holdBonus > 0 ? 'Out on the last flight, pockets full.' : 'On the chopper. Lou owes the pilot a drink.' };
     if (s.result === 'quit') return { t: 'QUIT', c: 'ink', sub: s.cleared ? 'Walked off after the clear. Rewards kept.' : 'Called it early. You keep what you carried.' };
     if (s.cleared) return { t: 'CLEARED', c: 'yellow', t2: 'DIED IN HOLD OUT', sub: 'The map is yours. The night was not.' };
@@ -110,11 +111,12 @@
   function endHTML(s, r) {
     const st = resultStamp(s), si = U.survInfo(s.survivor), mi = M.masteryInfo(M.data, s.survivor);
     const title = M.data.title;
-    const where = M.name('map', s.map) + ', ' + M.name('difficulty', s.difficulty || 'normal') + (s.infection ? ', Infection ' + s.infection : '');
+    const where = M.name('map', s.map) + ', ' + (s.stage ? 'Night ' + s.stage : M.name('difficulty', s.difficulty || 'normal')) + (s.infection ? ', Infection ' + s.infection : '');
     // scrap ledger
     const sl = [['Picked up in the run', Math.floor(r.scrapRun || 0)]];
     if (r.evacBonus > 0) sl.push(['Evac bonus (+40%)', Math.floor(r.evacBonus)]);
     if (r.holdBonus > 0) sl.push([s.result === 'evac' ? 'Hold Out bonus' : 'Hold Out bonus (half, died)', Math.floor(r.holdBonus)]);
+    if (r.nightScrap > 0) sl.push(['First time surviving Night ' + r.nightClear, r.nightScrap]);
     if (r.achScrap > 0) sl.push(['Achievement rewards', r.achScrap]);
     const scrapTotal = (r.scrap || 0) + (r.achScrap || 0);
     const ledger = '<ul class="m-ledg">' + sl.map(x => '<li><span>' + esc(x[0]) + '</span><span class="m-lead"></span><b>+' + fmt(x[1]) + '</b></li>').join('') +
@@ -136,6 +138,7 @@
       (r.daily.isBest ? U.stamp(r.daily.prev === null ? 'First score today' : 'New best', 'red', 'sm') : '<span class="m-small">Best today: ' + fmt(r.daily.best) + '</span>') + '</div>';
     // clippings
     const clips = [];
+    if (r.nightClear) { const N = M.NIGHTS[r.nightClear - 1]; clips.push({ k: 'clear', ico: 'trophy', h: 'Night survived', t: M.name('mapShort', s.map) + ' — Night ' + r.nightClear, sub: '+' + N.scrap + ' Scrap · +' + N.serum + ' Serum' }); }
     for (const fc of r.firstClears) clips.push({ k: 'clear', ico: 'trophy', h: 'First clear', t: M.name('mapShort', fc.map) + ' on ' + M.name('difficulty', fc.difficulty), sub: '+5 Serum' });
     for (const a of r.newAchievements) clips.push({ k: 'ach', ico: 'trophy', h: 'Achievement', t: a.name, sub: a.desc + ' — ' + a.rewards.map(M.rewardText).join(' + ') });
     for (const u of r.unlocks) clips.push({ k: 'unlock ' + u.kind, ico: unlockIcon(u), h: u.text, t: u.name, portrait: u.kind === 'survivor' ? u.id : null });
@@ -162,7 +165,9 @@
         '</div>' + clipHTML +
         '<details class="m-ebuild"><summary>Final build</summary>' + buildHTML(s.weapons || [], s.gear || [], s.perks || []) + '</details>' +
       '</div>' +
-      '<footer class="m-foot m-efoot"><button class="m-btn" data-act="eMenu">Menu</button><button class="m-sticker sm" data-act="eRetry"><span class="m-play-big">' + (s.daily ? 'RETRY DAILY' : 'RETRY') + '</span><span class="m-play-sub">same setup</span></button></footer>' +
+      '<footer class="m-foot m-efoot"><button class="m-btn" data-act="eMenu">Menu</button>' +
+        (r.nightClear && s.stage < 3 ? '<button class="m-btn" data-act="eRetry">Replay Night ' + s.stage + '</button><button class="m-sticker sm" data-act="eNext"><span class="m-play-big">NIGHT ' + (s.stage + 1) + '</span><span class="m-play-sub">' + esc(M.NIGHTS[s.stage].ends) + '</span></button>'
+          : '<button class="m-sticker sm" data-act="eRetry"><span class="m-play-big">' + (s.daily ? 'RETRY DAILY' : 'RETRY') + '</span><span class="m-play-sub">same setup</span></button>') + '</footer>' +
     '</div>';
   }
   function fmtK(n) { return n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e4 ? Math.round(n / 1e3) + 'k' : fmt(n); }
@@ -207,8 +212,13 @@
     eRetry() {
       const d = U.endData; if (!d) { U.showMain(); return; }
       const s = d.summary; U.endData = null;
-      const sel = s.daily ? { daily: M.dailyFor(s.daily.key) } : U.validSel({ map: s.map, survivor: s.survivor, difficulty: s.difficulty, infection: s.infection | 0 });
+      const sel = s.daily ? { daily: M.dailyFor(s.daily.key) } : U.validSel({ map: s.map, survivor: s.survivor, difficulty: s.difficulty, infection: s.infection | 0, stage: s.stage | 0 });
       U.snd('radio_tune'); U.startRun(sel);
+    },
+    eNext() {
+      const d = U.endData; if (!d) { U.showMain(); return; }
+      const s = d.summary; U.endData = null; skipReveal();
+      U.snd('radio_tune'); U.startRun(U.validSel({ map: s.map, survivor: s.survivor, difficulty: s.difficulty, infection: 0, stage: (s.stage | 0) + 1 }));
     }
   });
 })();

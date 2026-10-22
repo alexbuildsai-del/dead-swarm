@@ -34,7 +34,9 @@ function pickSel(i) {
   const survs = SURVS.filter(s => M.survivorUnlocked(save, s));
   const newer = survs.filter(s => (runsBy[s] || 0) < 2);
   const survivor = newer.length && rng.next() < 0.7 ? newer[newer.length - 1] : rng.pick(survs);
-  return { map, survivor, difficulty, infection: 0 };
+  // the Nights on-ramp: a player plays the next Night they have not survived yet, as the play screen offers it
+  const stage = M.nightsOffered(save, map, difficulty) ? M.nightsDone(save) + 1 : 0;
+  return { map, survivor, difficulty, infection: 0, stage };
 }
 function shop(i) {
   const bought = [];
@@ -64,12 +66,13 @@ for (let i = 1; i <= RUNS; i++) {
   const res = M.applyRunResult(save, w.over);
   const gainedScrap = save.scrap - before.scrap, gainedSerum = save.serum - before.serum;
   runsBy[sel.survivor] = (runsBy[sel.survivor] || 0) + 1;
-  (recent[sel.map] = recent[sel.map] || []).push(w.over.cleared ? 99 : w.t / 60);
+  const won = sel.stage === 1 || sel.stage === 2 ? !!w.over.stageClear : !!w.over.cleared;
+  (recent[sel.map] = recent[sel.map] || []).push(won ? 99 : w.t / 60);
   const bought = shop(i);
   const spentS = M.spent(save, 'scrap'), spentR = M.spent(save, 'serum');
   if (fullAt < 0 && spentS >= totalScrapSH) fullAt = i;
   if (fullSerumAt < 0 && spentR >= totalSerumSH) fullSerumAt = i;
-  const row = { seed: SEED, run: i, sel, result: w.over.result, cleared: !!w.over.cleared, t: Math.round(w.t), level: w.over.level, runScrap: Math.round(w.over.scrap),
+  const row = { seed: SEED, run: i, sel, result: w.over.result, cleared: !!w.over.cleared, night: sel.stage || 0, nightWon: !!w.over.stageClear, t: Math.round(w.t), level: w.over.level, runScrap: Math.round(w.over.scrap),
     gainedScrap, gainedSerum, achievements: (res.newAchievements || []).length, unlocks: (res.unlocks || []).map(u => u.key || u.id || u).slice(0, 12),
     spentScrap: spentS, spentSerum: spentR, shPct: Math.round(100 * spentS / totalScrapSH), bought, err };
   lines.push(row);
@@ -79,9 +82,11 @@ for (let i = 1; i <= RUNS; i++) {
     process.stderr.write('SAVE@' + i + ' ' + JSON.stringify({ ranks: save.safehouse, spentScrap: M.spent(save, 'scrap'), spentSerum: M.spent(save, 'serum'), mastery: ml, unlocked: [un.weapons.size, un.gear.size, un.perks.size], scrap: save.scrap, serum: save.serum, lifetimeScrap: save.lifetime.scrap }) + '\n');
   }
   if (OUT) fs.appendFileSync(OUT, JSON.stringify(row) + '\n');
-  process.stderr.write(`run ${i} ${sel.survivor}/${sel.map}/${sel.difficulty} ${row.result}${row.cleared ? ' CLEAR' : ''} t=${row.t} +${gainedScrap}s +${gainedSerum}r SH ${row.shPct}%\n`);
+  process.stderr.write(`run ${i} ${sel.survivor}/${sel.map}/${sel.difficulty}${sel.stage ? ' N' + sel.stage : ''} ${row.result}${row.cleared ? ' CLEAR' : row.nightWon ? ' NIGHT ' + sel.stage + ' SURVIVED' : ''} t=${row.t} +${gainedScrap}s +${gainedSerum}r SH ${row.shPct}%\n`);
 }
 const clr = a => a.length ? Math.round(100 * a.filter(r => r.cleared).length / a.length) + '%' : '–';
-console.log(JSON.stringify({ seed: SEED, fullScrapSafehouseAtRun: fullAt, fullSerumAt, shPctEnd: lines[lines.length - 1].shPct,
+const firstAt = f => { const r = lines.find(f); return r ? r.run : -1; };
+console.log(JSON.stringify({ seed: SEED, night1At: firstAt(r => r.night === 1 && r.nightWon), night2At: firstAt(r => r.night === 2 && r.nightWon), firstClearAt: firstAt(r => r.cleared),
+  minutesToFirstClear: Math.round(lines.slice(0, Math.max(0, firstAt(r => r.cleared))).reduce((s, r) => s + r.t, 0) / 60), fullScrapSafehouseAtRun: fullAt, fullSerumAt, shPctEnd: lines[lines.length - 1].shPct,
   clear1_5: clr(lines.slice(0, 5)), clear6_15: clr(lines.slice(5, 15)), clear16_30: clr(lines.slice(15, 30)),
   normalClear: clr(lines.filter(r => r.sel.difficulty === 'normal')), avgScrap: Math.round(lines.reduce((s, r) => s + r.gainedScrap, 0) / lines.length) }));

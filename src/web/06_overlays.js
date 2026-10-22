@@ -31,7 +31,7 @@ DS.Overlay = {
   setRunVisible(on) { this.pauseBtn.style.display = on ? 'flex' : 'none'; if (!on) { this.holdBtn.style.display = 'none'; this.holdBtn._v = false; this.close(); } },
   tick(world) {
     const e = world.evac;
-    const show = !!(e && e.state === 'landed' && !world.holdOut && !world.over);
+    const show = !!(e && e.state === 'landed' && !world.holdOut && !world.over && (!world.canHoldOut || world.canHoldOut()));
     if (this.holdBtn._v !== show) { this.holdBtn._v = show; this.holdBtn.style.display = show ? 'block' : 'none'; this.holdRect = null; }
   },
   /* screen box of the HOLD OUT button while it is shown (the HUD keeps the evac prompt clear of it) */

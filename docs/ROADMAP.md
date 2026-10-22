@@ -47,7 +47,8 @@ Tick a box and add a one-line note when an item lands.
   - Cost: 3–6 zombies burst out.
   - There's a global 20 s cooldown so it can't be farmed.
   - The layout is the same every run, so players learn which streets pay.
-- [ ] **Nights on-ramp** (see Decisions).
+- [x] **Nights on-ramp** (done; test `tools/agents/review/nights.js`; campaigns: Night 1 survived on run 1, logged as
+  nights-1 in `results/TUNING_LOG.md`).
 - [ ] **Evening and powered generators** (idea A):
   - Dusk falls during the run: daylight at the start, evening by about 8:00.
   - Street lamps light up in blocks you've powered.
