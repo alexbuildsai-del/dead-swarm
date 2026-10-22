@@ -17,8 +17,9 @@ Tick a box and add a one-line note when an item lands.
 - **Fonts are bundled** in the file, so the game plays fully offline (done).
 
 ## Now (playtest 1 feedback)
-- [ ] **Look demo**: an artifact mock-up of a Maple Hollow intersection with the minimap, street lamps, the new
+- [x] **Look demo**: an artifact mock-up of a Maple Hollow intersection with the minimap, street lamps, the new
   pickup designs and a Day / Dusk / Evening slider. It's for choosing the look; no game code changes.
+  Done: https://claude.ai/artifact/9DnXW9hPK597UwFu8Um9oR (source in `docs/mockups/maple-hollow-look.html`).
 - [ ] **Pickup readability**:
   - Health becomes a white first-aid tin with a big red cross and its own pulsing ring.
   - The red XP vial changes colour, so red means health only.
