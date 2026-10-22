@@ -620,7 +620,7 @@
      ====================================================================== */
   M.SETTINGS_DEFAULT = {
     master: 0.8, music: 0.6, sfx: 0.8, radio: 0.7, shake: true, dmgNumbers: true, reducedFx: false, fps: false, swapSides: false,
-    quality: 'auto', ink: 'red', paper: 'newsprint', subtitles: true
+    quality: 'auto', ink: 'red', paper: 'newsprint', subtitles: true, bigSubs: false
   };
   M.LIFETIME_KEYS = ['runs', 'time', 'kills', 'scrap', 'serum', 'xp', 'crits', 'frozen', 'burned', 'healed', 'explosionKills', 'elites', 'minibosses',
     'bosses', 'crates', 'crate5', 'ults', 'dashes', 'callins', 'evacs', 'deaths', 'quits', 'clears', 'holdOuts', 'revived', 'allGenerators', 'ambulances',
@@ -676,7 +676,7 @@
     if (isObj(raw.settings)) {
       const st = raw.settings, D = M.SETTINGS_DEFAULT;
       for (const k of ['master', 'music', 'sfx', 'radio']) if (typeof st[k] === 'number' && isFinite(st[k])) s.settings[k] = Math.min(1, Math.max(0, st[k]));
-      for (const k of ['shake', 'dmgNumbers', 'reducedFx', 'fps', 'swapSides', 'subtitles']) if (typeof st[k] === 'boolean') s.settings[k] = st[k];
+      for (const k of ['shake', 'dmgNumbers', 'reducedFx', 'fps', 'swapSides', 'subtitles', 'bigSubs']) if (typeof st[k] === 'boolean') s.settings[k] = st[k];
       if (['auto', 'high', 'low'].indexOf(st.quality) >= 0) s.settings.quality = st.quality;
       if (M.INK_ORDER.indexOf(st.ink) >= 0) s.settings.ink = st.ink;
       if (M.PAPER_ORDER.indexOf(st.paper) >= 0) s.settings.paper = st.paper;

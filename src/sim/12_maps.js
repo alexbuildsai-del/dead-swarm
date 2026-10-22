@@ -604,7 +604,7 @@ DS.MapQuarantine = class MapQuarantine extends DS.MapBase {
     // gas stages
     const st = this.gasStages[g.stage];
     if (st) {
-      if (g.warned < g.stage && m >= st[0] - 0.25) { g.warned = g.stage; world.say(DS.RADIO.gasWarn ? world.rng.pick(DS.RADIO.gasWarn) : 'Gas is moving in. Get inside the line.', 2); world.sound('gas_warn'); }
+      if (g.warned < g.stage && m >= st[0] - 0.25) { g.warned = g.stage; world.say(DS.RADIO.gasWarn ? world.rng.pick(DS.RADIO.gasWarn) : 'Gas is moving in. Get inside the line.', 2); world.sound('gas_warn'); world.fx('banner', 0, 0, 2.6, 0, 0, 'GAS CLOSING IN 15s'); }
       if (m >= st[0] && !this.gasHeld(world)) { g.from = g.r; g.to = st[1]; g.t0 = world.t; g.t1 = world.t + 30; g.stage++; }
     }
     if (this.gasHeld(world)) { if (world.t < g.t1) { g.t0 += dt; g.t1 += dt; } } // freeze the shrink mid-way

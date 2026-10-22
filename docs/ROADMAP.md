@@ -32,7 +32,7 @@ Tick a box and add a one-line note when an item lands.
   - Four tabs: The Night, On the Ground (every pickup with its real sprite), Getting Stronger, Between Runs (Scrap vs
     Serum).
   - It explains mechanics, not strategy, in the style of Riot's quick-info screens.
-- [ ] **Lou fixes**:
+- [x] **Lou fixes** (done; regression test `tools/agents/review/lou_subs.py`):
   - Fix the bug where turning subtitles off silences Lou for the rest of a run.
   - The gas warning gets a banner (today it's only a radio line).
   - Hold chatter during big fights.

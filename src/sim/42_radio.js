@@ -251,8 +251,11 @@
     chatterSoon(key, wait, extra) { if (!this.chatter(key, 0, extra)) this.cq = { key, extra: extra || null, until: this.w.t + (wait || 10) }; }
     canInfo() { const ch = this.ch, el = this.w.t - ch.start; return el >= ch.dur * 0.7 || (ch.pri === 0 && el > 0.8); }
     canChatter() {
-      const w = this.w, ch = this.ch;
-      return w.t - this.lastChatter >= 25 && w.t >= ch.start + ch.dur + 2 && !this.q.length;
+      const w = this.w, ch = this.ch, p = w.player;
+      // a busy screen gets less chatter: none at low health, half as often in a big horde
+      if (p && !p.dead && p.hp < p.stats.maxHp * 0.4) return false;
+      const gap = w.zombies.length > 260 ? 50 : 25;
+      return w.t - this.lastChatter >= gap && w.t >= ch.start + ch.dur + 2 && !this.q.length;
     }
     pump() {
       const w = this.w;

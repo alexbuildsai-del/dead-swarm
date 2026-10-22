@@ -209,7 +209,7 @@
     const papers = M.PAPER_ORDER.map(id => { const un = M.paperUnlocked(s, id), A = M.ACH[M.UNLOCKED_BY.paper[id]], P = DS.PAPERS[id];
       return '<button class="m-swatch paper' + (st.paper === id ? ' sel' : '') + (un ? '' : ' locked') + '" data-act="set:paper" data-v="' + id + '" aria-label="' + esc(M.name('paper', id)) + (un ? '' : ', locked') + '"' + (un ? '' : ' aria-disabled="true" data-why="Earn ' + esc(A ? A.name : '') + ' to unlock."') + '><span class="m-sheetsw" style="--c:' + P.bg + ';--c2:' + P.ink + '"></span><small>' + esc(P.name) + '</small></button>'; }).join('');
     return '<div class="m-set">' +
-      '<section><h2 class="m-h2">Sound</h2>' + slider('master', 'Master') + slider('music', 'Music') + slider('sfx', 'Effects') + slider('radio', 'Radio (Lou)') + sw('subtitles', 'Subtitles', 'Show what Lou says') + '</section>' +
+      '<section><h2 class="m-h2">Sound</h2>' + slider('master', 'Master') + slider('music', 'Music') + slider('sfx', 'Effects') + slider('radio', 'Radio (Lou)') + sw('subtitles', 'Subtitles', 'Show what Lou says') + sw('bigSubs', 'Large subtitles', 'Bigger text in Lou\'s box') + '</section>' +
       '<section><h2 class="m-h2">Screen</h2>' + sw('shake', 'Screen shake') + sw('dmgNumbers', 'Damage numbers') + sw('reducedFx', 'Reduced effects', 'Fewer particles and flashes, calmer menus') + sw('fps', 'FPS counter') +
         '<div class="m-setrow"><span>Quality</span>' + seg('quality', [['auto', 'Auto'], ['high', 'High'], ['low', 'Low']]) + '</div></section>' +
       '<section><h2 class="m-h2">Controls</h2>' + sw('swapSides', 'Joystick on the right', 'Dash and ultimate buttons move left') + '</section>' +

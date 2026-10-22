@@ -266,33 +266,37 @@ DS.HUD = {
       const m = q.shift();
       if (!this.msg || m.pri >= this.msg.pri || this.msgT > this.msg.dur * 0.6) { this.msg = m; this.msgT = 0; if (DS.Audio && DS.Audio.dj) DS.Audio.dj(m.text, m.dur, m.pri); }
     }
-    if (!this.msg || !DS.Settings.subtitles) return;
-    if (DS.Overlay && DS.Overlay.isOpen()) { this.msgT += dt * 0.25; return; }
-    this.msgT += dt; if (this.msgT > this.msg.dur) { this.msg = null; return; }
+    if (!this.msg) return;
+    // the line's clock runs whether or not it is shown: with subtitles off a stale line must still expire,
+    // or every later line of lower priority (voice included) is dropped for the rest of the run
+    const ov = DS.Overlay && DS.Overlay.isOpen();
+    this.msgT += ov ? dt * 0.25 : dt; if (this.msgT > this.msg.dur) { this.msg = null; return; }
+    if (ov || !DS.Settings.subtitles) return;
     const m = this.msg, k = this.msgT;
     const a = Math.min(1, k * 5, (m.dur - k) * 3);
     const small = H < 480;
-    let w = Math.min(W * (small ? 0.5 : 0.6), 500), x = W / 2 - w / 2, y = H - S.b - (DS.isTouch ? 14 : 40);
+    const big = !!DS.Settings.bigSubs;
+    let w = Math.min(W * (small ? (big ? 0.62 : 0.5) : (big ? 0.7 : 0.6)), big ? 640 : 500), x = W / 2 - w / 2, y = H - S.b - (DS.isTouch ? 14 : 40);
     const z = DS.isTouch ? this.btnZone() : null, L = S.l + 10, Rt = W - S.r - 10;
     if (z && z.top < y) { // keep the box beside the DASH/ULT corner: slide it away, narrow it only if it must
       if (z.side === 'right' && x + w > z.left - 8) { x = Math.max(L, z.left - 8 - w); w = Math.min(w, z.left - 8 - x); }
       else if (z.side === 'left' && x < z.right + 8) { x = z.right + 8; w = Math.min(w, Rt - x); }
     }
-    const fs = small ? 11 : 13, lh = fs + 2;
+    const fs = big ? (small ? 14 : 17) : (small ? 11 : 13), lh = fs + (big ? 4 : 2);
     ctx.globalAlpha = a;
     ctx.font = fs + 'px ' + DS.FONT.type;
-    const lines = this.lines(ctx, m.text, w - 20, w < 300 ? 5 : 3);
-    const h = 20 + lines.length * lh;
+    const lines = this.lines(ctx, m.text, w - 20, w < 300 ? 5 : big ? 4 : 3);
+    const h = (big ? 24 : 20) + lines.length * lh;
     ctx.fillStyle = 'rgba(27,31,26,0.88)'; ctx.fillRect(x, y - h, w, h);
     ctx.fillStyle = m.pri >= 2 ? DS.COL.red : DS.COL.yellow; ctx.fillRect(x, y - h, 4, h);
-    ctx.textAlign = 'left'; ctx.font = '10px ' + DS.FONT.head; ctx.fillStyle = m.pri >= 2 ? DS.COL.red : DS.COL.yellow;
+    ctx.textAlign = 'left'; ctx.font = (big ? 12 : 10) + 'px ' + DS.FONT.head; ctx.fillStyle = m.pri >= 2 ? DS.COL.red : DS.COL.yellow;
     const blink = ((t * 2) | 0) % 2 ? '◉' : '○';
     ctx.fillText(blink + ' K-DED 88.1 — LOU', x + 12, y - h + 10);
     ctx.font = fs + 'px ' + DS.FONT.type; ctx.fillStyle = DS.COL.paper;
     // typewriter reveal
     const shown = Math.floor(k * 55);
     let used = 0;
-    for (let i = 0; i < lines.length; i++) { const ln = lines[i]; const vis = ln.slice(0, Math.max(0, shown - used)); used += ln.length; ctx.fillText(vis, x + 12, y - h + 24 + i * lh); }
+    for (let i = 0; i < lines.length; i++) { const ln = lines[i]; const vis = ln.slice(0, Math.max(0, shown - used)); used += ln.length; ctx.fillText(vis, x + 12, y - h + (big ? 28 : 24) + i * lh); }
     ctx.globalAlpha = 1;
   },
   lines(ctx, text, maxW, maxLines) {

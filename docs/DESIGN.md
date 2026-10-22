@@ -597,6 +597,9 @@ penalty.
 Lou also speaks on: run start (per map), each event, each miniboss/boss arrival, low HP (once per 60 s, < 25%), level 10/
 20/30, evolution, gas shrink, generator/checkpoint/nest done, evac landing, Hold Out minutes, death and evac.
 Subtitles appear in a radio box ("◉ K-DED 88.1 — LOU:") with a synthesized radio babble voice.
+The babble is deliberate (no real words), so nothing the player needs is radio-only: every pri ≥ 2 line also shows as a
+banner, card, boss bar or objective text (the gas warning has a "GAS CLOSING IN 15s" banner). Chatter (pri 0) is held
+below 40% HP and spaced 50 s instead of 25 s while more than 260 zombies are alive. Settings: Subtitles, Large subtitles.
 
 ---
 
