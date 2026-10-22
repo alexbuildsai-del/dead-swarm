@@ -5,6 +5,11 @@ import os, json
 from playwright.sync_api import sync_playwright
 URL = 'file://' + os.path.abspath(os.path.join(os.environ.get('DS_ROOT', os.getcwd()), os.environ.get('DS_OUT', 'build'), 'index.html'))
 ok = 0; bad = 0
+def play(pg):
+    pg.click('[data-act=go][data-to=play]')
+    if pg.locator('[data-act=gplay]').count(): pg.click('[data-act=gplay]')
+    pg.click('[data-act=start]')
+
 def check(c, msg):
     global ok, bad
     if c: ok += 1
@@ -54,7 +59,7 @@ with sync_playwright() as p:
     pg.click('[data-act=go][data-to=settings]'); pg.wait_for_timeout(200)
     check(pg.locator('.m-warn').count() == 1, 'settings warns that saving is blocked')
     pg.keyboard.press('Escape'); pg.wait_for_timeout(200)
-    pg.click('[data-act=go][data-to=play]'); pg.click('[data-act=start]'); pg.wait_for_timeout(1500)
+    play(pg); pg.wait_for_timeout(1500)
     pg.evaluate("() => DS.Game.quit()"); pg.wait_for_timeout(1400)
     check(pg.locator('.m-end').count() == 1, 'run + end screen work without storage')
     check(not errs, 'no errors without storage ' + str(errs[:3])); ctx.close()
@@ -102,7 +107,7 @@ with sync_playwright() as p:
 
     print('· resume an interrupted run')
     ctx, pg, errs = page()
-    pg.click('[data-act=go][data-to=play]'); pg.click('[data-act=start]'); pg.wait_for_timeout(2500)
+    play(pg); pg.wait_for_timeout(2500)
     pg.evaluate("() => { DS.Game.world.t = 200; DS.Game.saveSnapshot(); }")
     pg.reload(); pg.wait_for_timeout(1500)
     check(pg.locator('[data-act=resume]').count() == 1, 'Resume button on the menu')
@@ -132,7 +137,7 @@ with sync_playwright() as p:
     pg.click('[data-act=go][data-to=safehouse]'); pg.click('[data-act=respec]') if pg.locator('[data-act=respec]:not([disabled])').count() else None
     pg.keyboard.press('Escape'); pg.wait_for_timeout(150); pg.keyboard.press('Escape'); pg.wait_for_timeout(150)
     check(pg.locator('.m-main').count() == 1, 'Esc closes modal then page')
-    pg.click('[data-act=go][data-to=play]'); pg.click('[data-act=start]'); pg.wait_for_timeout(500)
+    play(pg); pg.wait_for_timeout(500)
     check(pg.evaluate("() => DS.Game.state") == 'run', 'run starts in 2 taps')
     pg.evaluate("() => DS.Game.quit()"); pg.wait_for_timeout(1300)
     # daily

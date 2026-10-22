@@ -49,7 +49,7 @@ with sync_playwright() as p:
     def back():
         pg.keyboard.press('Escape'); pg.wait_for_timeout(150)
     shot('main')
-    for to in ['play', 'survivors', 'safehouse', 'armory', 'notes', 'achievements', 'daily', 'settings']:
+    for to in ['guide', 'play', 'survivors', 'safehouse', 'armory', 'notes', 'achievements', 'daily', 'settings']:
         click('[data-act=go][data-to=%s]' % to)
         shot(to)
         if to == 'notes':

@@ -90,6 +90,68 @@
   };
 
   /* ======================================================================
+     FIELD GUIDE — how the night works, no strategy. Opens by itself before the first run (PLAY → guide → play),
+     and any time from the eye button beside PLAY or from the pause screen.
+     ====================================================================== */
+  const GUIDE_TABS = [['night', 'The Night'], ['ground', 'On the Ground'], ['grow', 'Getting Stronger'], ['between', 'Between Runs']];
+  const gcard = (ico, title, text) => '<div class="m-gc">' + (ico ? '<span class="m-gc-ico">' + ico + '</span>' : '') + '<div class="m-gc-t"><b>' + esc(title) + '</b><p>' + text + '</p></div></div>';
+  U.guideBody = function (t) {
+    const touch = !!DS.isTouch, k = (a, b) => touch ? a : b;
+    if (t === 'ground') {
+      const vials = ['xp0', 'xp1', 'xp2', 'xp3'].map(id => U.icon(id === 'xp1' ? 'xp' : id, 40)).join('');
+      return '<p class="m-lede">Walk over a pickup to grab it. XP and most pickups fly to you once you\'re close.</p><div class="m-ggrid">' +
+        gcard('<span class="m-gc-row">' + vials + '</span>', 'XP vials', 'Fill the blue bar at the top to level up. Green is worth 1, blue 5, gold 25, magenta 100.') +
+        gcard(U.icon('food', 48), 'First-aid tin', 'Heals 30 HP. The white tin with the red cross and the pulsing red ring.') +
+        gcard(U.icon('scrap', 48), 'Scrap', 'Money for the Safehouse. You keep it even if you die.') +
+        gcard(U.icon('crate', 48), 'Supply crate', 'Walk into it for 1 to 5 upgrades to what you carry. Elites, bosses, objectives and Lou\'s call-ins drop them.') +
+        gcard(U.icon('magnet', 48), 'Magnet', 'Pulls every XP vial on the map to you.') +
+        gcard(U.icon('grenade', 48), 'Grenade', 'Wipes out every zombie on screen. Bosses only take a dent.') +
+        gcard(U.icon('cryo_pk', 48), 'Cryo canister', 'Freezes everything on screen for 4 seconds.') +
+        gcard(U.icon('bless', 48), 'Blessing card', 'Heals 8. Only Father Silas leaves these behind. Anything with a red cross heals you.') +
+        '</div><div class="m-gnote">' + U.icon('serum', 40) + '<p><b>Serum never drops on the floor.</b> Minibosses, final bosses and objectives add it straight to your total. Watch for the green <b>+1 SERUM</b> under the timer.</p></div>';
+    }
+    if (t === 'grow') {
+      return '<p class="m-lede">You start each night with one weapon. Everything else you find on the way.</p><div class="m-ggrid">' +
+        gcard(U.icon('xp', 48), 'Level-ups', 'Each level, pick 1 of 3 cards: a new weapon, a new piece of gear, or a level for something you carry. You have 5 weapon slots and 5 gear slots, and items go up to level 5.') +
+        gcard(U.icon('crate', 48), 'Supply crates', 'A crate spins up 1 to 5 rewards at once, applied straight away.') +
+        gcard('<span class="m-gc-q">EVO</span>', 'Evolutions', 'From 6:15, a crate can turn a level-5 weapon into its evolution if you also carry its partner gear. Level-up cards show which gear pairs with which weapon.') +
+        gcard('<span class="m-gc-q">1/3</span>', 'Perks', 'After each miniboss (5:00 and 10:00) pick 1 of 3 perks. They last for the rest of the night.') +
+        gcard('<span class="m-gc-q">☎</span>', 'Lou\'s call-ins', 'Every few minutes Lou puts a listener on air with a short challenge. Win it for a supply crate, Scrap and Air Support charge. Lose it and nothing bad happens.') +
+        '</div>';
+    }
+    if (t === 'between') {
+      return '<p class="m-lede">Dying is part of it. What you bring home makes the next night easier.</p><div class="m-ggrid">' +
+        gcard(U.icon('scrap', 48), 'Scrap → Safehouse', 'Every run pays Scrap, even a short one. Spend it in the Safehouse on permanent upgrades: more health, speed, damage, rerolls. Refunds are free.') +
+        gcard(U.icon('serum', 48), 'Serum → Serum lab', 'Rare. Minibosses give 1, final bosses 2, a finished objective 1, and your first clear of a map +5. Spend it on Second Wind, Head Start and Extra Choice.') +
+        gcard('<span class="m-gc-q">⚑</span>', 'New maps and survivors', 'Clear Maple Hollow to open St. Agnes Hospital and recruit Mira. Clearing a map on Normal opens Hard for it. Some survivors cost Scrap; others unlock from what you do.') +
+        gcard('<span class="m-gc-q">?</span>', 'Field Notes', 'Everything you meet gets written up: zombies, bosses, weapons, evolutions and perks.') +
+        '</div>';
+    }
+    return '<p class="m-lede">Survive fifteen minutes. At 15:00 the final boss arrives; kill it and the evac chopper lands for you.</p><div class="m-ggrid">' +
+      gcard('<span class="m-gc-q">' + k('✋', 'WASD') + '</span>', 'Move', k('Touch and drag anywhere on the screen.', 'WASD or the arrow keys.') + ' Your weapons aim and fire on their own.') +
+      gcard('<span class="m-gc-q">' + k('DASH', 'SPACE') + '</span>', 'Dash', 'A quick burst that slips through a crowd. It recharges in a few seconds.') +
+      gcard('<span class="m-gc-q">' + k('ULT', 'E') + '</span>', 'Special', 'Each survivor has one (Rook calls in Air Support). It charges as you fight; the button fills up when it\'s ready.') +
+      gcard('<span class="m-gc-q">➤</span>', 'The objective', 'Each map has a job, like powering three generators on Maple Hollow. The yellow arrow points to the next one. Finishing it pays crates, Scrap and Serum.') +
+      gcard('<span class="m-gc-q">!</span>', 'Red means danger', 'Anything red on the ground is an attack about to land. Bosses arrive at 5:00, 10:00 and 15:00.') +
+      gcard('<span class="m-gc-q">⇧</span>', 'Evac', 'Board the chopper to bank everything plus 40% Scrap. Or Hold Out for more Scrap while it gets harder.') +
+      '</div>' + (touch ? '' : '<p class="m-small">Pause any time with Esc or P.</p>');
+  };
+  U.S.guide = {
+    render(a) {
+      const t = a.tab || 'night', i = Math.max(0, GUIDE_TABS.findIndex(x => x[0] === t));
+      const foot = (i < GUIDE_TABS.length - 1 ? '<button class="m-btn" data-act="gnext">Next: ' + esc(GUIDE_TABS[i + 1][1]) + ' ›</button>' : '') +
+        (a.next === 'play' ? '<button class="m-sticker sm" data-act="gplay"><span class="m-play-big">LET\'S GO</span></button>' : '');
+      return U.page('Field Guide', tabs(GUIDE_TABS, t) + '<div class="m-tabbody m-guide">' + U.guideBody(t) + '</div>', { cls: 'p-guide', foot });
+    },
+    mount() { const s = M.data; if (s && !s.flags.guideSeen) { s.flags.guideSeen = true; M.save(); } },
+    act: {
+      tab(b) { cur().args.tab = b.dataset.id; U.snd('ui_click'); U.render(false); },
+      gnext() { const a = cur().args, i = Math.max(0, GUIDE_TABS.findIndex(x => x[0] === (a.tab || 'night'))); a.tab = GUIDE_TABS[Math.min(GUIDE_TABS.length - 1, i + 1)][0]; U.snd('ui_click'); U.render(false); },
+      gplay() { U.snd('ui_click'); U.replace('play'); }
+    }
+  };
+
+  /* ======================================================================
      ACHIEVEMENTS
      ====================================================================== */
   U.S.achievements = {

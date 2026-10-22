@@ -388,6 +388,7 @@
           '<div class="m-cta">' +
             (snap ? '<button class="m-resume" data-act="resume"><b>Resume run</b><span>' + esc(M.name('survivor', snap.survivor)) + ', ' + esc(M.name('mapShort', snap.map)) + ', ' + DS.fmtTime(snap.t) + '</span></button>' : '') +
             '<button class="m-sticker m-play" data-act="go" data-to="play"><span class="m-play-big">PLAY</span><span class="m-play-sub">' + esc(M.name('survivor', surv)) + ', ' + esc(M.name('mapShort', map)) + ', ' + esc(M.name('difficulty', diff)) + '</span></button>' +
+            '<button class="m-eye" data-act="go" data-to="guide" aria-label="Field Guide: how to play"><svg viewBox="0 0 32 20" aria-hidden="true"><path d="M2 10 C8 1, 24 1, 30 10 C24 19, 8 19, 2 10 Z"/><circle cx="16" cy="10" r="4.6"/></svg><span>How to play</span></button>' +
           '</div>' +
           '<div class="m-radio" data-act="radio" role="button" tabindex="0" aria-label="Lou Vesper on K-DED 88.1. Tap for the next line.">' +
             '<div class="m-dial" aria-hidden="true"><div class="m-strip">' + ticks + '</div><div class="m-needle"></div></div>' +
@@ -411,7 +412,9 @@
     leave() { U.radioStop(); },
     act: {
       resume() { U.resumeRun(); },
-      radio() { U.radioNext(true); }
+      radio() { U.radioNext(true); },
+      // the very first PLAY opens the Field Guide, which ends in LET'S GO → the play screen
+      go(b) { const s = M.data, to = b.dataset.to; if (to === 'play' && !s.flags.guideSeen && !s.lifetime.runs) U.go('guide', { next: 'play' }); else U.globalAct.go(b); }
     }
   };
   /* ---------------- the radio dial ---------------- */

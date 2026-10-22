@@ -38,7 +38,11 @@
     const w = U.pauseWorld; if (!w) return;
     const sub = U.pauseSub;
     let html;
-    if (sub === 'settings') {
+    if (sub === 'guide') {
+      const t = U.pauseGuideTab || 'ground';
+      const T = '<div class="m-tabs" role="tablist">' + [['night', 'The Night'], ['ground', 'On the Ground'], ['grow', 'Getting Stronger'], ['between', 'Between Runs']].map(([id, label]) => '<button role="tab" class="m-tab' + (id === t ? ' sel' : '') + '" aria-selected="' + (id === t) + '" data-act="pgTab" data-id="' + id + '">' + esc(label) + '</button>').join('') + '</div>';
+      html = '<div class="m-pause m-sheet p-pset p-guide"><header class="m-head"><button class="m-back" data-act="psBack">‹ Back</button>' + U.ransom('Field Guide', 'm-title long') + '</header><div class="m-body">' + T + '<div class="m-tabbody m-guide">' + U.guideBody(t) + '</div></div></div>';
+    } else if (sub === 'settings') {
       html = '<div class="m-pause m-sheet p-pset"><header class="m-head"><button class="m-back" data-act="psBack">‹ Back</button>' + U.ransom('Settings', 'm-title') + '</header><div class="m-body">' + U.settingsHTML(true) + '</div></div>';
     } else {
       const p = w.player, r = U.pauseReason;
@@ -56,6 +60,7 @@
         '</div></div>' +
         '<footer class="m-foot m-pfoot"><button class="m-sticker sm m-resume-btn" data-act="pResume"><span class="m-play-big">RESUME</span></button>' +
           '<button class="m-btn" data-act="pSettings">Settings</button>' +
+          '<button class="m-btn" data-act="pGuide">How to play</button>' +
           '<button class="m-btn red' + (U.quitArmed ? ' armed' : '') + '" data-act="pQuit">' + (U.quitArmed ? 'Tap again to quit' : 'Quit to menu') + '</button>' +
           '<button class="m-ver in" data-act="ver" aria-label="Version ' + esc(DS.VERSION) + '">v' + esc(DS.VERSION) + '</button></footer>' +
         (U.quitArmed ? '<p class="m-qnote">You keep the Scrap and Serum earned so far. No evac bonus.</p>' : '') +
@@ -68,6 +73,8 @@
     pResume() { U.snd('ui_click'); DS.Game.unpause(); },
     pSettings() { U.pauseSub = 'settings'; U.snd('ui_click'); U.renderPause(); },
     psBack() { U.pauseSub = null; U.snd('ui_back'); U.renderPause(); },
+    pGuide() { U.pauseSub = 'guide'; U.pauseGuideTab = 'ground'; U.snd('ui_click'); U.renderPause(); },
+    pgTab(b) { U.pauseGuideTab = b.dataset.id; U.snd('ui_click'); U.renderPause(); },
     pQuit() {
       if (!U.quitArmed) { U.quitArmed = true; U.snd('ui_error'); U.renderPause(); clearTimeout(U._qt); U._qt = setTimeout(() => { if (U.mode === 'pause' && U.quitArmed) { U.quitArmed = false; U.renderPause(); } }, 4000); return; }
       U.quitArmed = false; U.snd('ui_back');

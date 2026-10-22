@@ -26,7 +26,8 @@ Tick a box and add a one-line note when an item lands.
   - The red XP vial changes colour, so red means health only.
   - Every pickup gets a distinct silhouette.
   - Scrap and Serum get icon chips in the HUD, and the Serum chip flashes when you gain one.
-- [ ] **Field Guide**:
+- [x] **Field Guide** (done: eye button beside PLAY, first PLAY on a new save goes through it and ends in
+  LET'S GO, also under How to play on the pause screen; `save.flags.guideSeen`):
   - An eye icon next to PLAY; it opens automatically on the first visit.
   - Four tabs: The Night, On the Ground (every pickup with its real sprite), Getting Stronger, Between Runs (Scrap vs
     Serum).
