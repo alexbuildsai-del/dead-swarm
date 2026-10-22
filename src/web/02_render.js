@@ -378,6 +378,9 @@ DS.Renderer = class Renderer {
     g.globalCompositeOperation = 'source-over';
     g.setTransform(1, 0, 0, 1, 0, 0);
     const depth = dusk ? dusk : world.darkness !== undefined ? world.darkness : 0.93;
+    // dusk is a see-through tint, so start from a clear layer: painted over last frame's it would build up to full black
+    // within a second (night maps keep their near-opaque build-up, which is the look they were tuned with)
+    if (dusk) g.clearRect(0, 0, W, H);
     g.fillStyle = dusk ? 'rgba(14,20,40,' + depth.toFixed(3) + ')' : 'rgba(6,9,8,' + depth + ')'; g.fillRect(0, 0, W, H);
     g.globalCompositeOperation = 'destination-out';
     const light = (x, y, r, a) => {
