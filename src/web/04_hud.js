@@ -115,6 +115,13 @@ DS.HUD = {
       if (ob.progress !== undefined) { const pw = 110, px2 = narrow ? ox : ox - pw; ctx.fillStyle = DS.COL.ink; ctx.fillRect(px2, py2, pw, 5); ctx.fillStyle = DS.COL.yellow; ctx.fillRect(px2, py2, pw * ob.progress, 5); mw = Math.max(mw, pw); }
       avoid.push(narrow ? { l: ox, r: ox + mw, b: py2 + 6 } : { l: ox - mw, r: ox, b: py2 + 6 });
     }
+    // ---- minimap: landscape → left column under the slots; portrait (objective on the left) → top-right under pause
+    if (DS.Settings.minimap !== false && !(DS.Overlay && DS.Overlay.isOpen())) {
+      const m = narrow ? 88 : small ? 84 : 120;
+      const mx = narrow ? Rt - m : L, my = narrow ? Math.max(T + 56, bars.length ? by : 0) : sy + 2 * (sz + gap) + 12;
+      this.minimap(ctx, world, mx, my, m, t); this.mmRect = { l: mx - 3, t: my - 3, r: mx + m + 3, b: my + m + 3 };
+      if (narrow) avoid.push({ l: mx - 3, r: mx + m + 3, b: my + m + 3 });
+    } else this.mmRect = null;
     // ---- call-in card
     if (world.radio && world.radio.active) this.callin(ctx, world, W, H, S, t, dt, avoid); else this.callY = null;
     // ---- off-screen markers
@@ -226,8 +233,76 @@ DS.HUD = {
     }
     if (line && n < maxLines) ctx.fillText(line, x, y + n * lh);
   },
+  /* corner minimap, ~1,500 units each way: streets or walls, the objective, evac, call-in spots, crates, bosses */
+  minimap(ctx, world, x, y, m, t) {
+    const map = world.map, p = world.player, C = DS.COL, range = 1500, k = m / (2 * range), cx = x + m / 2, cy = y + m / 2;
+    const at = (wx, wy, clamp) => {
+      let sx = cx + (wx - p.x) * k, sy = cy + (wy - p.y) * k;
+      if (clamp) { sx = DS.clamp(sx, x + 6, x + m - 6); sy = DS.clamp(sy, y + 6, y + m - 6); }
+      return [sx, sy];
+    };
+    ctx.save();
+    ctx.fillStyle = C.ink; ctx.fillRect(x - 3, y - 3, m + 6, m + 6);
+    ctx.beginPath(); ctx.rect(x, y, m, m); ctx.clip();
+    ctx.fillStyle = map.dark ? '#22271f' : '#4a4e48'; ctx.fillRect(x, y, m, m);
+    if (map.bounded) {
+      const b = this.mmBase(world);
+      if (b) { const [bx, by] = at(b.x0, b.y0); ctx.imageSmoothingEnabled = false; ctx.drawImage(b.cv, bx, by, b.cv.width * b.step * k, b.cv.height * b.step * k); ctx.imageSmoothingEnabled = true; }
+    } else if (DS.SUB) {
+      const B = DS.SUB.B, inset = DS.SUB.SW / 2, s = (B - DS.SUB.SW) * k;
+      for (let by = Math.floor((p.y - range) / B); by <= Math.floor((p.y + range) / B); by++) for (let bx = Math.floor((p.x - range) / B); bx <= Math.floor((p.x + range) / B); bx++) {
+        const [sx, sy] = at(bx * B + inset, by * B + inset);
+        ctx.fillStyle = ((bx * 3 + by * 5) & 1) ? '#76866a' : '#7f8f6a'; ctx.fillRect(sx, sy, s, s);
+      }
+    }
+    if (map.gas) { const [gx, gy] = at(map.gas.x, map.gas.y); ctx.beginPath(); ctx.arc(gx, gy, map.gas.r * k, 0, DS.TAU); ctx.strokeStyle = C.red; ctx.lineWidth = 2; ctx.stroke(); }
+    const dot = (wx, wy, r, fill, ring, label, clamp) => {
+      const [sx, sy] = at(wx, wy, clamp);
+      ctx.beginPath(); ctx.arc(sx, sy, r, 0, DS.TAU); ctx.fillStyle = fill; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = ring || C.ink; ctx.stroke();
+      if (label) { ctx.font = Math.round(r * 1.5) + 'px ' + DS.FONT.head; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = fill === C.ink ? C.yellow : C.ink; ctx.fillText(label, sx, sy + 0.5); }
+      return [sx, sy];
+    };
+    const pulse = (wx, wy, col, clamp) => { const [sx, sy] = at(wx, wy, clamp), q = (t * 1.2) % 1; ctx.beginPath(); ctx.arc(sx, sy, 6 + q * 7, 0, DS.TAU); ctx.globalAlpha = 1 - q; ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.stroke(); ctx.globalAlpha = 1; };
+    for (const k2 of world.pickups) if (k2.kind === 'crate') { const [sx, sy] = at(k2.x, k2.y); ctx.fillStyle = '#c49c62'; ctx.fillRect(sx - 3, sy - 2.5, 6, 5); ctx.strokeStyle = C.ink; ctx.lineWidth = 1; ctx.strokeRect(sx - 3, sy - 2.5, 6, 5); }
+    if (map.gens) {   // Maple Hollow: every generator, coloured by state
+      for (const g of map.gens) {
+        const live = !g.done && !g.locked;
+        if (live) pulse(g.x, g.y, C.yellow, true);
+        dot(g.x, g.y, 5.5, g.done ? C.yellow : live ? C.ink : '#7c807a', live ? C.yellow : C.ink, String(g.idx + 1), true);
+      }
+    } else if (map.nests) {
+      for (const N of map.nests) if (!N.done) { if (!N.sealed) pulse(N.x, N.y, C.yellow, true); dot(N.x, N.y, 4.5, N.sealed ? '#7c807a' : C.red, C.ink, '', true); }
+    }
+    const ob = map.objective;
+    if (ob && ob.markers && !map.gens) for (const mk of ob.markers) { pulse(mk.x, mk.y, C.yellow, true); dot(mk.x, mk.y, 4.5, C.yellow, C.ink, '', true); }
+    if (world.radio && world.radio.markers) for (const mk of world.radio.markers) dot(mk.x, mk.y, 4, C.white, C.ink, '', true);
+    if (world.evac && world.evac.state !== 'away') { pulse(world.evac.x, world.evac.y, C.uv, true); dot(world.evac.x, world.evac.y, 5, C.uv, C.ink, '', true); }
+    for (const b of world.bosses) if (b.alive) dot(b.x, b.y, 4.5, C.red, C.ink, '', true);
+    // the survivor, pointing where they face
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate(Math.atan2(p.facingY, p.facingX));
+    ctx.beginPath(); ctx.moveTo(7, 0); ctx.lineTo(-5, -4.5); ctx.lineTo(-2.5, 0); ctx.lineTo(-5, 4.5); ctx.closePath();
+    ctx.fillStyle = C.white; ctx.fill(); ctx.strokeStyle = C.ink; ctx.lineWidth = 1.4; ctx.stroke(); ctx.restore();
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(216,213,196,0.55)'; ctx.lineWidth = 1; ctx.strokeRect(x + 1.5, y + 1.5, m - 3, m - 3);
+  },
+  /* bounded maps: walls and obstacles sampled once per run into a small canvas (one pixel per 40 units) */
+  mmBase(world) {
+    if (this._mmW === world) return this._mmB;
+    this._mmW = world; this._mmB = null;
+    const map = world.map, b = map.bounds; if (!b || !map.blockedPoint) return null;
+    const step = 40, w = Math.ceil((b.x1 - b.x0) / step), h = Math.ceil((b.y1 - b.y0) / step);
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+    const g = cv.getContext('2d'), img = g.createImageData(w, h), d = img.data;
+    const floor = map.dark ? [44, 50, 40] : [96, 100, 90], wall = map.dark ? [130, 134, 120] : [200, 197, 176];
+    for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+      const c = map.blockedPoint(b.x0 + (i + 0.5) * step, b.y0 + (j + 0.5) * step) ? wall : floor, o = (j * w + i) * 4;
+      d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255;
+    }
+    g.putImageData(img, 0, 0);
+    return (this._mmB = { cv, step, x0: b.x0, y0: b.y0 });
+  },
   markers(ctx, world, R, t) {
-    const W = R.W, H = R.H, pad = 28, tmp = { x: 0, y: 0 };
+    const W = R.W, H = R.H, pad = 34, tmp = { x: 0, y: 0 };
     const list = [];
     const ob = world.map.objective; if (ob && ob.markers) for (const m of ob.markers) list.push(m);
     if (world.evac && world.evac.state !== 'away') list.push({ x: world.evac.x, y: world.evac.y, kind: 'evac', label: 'EVAC' });
@@ -237,15 +312,19 @@ DS.HUD = {
       R.toScreen(m.x, m.y, tmp);
       const inside = tmp.x > 0 && tmp.x < W && tmp.y > 0 && tmp.y < H;
       if (inside) { if (m.kind !== 'boss' && m.label) { ctx.font = '11px ' + DS.FONT.head; ctx.textAlign = 'center'; ctx.lineWidth = 3; ctx.strokeStyle = DS.COL.ink; ctx.fillStyle = DS.COL.yellow; ctx.strokeText(m.label, tmp.x, tmp.y - 50); ctx.fillText(m.label, tmp.x, tmp.y - 50); } continue; }
-      const cx = W / 2, cy = H / 2, dx = tmp.x - cx, dy = tmp.y - cy;
-      const k = Math.min((W / 2 - pad) / Math.abs(dx || 1e-6), (H / 2 - pad) / Math.abs(dy || 1e-6));
-      const x = cx + dx * k, y = cy + dy * k, a = Math.atan2(dy, dx);
+      // clamp to the screen edge, but keep below the timer band and off the minimap
+      const top = this.safe.t + (W < 600 ? 104 : 84), cx = W / 2, cy = H / 2, dx = tmp.x - cx, dy = tmp.y - cy;
+      const k = Math.min((W / 2 - pad) / Math.abs(dx || 1e-6), (dy < 0 ? cy - top : H / 2 - pad) / Math.abs(dy || 1e-6));
+      let x = cx + dx * k, y = cy + dy * k; const a = Math.atan2(dy, dx), mm = this.mmRect;
+      if (mm && x > mm.l - 18 && x < mm.r + 18 && y > mm.t - 18 && y < mm.b + 18) { if (mm.l < W / 2) x = mm.r + 22; else x = mm.l - 22; }
       const col = m.kind === 'boss' ? DS.COL.red : m.kind === 'evac' ? DS.COL.uv : DS.COL.yellow;
-      ctx.save(); ctx.translate(x, y); ctx.rotate(a);
-      ctx.fillStyle = DS.COL.ink; ctx.beginPath(); ctx.moveTo(14, 0); ctx.lineTo(-8, -10); ctx.lineTo(-8, 10); ctx.closePath(); ctx.fill();
-      ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(11, 0); ctx.lineTo(-5, -7); ctx.lineTo(-5, 7); ctx.closePath(); ctx.fill();
+      // a big notched arrow with a thick ink outline and a slow pulse, so it reads at the screen edge mid-fight
+      const s = 1 + 0.08 * Math.sin(t * 5);
+      ctx.save(); ctx.translate(x, y); ctx.rotate(a); ctx.scale(s, s);
+      ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(-12, -14); ctx.lineTo(-6, 0); ctx.lineTo(-12, 14); ctx.closePath();
+      ctx.lineJoin = 'round'; ctx.lineWidth = 6; ctx.strokeStyle = DS.COL.ink; ctx.stroke(); ctx.fillStyle = col; ctx.fill();
       ctx.restore();
-      if (m.label) { ctx.font = '10px ' + DS.FONT.head; ctx.textAlign = 'center'; ctx.fillStyle = col; ctx.lineWidth = 3; ctx.strokeStyle = DS.COL.ink; const lx = x - Math.cos(a) * 22, ly = y - Math.sin(a) * 22; ctx.strokeText(m.label, lx, ly); ctx.fillText(m.label, lx, ly); }
+      if (m.label) { ctx.font = '12px ' + DS.FONT.head; ctx.textAlign = 'center'; ctx.fillStyle = col; ctx.lineWidth = 3.5; ctx.strokeStyle = DS.COL.ink; const lx = x - Math.cos(a) * 30, ly = y - Math.sin(a) * 26; ctx.strokeText(m.label, lx, ly); ctx.fillText(m.label, lx, ly); }
     }
   },
   evacPrompt(ctx, world, W, H, t) {

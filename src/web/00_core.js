@@ -8,7 +8,7 @@ DS.isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 DS.Settings = Object.assign({
   master: 0.8, music: 0.6, sfx: 0.8, radio: 0.7,
   shake: true, dmgNumbers: true, reducedFx: false, fps: false, swapSides: false,
-  quality: 'auto', ink: 'red', paper: 'newsprint', subtitles: true, bigSubs: false
+  quality: 'auto', ink: 'red', paper: 'newsprint', subtitles: true, bigSubs: false, minimap: true
 }, DS.Settings || {});
 
 DS.INKS = {

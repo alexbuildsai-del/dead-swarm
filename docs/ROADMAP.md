@@ -37,7 +37,7 @@ Tick a box and add a one-line note when an item lands.
   - The gas warning gets a banner (today it's only a radio line).
   - Hold chatter during big fights.
   - Add a subtitle size setting.
-- [ ] **Minimap**: a corner minimap showing streets or walls, the active objective, crates, evac and bosses, plus a
+- [x] **Minimap** (done; Settings → Screen → Minimap): a corner minimap showing streets or walls, the active objective, crates, evac and bosses, plus a
   bigger off-screen arrow. It has an on/off setting.
 - [ ] **Lootable houses (Maple Hollow)**:
   - About 1 in 3 houses has its porch light on.

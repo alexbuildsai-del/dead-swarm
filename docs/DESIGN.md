@@ -782,6 +782,11 @@ menu. Export = `DS1:` + base64(JSON) + checksum; Import validates and migrates. 
 ---
 
 ## 14. UI & feel
+- **Minimap** (Settings → Screen → Minimap): about 1,500 units each way. Landscape: left column under the slots;
+  portrait: top-right under pause. Maple Hollow draws the street grid and all three generators (done / active / locked);
+  bounded maps sample their walls once per run; Quarantine adds the nests and the gas ring. Crates, evac, call-in spots
+  and bosses are marked, far ones clamped to the edge. Off-screen arrows are larger, pulse, and stay below the timer and
+  off the minimap.
 - HUD: HP bar (inked tape), XP bar (top), timer (stamp), kills, Scrap, Serum, weapon/gear icons with level pips, ult
   meter ring on the Ultimate button, dash cooldown on the Dash button, call-in card, radio subtitle box.
 - Level-up: 0.32 s slow-mo (×0.22 speed), radial ink burst, cards slam in like photocopies being slapped down.
