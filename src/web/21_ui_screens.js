@@ -72,10 +72,20 @@
       const sw = mi.alt ? si.alt : si.start;
       const mult = U.scrapMult(L.difficulty, L.infection);
       // co-op: the teammate (a bot for now; a friend online comes next). Same survivor twice is fine.
-      let buddy = '';
+      let buddy = '', startTxt = '', startOff = false;
+      const online = coop && U.netLobby && U.netLobby.mode === 'friend', NL = U.netLobby, net = DS.Net;
       if (coop) {
         if (!a.buddy || !M.survivorUnlocked(s, a.buddy)) a.buddy = L.survivor === 'juno' ? 'rook' : M.survivorUnlocked(s, 'juno') ? 'juno' : 'rook';
-        buddy = '<h2 class="m-h2">With <small>a bot buddy for now; a friend online is next</small></h2><div class="m-svs">' + DS.SURVIVOR_ORDER.filter(id => M.survivorUnlocked(s, id)).map(id => {
+        buddy = '<h2 class="m-h2">With</h2><div class="m-diffs m-with">' +
+          '<button class="m-diff' + (online ? '' : ' sel') + '" data-act="withMode" data-id="bot" aria-pressed="' + !online + '"><b>Bot buddy</b><small>offline, any time</small></button>' +
+          '<button class="m-diff' + (online ? ' sel' : '') + '" data-act="withMode" data-id="friend" aria-pressed="' + online + '"><b>A friend online</b><small>host or join with a code</small></button></div>';
+        if (online) {
+          buddy += '<div class="m-net">' + U.netPanel(a, L) + '</div>';
+          U.netSync(L);
+          const host = net.role === 'host' && net.open;
+          startOff = !(host && NL.friend);
+          startTxt = !net.open ? 'connect first' : host ? (NL.friend ? 'online · with ' + esc(M.name('survivor', NL.friend.s)) : 'waiting for your friend') : 'the host starts the run';
+        } else buddy += '<div class="m-svs">' + DS.SURVIVOR_ORDER.filter(id => M.survivorUnlocked(s, id)).map(id => {
           const on = a.buddy === id;
           return '<button class="m-sv' + (on ? ' sel' : '') + '" data-act="buddy" data-id="' + id + '" aria-pressed="' + on + '" aria-label="Bot buddy: ' + esc(M.name('survivor', id)) + '">' + U.img(U.portraitURL(id, 0, 128), 'm-por', '') + '<span class="m-sv-m">BOT</span></button>';
         }).join('') + '</div>';
@@ -87,7 +97,7 @@
           '<div class="m-svinfo"><b>' + esc(si.fullName) + '</b> <span class="m-role">' + esc(si.role) + '</span>' +
             '<p>' + esc(si.passive.name) + ': ' + esc(si.passive.desc) + '</p>' +
             '<p class="m-sw">' + U.icon(sw, 32) + 'Starts with ' + esc(M.name('weapon', sw)) + (mi.talent ? ' · Talent ' + mi.talent + ': ' + esc(si.talents[mi.talent].name) : '') + '</p></div>' + buddy +
-          '<button class="m-sticker m-start" data-act="start"><span class="m-play-big">START</span><span class="m-play-sub">' + (coop ? 'with ' + esc(M.name('survivor', a.buddy)) + ' · ' : '') + (L.stage === 1 || L.stage === 2 ? 'Night ' + L.stage + ' · ' + esc(M.NIGHTS[L.stage - 1].ends) : 'Scrap ' + U.multTxt(mult) + ' · ' + esc(M.name('mapShort', L.map))) + '</span></button>' +
+          '<button class="m-sticker m-start' + (startOff ? ' off' : '') + '" data-act="start"' + (startOff ? ' aria-disabled="true" data-why="' + esc(startTxt[0].toUpperCase() + startTxt.slice(1)) + '."' : '') + '><span class="m-play-big">START</span><span class="m-play-sub">' + (online ? startTxt + ' · ' : coop ? 'with ' + esc(M.name('survivor', a.buddy)) + ' · ' : '') + (L.stage === 1 || L.stage === 2 ? 'Night ' + L.stage + ' · ' + esc(M.NIGHTS[L.stage - 1].ends) : 'Scrap ' + U.multTxt(mult) + ' · ' + esc(M.name('mapShort', L.map))) + '</span></button>' +
         '</section></div>', { cls: 'p-play', right: U.wallet() });
     },
     act: {
@@ -97,11 +107,15 @@
       surv(b) { const a = cur().args; a.sel.survivor = b.dataset.id; M.remember(a.sel); U.snd('ui_click'); U.refresh(); },
       night(b) { const a = cur().args; a.sel.stage = +b.dataset.id; a.sel = validSel(a.sel); M.remember(a.sel); U.snd('ui_click'); U.refresh(); },
       buddy(b) { cur().args.buddy = b.dataset.id; U.snd('ui_click'); U.refresh(); },
-      start() { const a = cur().args; U.snd('radio_tune'); U.startRun(a.coop ? Object.assign(validSel(Object.assign({}, a.sel, { map: 'suburbs' })), { buddy: a.buddy }) : validSel(a.sel)); }
+      start() {
+        const a = cur().args; U.snd('radio_tune');
+        if (a.coop && U.netLobby.mode === 'friend') { U.netHostStart(validSel(Object.assign({}, a.sel, { map: 'suburbs' }))); return; }
+        U.startRun(a.coop ? Object.assign(validSel(Object.assign({}, a.sel, { map: 'suburbs' })), { buddy: a.buddy }) : validSel(a.sel));
+      }
     }
   };
   /* CO-OP: the Play screen for two (Maple Hollow first). Progress, Scrap and Nights go to your own save as in solo. */
-  U.S.coop = Object.assign({}, U.S.play, { render(a) { a.coop = true; return U.S.play.render(a); } });
+  U.S.coop = Object.assign({}, U.S.play, { render(a) { a.coop = true; return U.S.play.render(a); }, act: Object.assign({}, U.S.play.act, U.netActs) });
   function cur() { return U.stack[U.stack.length - 1]; }
 
   /* ======================================================================

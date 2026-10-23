@@ -112,7 +112,7 @@ DS.Renderer = class Renderer {
     this.camX = cam ? cam.px + (cam.x - cam.px) * alpha : px; this.camY = cam ? cam.py + (cam.y - cam.py) * alpha : py;
     if (this.shakeAmp > 0.1 && DS.Settings.shake) { this.shakeX = (Math.random() * 2 - 1) * this.shakeAmp; this.shakeY = (Math.random() * 2 - 1) * this.shakeAmp; this.shakeAmp *= Math.pow(0.0008, dt); }
     else { this.shakeX = this.shakeY = 0; this.shakeAmp = 0; }
-    world.view.w = this.vw; world.view.h = this.vh;
+    if (!world.fixedView) { world.view.w = this.vw; world.view.h = this.vh; }
     const s = z0 * dpr;
     const cx = this.camX + this.shakeX, cy = this.camY + this.shakeY;
     ctx.setTransform(1, 0, 0, 1, 0, 0);

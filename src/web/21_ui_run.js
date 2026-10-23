@@ -46,7 +46,7 @@
       html = '<div class="m-pause m-sheet p-pset"><header class="m-head"><button class="m-back" data-act="psBack">‹ Back</button>' + U.ransom('Settings', 'm-title') + '</header><div class="m-body">' + U.settingsHTML(true) + '</div></div>';
     } else {
       const p = w.player, r = U.pauseReason;
-      const head = r === 'resume' ? ['RUN RESTORED', 'yellow', 'Picked up where you left off. Breathe, then go.'] : r === 'hidden' ? ['PAUSED', 'uv', 'You stepped away. The dead are holding still. For now.'] : ['PAUSED', 'uv', 'Lou\'s spinning a record. Take your time.'];
+      const head = DS.Game && DS.Game.net ? ['ONLINE', 'uv', 'The run keeps going while this is open. Your friend is still out there.'] : r === 'resume' ? ['RUN RESTORED', 'yellow', 'Picked up where you left off. Breathe, then go.'] : r === 'hidden' ? ['PAUSED', 'uv', 'You stepped away. The dead are holding still. For now.'] : ['PAUSED', 'uv', 'Lou\'s spinning a record. Take your time.'];
       const weapons = p.weapons.map(i => ({ id: i.def.id, level: i.level, evo: !!i.evo }));
       const gear = p.gear.map(g => ({ id: g.id, level: g.level }));
       const cfg = w.cfg || {};
@@ -214,18 +214,28 @@
     el.classList.add('skip', 'revealed'); el.querySelectorAll('.m-clip').forEach(c => c.classList.add('in'));
     el.querySelectorAll('.m-count').forEach(c => { c.textContent = fmt(+c.dataset.v || 0); });
   }
+  /* after a co-op run, Retry / Next Night stay co-op: online → back to the lobby (the host starts again), bot → same buddy */
+  U.coopAgain = function (s, stage) {
+    if (!s.players) return false;
+    if (DS.Game.lastNetRun) { U.showMain(); U.netLobby.mode = 'friend'; U.go('coop', { sel: U.validSel({ map: 'suburbs', survivor: s.survivor, difficulty: s.difficulty, stage: stage || s.stage | 0 }) }); return true; }
+    const mate = s.players.find((q, k) => k > 0);
+    U.snd('radio_tune'); U.startRun(Object.assign(U.validSel({ map: 'suburbs', survivor: s.survivor, difficulty: s.difficulty, infection: 0, stage: stage || s.stage | 0 }), { buddy: mate ? mate.survivor : 'juno' }));
+    return true;
+  };
   Object.assign(U.globalAct, {
     skipReveal() { skipReveal(); },
     eMenu() { skipReveal(); U.snd('ui_back'); U.endData = null; U.showMain(); },
     eRetry() {
       const d = U.endData; if (!d) { U.showMain(); return; }
       const s = d.summary; U.endData = null;
+      if (U.coopAgain(s)) return;
       const sel = s.daily ? { daily: M.dailyFor(s.daily.key) } : U.validSel({ map: s.map, survivor: s.survivor, difficulty: s.difficulty, infection: s.infection | 0, stage: s.stage | 0 });
       U.snd('radio_tune'); U.startRun(sel);
     },
     eNext() {
       const d = U.endData; if (!d) { U.showMain(); return; }
       const s = d.summary; U.endData = null; skipReveal();
+      if (U.coopAgain(s, (s.stage | 0) + 1)) return;
       U.snd('radio_tune'); U.startRun(U.validSel({ map: s.map, survivor: s.survivor, difficulty: s.difficulty, infection: 0, stage: (s.stage | 0) + 1 }));
     }
   });

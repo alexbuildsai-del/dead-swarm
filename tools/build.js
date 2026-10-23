@@ -43,7 +43,9 @@ const tpl = fs.readFileSync(path.join(SRC, 'index.template.html'), 'utf8');
 // the balance bot plays co-op teammates in the browser (bot buddy); it stays one file, shared with tools/balance
 const botJs = '/* ===== tools/balance/bot.js (co-op bot buddy) ===== */\n(function () { const module = { exports: {} };\n' +
   fs.readFileSync(path.join(ROOT, 'tools', 'balance', 'bot.js'), 'utf8') + '\nDS.Bot = module.exports.Bot; })();';
-const js = simJs + '\n;\n' + botJs + '\n;\n' + bundle(webFiles);
+let js = simJs + '\n;\n' + botJs + '\n;\n' + bundle(webFiles);
+// online co-op: both PCs must run the very same code; the build id is a hash of it (checked when a friend joins)
+{ let h = 2166136261 >>> 0; for (let i = 0; i < js.length; i++) h = Math.imul(h ^ js.charCodeAt(i), 16777619) >>> 0; js = 'globalThis.DS_BUILD_ID = "' + (DEMO ? 'd' : 'f') + h.toString(36) + '";\n' + js; }
 // guard against a literal </script> inside the bundle
 const safeJs = js.replace(/<\/script/gi, '<\\/script');
 const html = tpl.replace('/*__CSS__*/', () => css).replace('/*__JS__*/', () => safeJs).replace('<title>Dead Swarm</title>', () => DEMO ? '<title>Dead Swarm (Demo)</title>' : '<title>Dead Swarm</title>');

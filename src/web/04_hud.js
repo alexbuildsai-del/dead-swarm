@@ -64,7 +64,7 @@ DS.HUD = {
     // ---- slots
     const sz = small ? 22 : 28, gap = 3, sy = hy + hpH + 7;
     // ---- co-op: each teammate's chip (name, HP, down / aboard): right of the slots, or under them on a narrow screen
-    const nMates = world.players ? world.players.length - 1 : 0, mateH = W < 600 ? nMates * 34 : 0;
+    const nMates = world.players ? world.players.length - 1 : 0, mateH = W < 600 && nMates ? nMates * 34 + 14 : 0;
     if (nMates) this.mates(ctx, world, W < 600 ? L : L + 5 * (sz + gap) + 6, W < 600 ? sy + 2 * (sz + gap) + 6 : sy, t);
     for (let i = 0; i < 5; i++) this.slot(ctx, L + i * (sz + gap), sy, sz, p.weapons[i], 'w');
     for (let i = 0; i < 5; i++) this.slot(ctx, L + i * (sz + gap), sy + sz + gap + 2, sz, p.gear[i], 'g');
@@ -131,6 +131,18 @@ DS.HUD = {
     this.markers(ctx, world, R, t);
     // ---- evac prompt
     if (world.evac) this.evacPrompt(ctx, world, W, H, t);
+    // ---- online: waiting on the friend's input or their level-up pick; the round trip under the teammate chip
+    const net = DS.Game && DS.Game.net;
+    if (net && !world.over) {
+      const mate = world.players.find(q => q !== p), mn = mate ? (mate.name || mate.surv.name).toUpperCase() : 'YOUR FRIEND';
+      let msg = '';
+      if (DS.Game.netWaitT > 0.5) msg = 'WAITING FOR ' + mn + '…';
+      else if (!world.choice && world.anyChoice()) msg = mn + ' IS PICKING…';
+      if (msg) { ctx.textAlign = 'center'; ctx.font = '16px ' + DS.FONT.head; ctx.lineWidth = 4; ctx.strokeStyle = DS.COL.ink; ctx.fillStyle = DS.COL.paper; ctx.strokeText(msg, W / 2, H * 0.22); ctx.fillText(msg, W / 2, H * 0.22); }
+      const rt = DS.Net ? Math.round(DS.Net.rtt) : 0;
+      ctx.textAlign = 'left'; ctx.font = '10px ' + DS.FONT.type; ctx.fillStyle = rt > 150 ? DS.COL.red : '#9fe08a';
+      ctx.fillText('ONLINE · ' + rt + ' ms', W < 600 ? L : L + 5 * (sz + gap) + 6, (W < 600 ? sy + 2 * (sz + gap) + 6 : sy) + 34 * nMates + 6);
+    }
     // ---- co-op: you're out (bled out, or aboard and waiting): the camera follows your teammate
     if ((p.dead || p.boarded) && world.players && world.players.length > 1 && !world.over) {
       const mate = world.players.find(q => q !== p && !q.dead && !q.boarded);

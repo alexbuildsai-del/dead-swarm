@@ -101,7 +101,8 @@ normal progression into each player's own save; demo content first, in the free 
 the same survivor twice allowed; revives cost 20 max HP.
 - [x] Step 1: two survivors in one world (co-op rules, revives, boarding, scaling), a bot buddy, the Co-op screen
   (tests `tools/agents/coop/coop.js`, `tools/agents/coop/solo_golden.js`)
-- [ ] Step 2: online with a friend: lockstep over WebRTC, Host / Join codes, waiting screen, desync check
+- [x] Step 2: online with a friend: lockstep over WebRTC, Host / Join codes, lobby, waiting screen, desync check
+  (tests `tools/agents/coop/lockstep.js` and `tools/agents/coop/online.py`; how to test it: the multiplayer plan)
 - [ ] Step 3: play it together; co-op balance pass with bots; St. Agnes and Quarantine in co-op
 - [ ] Step 4 (Steam): invites, Steam relay transport, rich presence, rejoin
 

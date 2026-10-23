@@ -24,6 +24,8 @@ and `DS_ROOT` (default: the current directory). Browser scripts need Playwright:
 DS_OUT=build node tools/agents/review/fuzz.js --n 4 --seed 1 --minutes 16 --mode bot   # 0 problems expected
 DS_OUT=build node tools/agents/review/saves.js && DS_OUT=build node tools/agents/meta/test_meta.js
 DS_OUT=build node tools/agents/coop/coop.js && DS_OUT=build node tools/agents/coop/solo_golden.js   # co-op rules; solo unchanged
+DS_OUT=build node tools/agents/coop/lockstep.js       # online co-op: two worlds over a laggy link stay identical
+DS_OUT=build python3 tools/agents/coop/online.py      # online co-op in two real browsers (after touching 21_ui_online / 22_net / 90_game)
 DS_OUT=build python3 tools/agents/review/input.py        # plus any browser script for the area you touched
 python3 tools/shot.py "run=suburbs&god=1&t=8" /tmp/deadswarm/x.png 6 844 390   # then look at the screenshot
 ```
@@ -65,7 +67,12 @@ python3 tools/shot.py "run=suburbs&god=1&t=8" /tmp/deadswarm/x.png 6 844 390   #
   it (`DS.Art.beginFrame` runs the budgeted queue).
 - **Overlays** capture all input. Touch controls are hidden while an overlay is open, and taps get a 350 ms grace.
 - **Fonts** are embedded (`src/fonts/`, base64 via `tools/build.js`); the page makes no network requests and must
-  stay that way (`tools/agents/review/offline.py` checks it).
+  stay that way (`tools/agents/review/offline.py` checks it). The one exception is online co-op: only after Host or
+  Join does it ask public STUN servers for the outside address and connect to the friend's browser (`22_net.js`).
+- **Online co-op is lockstep:** both PCs run the same world and must stay bit-identical. The sim must never read the
+  window, settings, the save, the clock or `Math.random`; anything the UI does to a running world goes through
+  `DS.Lockstep` actions (picks, rerolls, skips); `world.view` is fixed (`DS.NET_VIEW`); no slow-mo, pause or hit-stop
+  online. `tools/agents/coop/lockstep.js` catches drift.
 - **Co-op:** `world.player` is the *acting* survivor (`world.as(q)` switches it; between ticks it is `players[0]`).
   Shared code that asks "is the survivor here?" must loop `world.players` (see ENGINE_API.md → Co-op). Run
   `tools/agents/coop/solo_golden.js` after any sim change: solo runs must stay bit-identical (re-record with `--record`

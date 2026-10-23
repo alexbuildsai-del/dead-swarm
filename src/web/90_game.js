@@ -40,11 +40,13 @@ DS.Game = {
     this.stillKey = '';
   },
 
-  /* start a run; cfg = DS.Meta.buildRunConfig(...) or a plain world cfg; snapshot = DS.Snapshot.load() to resume */
-  start(cfg, snapshot) {
+  /* start a run; cfg = DS.Meta.buildRunConfig(...) or a plain world cfg; snapshot = DS.Snapshot.load() to resume;
+     net = { local, delay } for an online co-op run (DS.Net is connected; both PCs start from the same cfg) */
+  start(cfg, snapshot, net) {
     this.stopMenuWorld();
     DS.HUD.reset(); DS.Overlay.close();
-    const view = { w: this.R.vw, h: this.R.vh };
+    // online every PC simulates the same logical screen (aim ranges, spawn ring), whatever its window size
+    const view = net ? Object.assign({}, DS.NET_VIEW) : { w: this.R.vw, h: this.R.vh };
     let w = null, fresh = false;
     if (snapshot && DS.Snapshot) {
       try { w = DS.Snapshot.restore(snapshot, { headless: false, view }); }
@@ -57,16 +59,18 @@ DS.Game = {
     }
     if (!w) w = new DS.World(Object.assign({}, cfg, { headless: false, view }));
     this.world = w; this.state = 'run'; this.paused = false; this.acc = 0; this.snapT = 0; this.slowT = 0;
+    this.net = null; this.netWaitT = 0; this.lastNetRun = !!net;
+    if (net) this.setupNet(w, net);
     // co-op teammates marked bot: true are played by the balance bot (DS.Bot), in their own survivor's shoes
     this.buddies = [];
-    (w.cfg.coop || []).forEach((c, i) => { const q = w.players[i + 1]; if (c.bot && q && DS.Bot) { w.as(q); this.buddies.push({ q, bot: new DS.Bot(w, { seed: w.seed + 31 * (i + 1), skill: c.skill || 0.7 }) }); } });
-    w.as(w.players[0]);
+    if (!net) (w.cfg.coop || []).forEach((c, i) => { const q = w.players[i + 1]; if (c.bot && q && DS.Bot) { w.as(q); this.buddies.push({ q, bot: new DS.Bot(w, { seed: w.seed + 31 * (i + 1), skill: c.skill || 0.7 }) }); } });
+    w.as(w.players[net ? net.local : 0]);
     this.lastEnd = null; this.restoreFailed = fresh; this.menuCover = false;
     this.R.resetMap(); this.FX.parts.length = 0;
     DS.Input.setEnabled(true); DS.Overlay.setRunVisible(true);
     document.body.classList.add('in-run');
     if (DS.Audio && DS.Audio.startRun) DS.Audio.startRun(w.cfg.map, w);
-    w.on('levelup', () => { this.slowT = 0.32; w.holdChoices = true; w.fx('levelup', w.player.x, w.player.y); });
+    w.on('levelup', () => { if (!this.net) { this.slowT = 0.32; w.holdChoices = true; } w.fx('levelup', w.player.x, w.player.y); });   // online: no slow-mo (it would change when choices open)
     w.on('end', o => this.finish(o, w));
     if (snapshot && !fresh) this.pause('resume');
     if (fresh && DS.UI && DS.UI.toast) DS.UI.toast('Couldn\'t pick that run back up — starting it fresh.', 'bad');
@@ -122,10 +126,42 @@ DS.Game = {
     if (DS.Audio && DS.Audio.setPaused) DS.Audio.setPaused(false);
     if (DS.UI && DS.UI.hidePause) DS.UI.hidePause();
   },
-  quit() { if (this.world && !this.world.over) { this.paused = false; this.world.endRun('quit'); } },
+  quit() { if (this.world && !this.world.over) { this.paused = false; if (this.net) DS.Net.send({ k: 'quit', r: this.net.run }); this.world.endRun('quit'); } },   // online: ends the run for both, the connection stays
+  /* online co-op: the lockstep drives the world; the UI's picks become actions that both PCs apply on the same frame */
+  setupNet(w, net) {
+    const ls = this.net = new DS.Lockstep(w, net.local, m => DS.Net.send(m), { delay: net.delay, run: net.run, onDesync: () => this.netEnd('desync') });
+    w.fixedView = true;   // the renderer must not resize the logical screen to this window
+    w.resolveChoice = i => ls.action({ k: 'pick', i, n: w.choice && w.choice.n });
+    w.rerollChoice = () => ls.action({ k: 'reroll', n: w.choice && w.choice.n });
+    w.skipChoice = () => ls.action({ k: 'skip', n: w.choice && w.choice.n });
+    w.banishChoice = () => { };
+  },
+  netEnd(why) {
+    const w = this.world; if (!this.net || !w || w.over) return;
+    const L = { desync: 'Your games drifted out of sync, so the run had to stop. Play in the same browser (Chrome or Edge) from the same link.', quit: 'Your friend ended the run.', left: 'Your friend left.', dropped: 'Lost the connection to your friend.' };
+    if (DS.UI && DS.UI.toast) DS.UI.toast(L[why] || 'The online run stopped.', 'bad');
+    this.netStop = why; w.endRun('quit');
+  },
+  /* online frame: sample this PC's input, run every lockstep frame that is ready (both inputs in) */
+  netFrame(dt) {
+    const w = this.world, ls = this.net, L = w.players[ls.local];
+    const inp = this.netInp || (this.netInp = { mx: 0, my: 0, dash: false, ult: false, holdOut: false });
+    DS.Input.apply({ input: inp });
+    if (this.netAuto) this.netAuto(w, inp);   // tests: something else (a bot) fills this PC's input
+    this.acc += dt; let steps = 0;
+    while (this.acc >= DS.DT && steps < 8 && !w.over) {
+      if (!ls.ready()) break;
+      ls.step(inp); inp.dash = false; inp.ult = false; this.acc -= DS.DT; steps++;
+    }
+    if (this.acc > DS.DT * 4) this.acc = DS.DT * 2;   // waiting on the friend: don't bank time to burst through later
+    this.netWaitT = steps ? 0 : this.netWaitT + dt;
+    w.as(L);
+    if (w.choice && !DS.Overlay.isOpen() && !ls.isAnswered(w.choice) && !w.over) DS.Overlay.show(w, w.choice);
+    if (DS.Audio && DS.Audio.update) DS.Audio.update(w, dt);
+  },
   toMenu() {
     const hadRun = !!this.world;
-    this.state = 'menu'; this.world = null; this.paused = false; this.lastEnd = null;
+    this.state = 'menu'; this.world = null; this.paused = false; this.lastEnd = null; this.net = null;
     DS.Input.setEnabled(false); DS.Overlay.setRunVisible(false); document.body.classList.remove('in-run');
     if (DS.Audio && DS.Audio.menu) DS.Audio.menu();
     // back from a run: let the art drop that run's boss / map atlases
@@ -183,7 +219,8 @@ DS.Game = {
   runFrame(dt, now) {
     const w = this.world, R = this.R;
     const ovOpen = DS.Overlay.isOpen();
-    if (!this.paused && !ovOpen && !w.over) {
+    if (this.net) this.netFrame(dt);   // online: pause menus and overlays never stop the shared world
+    else if (!this.paused && !ovOpen && !w.over) {
       DS.Input.apply(w);
       let speed = 1;
       if (this.slowT > 0) { this.slowT -= dt; speed = 0.22; if (this.slowT <= 0) { w.holdChoices = false; } }
@@ -206,7 +243,7 @@ DS.Game = {
     DS.Overlay.tick(w);
     const alpha = DS.clamp(this.acc / DS.DT, 0, 1);
     this.FX.consume(w);
-    R.frame(w, alpha, now, (this.paused || ovOpen) ? 0 : dt);
+    R.frame(w, alpha, now, (!this.net && (this.paused || ovOpen)) ? 0 : dt);
     DS.HUD.frame(R.ctx, w, R, dt, now);
   },
   menuFrame(dt, now) {

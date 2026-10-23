@@ -1,7 +1,7 @@
 # Multiplayer (Steam, PC): co-op design and implementation plan
 
-Status: **step 1 built** (two survivors in one world, a bot buddy, the Co-op screen; see "Decisions" and "Status" at the
-end). Linked from `docs/ROADMAP.md` → Multiplayer. The sections below are the original proposal; where the decisions
+Status: **steps 1 and 2 built**: two survivors in one world (with a bot buddy), and online play with a friend over a
+direct browser-to-browser connection (see "Decisions" and "Status" at the end). Linked from `docs/ROADMAP.md` → Multiplayer. The sections below are the original proposal; where the decisions
 changed it, the decisions win.
 
 ## The recommendation in short
@@ -187,11 +187,43 @@ every 60 ticks:    send hash(world) ──► host compares ──► mismatch? 
 - Known gaps: set-piece events, boss arrival points and St. Agnes / Quarantine objectives still centre on players[0]
   (co-op is Maple Hollow only for now); no co-op balance pass yet; the damage meter merges both survivors.
 
-**Step 2 (next): online with a friend.** Lockstep over a browser-to-browser connection (WebRTC data channel), Host /
-Join with copy-paste codes, a waiting screen, the desync check, the friend's own save and run config sent at the start.
+**Step 2 (done): online with a friend.** Co-op → With → A friend online.
+- **Connecting** (`src/web/22_net.js`): one player presses Host and sends the code (about 330 characters, starts with
+  `DS1.`) over any chat app; the other presses Join, pastes it and sends the reply back; the host pastes the reply.
+  The browsers then talk directly over a WebRTC data channel: on the same Wi-Fi over the LAN, across the internet
+  through the public STUN servers (Google, Cloudflare), which tell each browser its outside address. No server of our
+  own, no accounts. A code carries the build id: two different builds refuse each other. The page touches the network
+  only after Host or Join.
+- **Lobby** (`src/web/21_ui_online.js`): the friend picks their own survivor and sends their own run config (their
+  Safehouse, mastery, unlocks); the host picks the map, Night and their survivor, and presses START. The host builds
+  one config for both PCs (random seed, a fixed logical screen `DS.NET_VIEW`) and sends it.
+- **Lockstep** (`src/sim/96_lockstep.js`, Node-safe): every PC runs the same world; only inputs travel. A frame runs
+  when both players' inputs for it are in; each PC sends its own input 5 frames ahead (83 ms of latency hidden).
+  Level-up picks, rerolls and skips are actions inside the input bundle, naming the choice they answer
+  (`choice.n`), applied on the same frame on both PCs. No banish online (it needs an instant answer). No slow-motion
+  on level-up and no pause online: the pause menu opens but the world keeps going.
+- **Desync check**: every 30 frames (half a second) both PCs hash their world and compare. A mismatch, a dropped
+  connection or the friend leaving ends the run for both (you keep what you earned). Quit ends the run for both but
+  keeps the connection: Retry goes back to the lobby and the host can start again.
+- **Banking**: each PC banks its own survivor's result into its own save (`world.local`, the run summary).
+- Tests: `tools/agents/coop/lockstep.js` (two worlds over a simulated link with latency and jitter, bots, picks,
+  a forced divergence is caught) and `tools/agents/coop/online.py` (two real browsers connect through the UI, play
+  with bots, quit, retry, close the page).
 
-**Step 3:** play it together, then a co-op balance pass with the bots. **Step 4 (Steam):** invites instead of codes,
-Steam's relay as the transport, rich presence.
+### How to test it with a friend
+1. Both open the same link (GitHub Pages, itch, or the same HTML file), in Chrome or Edge.
+2. Both: Co-op → With → A friend online. Each picks a survivor under Who.
+3. Host: press **Host**, then **Copy**, and send the code in Discord/WhatsApp.
+4. Friend: press **Join**, paste the code, press **Make my reply**, **Copy**, and send the reply back.
+5. Host: paste the reply, press **Connect**. Both see "Connected". The host presses **START**.
+6. If it never connects: some networks (phone hotspots, university or office Wi-Fi) block direct connections. Try
+   another network, or install Tailscale on both PCs (free), which makes them act like one LAN.
+
+
+**Step 3 (next):** play it together, then a co-op balance pass with the bots; local prediction for your own survivor
+(it moves 5 frames after you press, which you may feel); an adaptive input delay; rejoin after a drop.
+**Step 4 (Steam):** invites instead of codes, Steam's relay as the transport (the netcode only needs `send`/`receive`,
+so `22_net.js` is the only file to swap), rich presence.
 
 ## Sources
 - Vampire Survivors co-op history: [mp1st: update 1.6 adds local co-op](https://mp1st.com/news/vampire-survivors-update-1-6-for-august-17-adds-local-co-op-and-more), [Prima: playing it online via Remote Play](https://primagames.com/tips/how-to-play-vampire-survivors-co-op-online-via-steam-remote-play)

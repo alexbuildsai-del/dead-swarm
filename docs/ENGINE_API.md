@@ -102,6 +102,9 @@ unchanged; what to keep in mind:
   enemy shots already do. `world.nearestPlayer(x, y)` and `world.centre()` help.
 - Rewards everyone gets go through `world.forEachPlayer(fn)`; one survivor's choices through `world.forPlayer(i, fn)`.
 - Solo is one survivor that is always the acting one: nothing changes there (`tools/agents/coop/solo_golden.js`).
+- **Online** (`DS.Lockstep`, 96_lockstep.js) both PCs run the same world from the same inputs, so sim code must be
+  deterministic: only `world.rng`, no reading the window, settings, save or clock, and `world.view` is the fixed
+  `DS.NET_VIEW`. A survivor's level-up choice carries `choice.n`; the UI answers it through lockstep actions.
 
 ## Weapons (`DS.WEAPONS[id]`) — weapons agent
 ```js

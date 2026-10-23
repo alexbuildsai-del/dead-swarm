@@ -131,6 +131,8 @@ DS.World = class World extends DS.Emitter {
     this.zSpeedMul = 1;          // set by events (Siren Night)
     this.spawnPaused = false;
     this.holdChoices = false;   // choice / choiceQueue are the acting survivor's (getters below)
+    this.choiceSeq = 0;         // every built choice gets n = ++choiceSeq (online picks name the choice they answer)
+    this.local = 0;             // which survivor this PC plays (online co-op); the run summary is theirs
     this.over = null; this.paused = false;
     this.hitStop = 0;
     this.scrap = 0; this.serum = 0; this.holdBonus = 0;
@@ -643,11 +645,11 @@ DS.World = class World extends DS.Emitter {
           built = c.type === 'levelup' ? { type: 'levelup', options: this.player.fallbackOptions(), free: !!c.free, level: this.player.level } : null;
         }
       }
-      if (built) { this.choice = built; this.emit('choice', built); }
+      if (built) { built.n = ++this.choiceSeq; this.choice = built; this.emit('choice', built); }
     }
   }
   resolveChoice(i) { if (!this.choice) return; this.player.resolveChoice(this.choice, i); this.choice = null; this.nextChoice(); }
-  rerollChoice() { if (this.choice && this.choice.type === 'levelup' && this.player.rerolls > 0) { this.player.rerolls--; this.choice = this.player.buildChoice({ type: 'levelup', reroll: true }); } }
+  rerollChoice() { if (this.choice && this.choice.type === 'levelup' && this.player.rerolls > 0) { this.player.rerolls--; this.choice = this.player.buildChoice({ type: 'levelup', reroll: true }); if (this.choice) this.choice.n = ++this.choiceSeq; } }
   banishChoice(i) { if (this.choice && this.choice.type === 'levelup' && this.player.banishes > 0) { const o = this.choice.options[i]; if (!o || !o.id || o.kind === 'item') return; this.player.banishes--; this.player.banished.add(o.id); this.player.replaceOption(this.choice, i); } }
   skipChoice() { if (this.choice && this.choice.type === 'levelup' && this.player.skips > 0) { this.player.skips--; this.choice = null; this.nextChoice(); } }
   /* co-op: the same, for survivor i (the UI and the bot act for one survivor; picks are made at the same time) */
@@ -752,8 +754,8 @@ DS.World = class World extends DS.Emitter {
   /* ---------------- run end ---------------- */
   endRun(result) {
     if (this.over) return;
-    const P0 = this.players[0]; if (this.player !== P0) this.as(P0);   // the summary is the local survivor's
-    if (this.players.length > 1 && result === 'evac' && !P0.boarded) result = 'death';   // co-op: your teammate made it, you didn't
+    const PL = this.players[this.local] || this.players[0]; if (this.player !== PL) this.as(PL);   // the summary is the local survivor's
+    if (this.players.length > 1 && result === 'evac' && !PL.boarded) result = 'death';   // co-op: your teammate made it, you didn't
     const evac = result === 'evac';
     const runScrap = this.scrap;
     const evacBonus = evac ? runScrap * 0.4 : 0;
@@ -761,12 +763,17 @@ DS.World = class World extends DS.Emitter {
     this.over = {
       result, cleared: this.cleared, time: this.t, kills: this.stats.kills, level: this.player.level,
       scrap: Math.floor(runScrap + evacBonus + hold), scrapRun: runScrap, evacBonus, holdBonus: hold, holdBonusRaw: this.holdBonus,
-      serum: this.serum, stats: this.stats, map: this.cfg.map, survivor: this.cfg.survivor, difficulty: this.cfg.difficulty,
+      serum: this.serum, stats: this.stats, map: this.cfg.map, survivor: PL.cfg.survivor, difficulty: this.cfg.difficulty,
       infection: this.cfg.infection, daily: this.cfg.daily, seed: this.seed, stage: this.stage, stageClear: this.stageClear,
       weapons: this.player.weapons.map(w => ({ id: w.def.id, level: w.level, evo: !!w.def.evolved, dmg: Math.round(w.dmg) })),
       gear: this.player.gear.map(g => ({ id: g.id, level: g.level })), perks: this.player.perks.slice(),
       damage: Object.assign({}, this.stats.damage), xp: this.stats.xpGained, killedBy: result === 'death' ? (this.lastHitBy || '?') : null
     };
+    if (this.players.length > 1) {   // co-op: "who did the work" is this survivor's own weapons (each instance counts its own) and abilities
+      const dm = {}; for (const wp of PL.weapons) dm[wp.def.id] = Math.round(wp.dmg);
+      for (const k of ['ult_' + PL.surv.id, 'dash_' + PL.surv.id]) if (this.stats.damage[k]) dm[k] = this.stats.damage[k];
+      this.over.damage = dm;
+    }
     if (this.players.length > 1) this.over.players = this.players.map(q => ({ survivor: q.surv.id, name: q.name || '', level: q.level, boarded: !!q.boarded, dead: !!q.dead, revives: q.revivedN,
       weapons: q.weapons.map(w => ({ id: w.def.id, level: w.level, evo: !!w.def.evolved, dmg: Math.round(w.dmg) })), gear: q.gear.map(g => ({ id: g.id, level: g.level })), perks: q.perks.slice() }));
     this.emit('end', this.over);

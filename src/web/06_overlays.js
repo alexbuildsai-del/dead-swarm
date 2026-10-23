@@ -30,6 +30,8 @@ DS.Overlay = {
   },
   setRunVisible(on) { this.pauseBtn.style.display = on ? 'flex' : 'none'; if (!on) { this.holdBtn.style.display = 'none'; this.holdBtn._v = false; this.close(); } },
   tick(world) {
+    // online: a pick goes round the network first; when the world's choice changes under us, this one is done
+    if (this.cur && DS.Game && DS.Game.net && world.choice !== this.cur) this.close();
     const e = world.evac;
     const show = !!(e && e.state === 'landed' && !world.holdOut && !world.over && (!world.canHoldOut || world.canHoldOut()));
     if (this.holdBtn._v !== show) { this.holdBtn._v = show; this.holdBtn.style.display = show ? 'block' : 'none'; this.holdRect = null; }
@@ -49,6 +51,7 @@ DS.Overlay = {
   },
   show(world, choice) {
     this.close();
+    if (DS.Game && DS.Game.net && DS.Game.net.isAnswered(choice)) return;   // online: already picked, on its way
     this.cur = choice;
     this.openAt = performance.now();
     if (DS.Input && DS.Input.onOverlay) DS.Input.onOverlay(true);
@@ -153,7 +156,7 @@ DS.Overlay = {
       b.disabled = n <= 0; this.tap(b, () => this.act(world, act)); return b;
     };
     mk('↻ Reroll', p.rerolls, 'reroll');
-    this.banishBtn = mk('✕ Banish', p.banishes, 'banish');
+    this.banishBtn = mk('✕ Banish', DS.Game && DS.Game.net ? 0 : p.banishes, 'banish');   // online: no banish (it needs an instant answer)
     mk('» Skip', p.skips, 'skip');
     if (DS.Audio) DS.Audio.play('levelup');
   },
@@ -163,6 +166,7 @@ DS.Overlay = {
     if (!c || c.type !== 'levelup' || this.locked || world.choice !== c) return false;
     if (a === 'reroll') {
       if (p.rerolls <= 0) return false;
+      if (DS.Game && DS.Game.net) { world.rerollChoice(); this.locked = true; return true; }   // online: the new cards arrive with the frame
       world.rerollChoice(); if (world.choice === c) return false;
       if (DS.Audio) DS.Audio.play('ui_click'); this.show(world, world.choice); return true;
     }

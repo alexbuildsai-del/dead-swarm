@@ -642,3 +642,13 @@ body.m-paused .m-root { background: rgba(16,19,15,.62); animation: ovIn .18s eas
 }
 .m-end.skip *, .m-end.skip *::before { animation: none !important; }
 .m-end.skip .m-clip { opacity: 1 !important; transform: rotate(var(--rot)) !important; }
+
+/* co-op: "A friend online" (21_ui_online.js) */
+.m-net { margin: 6px 0 10px; padding: 10px 12px; background: rgba(27,31,26,.06); border: 2px dashed rgba(27,31,26,.35); }
+.m-net p { margin: 6px 0; font-size: 14px; }
+.m-code { display: block; width: 100%; box-sizing: border-box; height: 58px; margin: 4px 0 6px; padding: 6px 8px; font: 12px/1.3 ui-monospace, Menlo, Consolas, monospace; color: var(--ink); background: var(--paper); border: 2px solid var(--ink); resize: none; word-break: break-all; }
+.m-net-btns { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0; }
+.m-net .m-btn { min-height: 38px; font-size: 15px; padding: 6px 14px; }
+.m-net-ok { color: #3b7a2e; font-family: var(--f-head); letter-spacing: .5px; }
+.m-net-err { color: var(--red); font-weight: bold; }
+.m-start.off { filter: grayscale(.7); opacity: .75; }

@@ -115,6 +115,10 @@ any difficulty). Each level adds its modifier on top of all lower ones and **+20
   workbench and loot go to whoever takes them. Generators charge for either survivor, 50% faster with both inside.
 - **Evac:** each survivor boards on their own (3 s in the ring) and waits aboard; nobody boards while a teammate is
   down; the chopper waits for everyone alive (no Hold Out in co-op).
+- **Online with a friend:** Host / Join with paste codes, direct browser-to-browser. The host picks the map and Night;
+  each player brings their own survivor and save. Picks travel as inputs (5 frames of input delay); no banish, no
+  pause and no level-up slow-motion online. A desync, a drop or the friend leaving ends the run for both; Quit ends
+  it for both but keeps the connection for another run.
 
 ## 3. Level-ups, slots, crates
 
