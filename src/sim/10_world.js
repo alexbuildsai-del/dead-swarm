@@ -563,7 +563,7 @@ DS.World = class World extends DS.Emitter {
     if (e.state === 'landed') {
       const inR = DS.dist2(p.x, p.y, e.x, e.y) < e.r * e.r;
       if (inR) { e.board += dt; e.awayT = 0; if (e.board >= 3) { if (this.stats.evacTime < 0) this.stats.evacTime = this.t - e.landedAt; this.endRun('evac'); return; } }
-      else { e.board = Math.max(0, e.board - dt * 2); }
+      else { e.board = Math.max(0, e.board - dt * DS.TUNE.boardDrain); }
       if (!this.canHoldOut()) this.input.holdOut = false;   // a Night's chopper waits on the pad until you board
       else if (!this.holdOut) {
         if (this.input.holdOut) { this.input.holdOut = false; this.beginHoldOut(); return; }

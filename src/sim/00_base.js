@@ -164,6 +164,8 @@ DS.TUNE = {
   benchTime: 3, benchCd: 60,  // generator 2's workbench: seconds to use it, cooldown
   lootR: 45, lootTime: 2.5, lootCd: 20, // loot spots: reach from the door, seconds to loot, global cooldown after a loot
   maxSpit: 3, maxAcid: 4, maxCharge: 4, maxGurney: 2, gurneyDmg: 9, // at most this many live ranged telegraphs of each kind (readability)
+  boardDrain: 0,               // evac pad: boarding seconds lost per second spent outside the ring (0: stepping out to dodge only pauses it)
+  n1MaxAcid: 2, n1Lobber: 0.5, n1Gasbag: 0.5, n1GasDeath: 0.5, // Night 1 only (the first win): acid cap, Lobber and Gasbag spawn weight, Gasbag death-burst damage
 };
 
 /* tiny event emitter mixin */

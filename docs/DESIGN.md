@@ -78,7 +78,8 @@ any difficulty). Each level adds its modifier on top of all lower ones and **+20
 - 15:00 final boss. The director drops to 35% budget (and half the horde floor) while any boss is alive.
 - Final boss dies → 2 Serum, 40 Scrap, boss crate (≥3). Evac helicopter lands ≈ 280 units' walk from the survivor
   (inside the gas line on Quarantine) 6 s later.
-  - **Board**: stand in the landing ring (r 90) for 3 s → run ends, rewards banked + **evac bonus = +40% of run Scrap**.
+  - **Board**: stand in the landing ring (r 90) for 3 s in total → run ends, rewards banked + **evac bonus = +40% of run
+    Scrap**. Stepping out to dodge only pauses the boarding meter (`TUNE.boardDrain` 0; it used to drain at 2×).
   - **Hold Out**: press the Hold Out button, or stay out of the ring for 20 s — only time spent not heading for the pad
     counts (walking toward it winds the timer back; stepping into the ring resets it). The heli is away for **2:00**,
     then lands again (6 s approach) for a **30 s** window, and repeats. Hold Out = endless: the time curves keep
@@ -94,6 +95,8 @@ any difficulty). Each level adds its modifier on top of all lower ones and **+20
   after the clear. Each Night opens the next. First survival of Night 1: +60 Scrap, +2 Serum; Night 2: +120 Scrap, +3
   Serum. A Night never counts as a map clear (no first-clear Serum, no unlocks); Night 3 does. Any Maple Hollow clear
   (older saves) counts as all Nights done. Progress: `save.flags.nightsSuburbs`; the run's `cfg.stage`.
+  Night 1 is gentler on the two ranged bombers (playtest 2): Lobbers and Gasbags spawn at half weight, at most 2 acid
+  throws are in the air at once (4 elsewhere), and a Gasbag's death burst does half damage (`TUNE.n1*`).
 
 ---
 
@@ -822,8 +825,9 @@ menu. Export = `DS1:` + base64(JSON) + checksum; Import validates and migrates. 
   off the minimap.
 - **Telegraphs** (always red): the shaded area and the fill that grows to the edge as the attack lands are drawn on the
   ground; the outline and the closing edge are drawn again above zombies and the survivor, so a circle under a horde or
-  under your own feet still shows (on dark maps and at dusk the whole telegraph is drawn above the darkness). While the
-  survivor stands inside one, a red warning sign beats over their head, faster as the soonest one nears.
+  under your own feet still shows (on dark maps and at dusk the whole telegraph is drawn above the darkness). In the last
+  0.5 s before one the survivor stands in lands, a red warning sign beats over their head, faster as the hit nears (not
+  for the whole wind-up: with several Lobbers it never went away, playtest 2). Hidden mid-dash.
 - **Killed by** (end screen, deaths only): the card of what landed the last hit, its name, and one line on how that
   attack works and how to get out of it (`M.INFO.tips`, `M.killerInfo`). Field Notes show the same line. An attack whose
   owner died before it landed still names it (`telegraph.by`).

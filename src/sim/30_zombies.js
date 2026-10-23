@@ -193,7 +193,7 @@
     update(world, z, dt) {
       z.a -= dt;
       if (z.a <= 0 && z.d < 470 && z.d > 110) {
-        if (world.tgCount('acid') >= DS.TUNE.maxAcid) { z.a = world.rng.range(0.3, 0.8); return; }
+        if (world.tgCount('acid') >= (world.stage === 1 ? DS.TUNE.n1MaxAcid : DS.TUNE.maxAcid)) { z.a = world.rng.range(0.3, 0.8); return; }
         z.a = ZU.cd(z, 3.2);
         const p = world.player, m = ZU.m(z), Tt = ZU.wind(z, 0.9);
         world.telegraph({ shape: 'circle', x: p.x, y: p.y, r: 45 * ZU.k(z), T: Tt, owner: z, persist: true, kind: 'acid', pd: 10 * m, pd2: 5 * m, onFire: acidFire });
@@ -233,7 +233,7 @@
     },
     onDeath(world, z) {
       if (z.c) return;
-      const m = ZU.m(z);
+      const m = ZU.m(z) * (world.stage === 1 ? DS.TUNE.n1GasDeath : 1);
       world.telegraph({ shape: 'circle', x: z.x, y: z.y, r: 58 * ZU.k(z), T: ZU.wind(z, 0.75), owner: null, by: DS.dmgSourceKey(z), kind: 'gas', pd: 10 * m, pd2: 4 * m, death: true, onFire: gasDeathFire });
     } });
 

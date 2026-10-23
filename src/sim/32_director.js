@@ -53,13 +53,17 @@
       this.alive = 0;
       const vars = (world.map.def && world.map.def.variants) || [];
       this.variants = vars;
+      // Night 1 thins out the two ranged bombers (playtest 2: "constantly hit by bombs"); read once, at the start of the run
+      const T = DS.TUNE, n1 = world.stage === 1 ? { lobber: T.n1Lobber, gasbag: T.n1Gasbag } : null;
       this.pools = DS.SPAWN_POOLS.map(p => {
         const types = [], ws = [];
         for (const k in p) {
           const id = k === 'A' ? vars[0] : k === 'B' ? vars[1] : k;
           if (!id || !DS.ZOMBIES[id]) continue;
+          const wt = p[k] * (n1 && n1[id] !== undefined ? n1[id] : 1);
+          if (!(wt > 0)) continue;
           const i = types.indexOf(id);
-          if (i >= 0) ws[i] += p[k]; else { types.push(id); ws.push(p[k]); }
+          if (i >= 0) ws[i] += wt; else { types.push(id); ws.push(wt); }
         }
         return { types, ws };
       });

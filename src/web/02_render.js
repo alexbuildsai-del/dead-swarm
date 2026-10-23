@@ -253,13 +253,15 @@ DS.Renderer = class Renderer {
     DS.Art.drawSurvivor(ctx, p, x, y, t, world);
     ctx.globalAlpha = 1;
   }
-  /* a red warning sign over the survivor while they stand inside an attack that is about to land; it beats faster as the
-     soonest one nears (the same test the attack itself uses, World.inTelegraph) */
+  /* a red warning sign over the survivor only in the last moment before an attack they stand in lands (CUE
+     seconds), so it means "move now" rather than "you are in a circle"; it beats faster as the hit nears. Same test the
+     attack itself uses (World.inTelegraph); hidden mid-dash, when nothing can hurt you */
   drawDangerCue(ctx, world, x, y, t) {
-    const p = world.player; if (p.dead) return;
-    let soon = -1;
-    for (const g of world.telegraphs) if (g.alive && g.T > 0 && world.inTelegraph(g, p.x, p.y, p.r * 0.6)) soon = Math.max(soon, DS.clamp(g.t / g.T, 0, 1));
-    if (soon < 0) return;
+    const p = world.player, CUE = 0.5; if (p.dead || p.dashIframes > 0) return;
+    let rem = 1e9;
+    for (const g of world.telegraphs) if (g.alive && g.T > 0 && world.inTelegraph(g, p.x, p.y, p.r * 0.6)) rem = Math.min(rem, g.T - g.t);
+    if (rem > CUE) return;
+    const soon = DS.clamp(1 - rem / CUE, 0, 1);
     const s = 1 + 0.2 * Math.max(0, Math.sin(t * (9 + 24 * soon)));
     ctx.save(); ctx.translate(x, y - 54); ctx.scale(s, s);
     ctx.lineJoin = 'round'; ctx.fillStyle = DS.COL.red; ctx.strokeStyle = DS.COL.ink; ctx.lineWidth = 3;

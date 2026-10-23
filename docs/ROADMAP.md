@@ -65,6 +65,19 @@ Tick a box and add a one-line note when an item lands.
   "Killed by" strip on the death screen with the attack's card and a one-line tip (also in Field Notes), and the Field
   Guide's red card explains the fill and the dash.
 
+## Now (playtest 2 feedback)
+- **Decision: first-run content is checked against the weakest bot** (`--skill 0`), not only the average one. The bot
+  sees every zombie and reacts in 0.2–0.65 s, so it overrates people: Night 1 looked like a run-1 win for it while a
+  real player failed it run after run.
+- [x] **Night 1 was too hard** ("constantly hit by bombs", never cleared it; logged as night1-2 in
+  `results/TUNING_LOG.md`): on Night 1 only, Lobbers and Gasbags spawn at half weight, at most 2 acid throws are in the
+  air at once, and a Gasbag's death burst does half damage. Weakest bot 10% → 48% survival, average 60% → 81%.
+- [x] **Boarding the chopper** no longer drains when you step out of the ring to dodge; it pauses (every run).
+- [x] **The red "!" over the survivor never went away**: it now shows only in the last 0.5 s before a hit you're
+  standing in lands, so it means "move now". Hidden mid-dash.
+- [x] A recorded Night 1 by the bot with on-screen tips, for the playtester (recorder: Playwright video of the demo
+  page with `tools/balance/bot.js` injected; not kept in the repo).
+
 ## Later: more map ideas
 - **Fuel drums (Quarantine)** and car alarms both need a shootable-prop system (a drum or car that weapons can hit and that
   explodes). Build that once and use it for both.

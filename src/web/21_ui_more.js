@@ -138,7 +138,7 @@
       gcard('<span class="m-gc-q">' + k('DASH', 'SPACE') + '</span>', 'Dash', 'A quick burst that slips through a crowd. It recharges in a few seconds.') +
       gcard('<span class="m-gc-q">' + k('ULT', 'E') + '</span>', 'Special', 'Each survivor has one (Rook calls in Air Support). It charges as you fight; the button fills up when it\'s ready.') +
       gcard('<span class="m-gc-q">➤</span>', 'The objective', 'Each map has a job, like powering three generators on Maple Hollow. The yellow arrow points to the next one. Finishing it pays crates, Scrap and Serum.') +
-      gcard('<span class="m-gc-q">!</span>', 'Red means danger', 'Anything red on the ground is an attack about to land. The red fills the shape; when it reaches the edge, it hits. Step out, or dash through it: you can\'t be hurt mid-dash. A red warning sign over your head means you\'re standing in one. Bosses arrive at 5:00, 10:00 and 15:00.') +
+      gcard('<span class="m-gc-q">!</span>', 'Red means danger', 'Anything red on the ground is an attack about to land. The red fills the shape; when it reaches the edge, it hits. Step out, or dash through it: you can\'t be hurt mid-dash. A red warning sign over your head means one is about to hit you: move now. Bosses arrive at 5:00, 10:00 and 15:00.') +
       gcard('<span class="m-gc-q">⇧</span>', 'Evac', 'Board the chopper to bank everything plus 40% Scrap. Or Hold Out for more Scrap while it gets harder.') +
       '</div>' + (touch ? '' : '<p class="m-small">Pause any time with Esc or P.</p>');
   };
