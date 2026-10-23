@@ -100,6 +100,22 @@ any difficulty). Each level adds its modifier on top of all lower ones and **+20
 
 ---
 
+### Co-op (two survivors; Maple Hollow for now)
+- **Mode:** Co-op on the main menu. Each player plays with their own save (survivors, Safehouse ranks, mastery) and
+  banks Scrap, Serum, mastery, Nights and achievements into it, as in solo. Co-op runs are not resumable.
+- **Shared XP:** every vial counts for both. One gain for the team: the vial × the survivors' average XP bonus ÷
+  (1 + `TUNE.coopXp` 0.7), so both level together and pick their cards at the same time (the run waits on both).
+- **Scaling** per extra survivor still in the fight: spawn budget and horde floor ×(1 + `coopSpawn` 0.7), boss and
+  elite HP ×(1 + `coopBossHp` 0.8).
+- **Down, not dead:** at 0 HP (after any Second Wind revive of your own) you go down: you crawl at 25% speed, your
+  weapons stop, nothing targets you. A teammate within 70 for 3 s (`coopReviveR`, `coopReviveT`) revives you at 50% HP
+  with 2 s of invulnerability and a shove; each revive costs 20 max HP (`coopReviveLoss`, never below half; First Aid
+  Kit's +20 wins it back). Nobody comes within 20 s (`coopBleed`): out for the run. Nobody left standing: the run ends.
+- **Rewards:** a miniboss's perk choice, the Night-ending crate and objective crates go to both. A crate pickup, the
+  workbench and loot go to whoever takes them. Generators charge for either survivor, 50% faster with both inside.
+- **Evac:** each survivor boards on their own (3 s in the ring) and waits aboard; nobody boards while a teammate is
+  down; the chopper waits for everyone alive (no Hold Out in co-op).
+
 ## 3. Level-ups, slots, crates
 
 - 5 weapon slots, 5 gear slots. Every item has levels 1–5. Evolved weapons have a single level ("EVO").

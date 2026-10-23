@@ -57,6 +57,10 @@ DS.Game = {
     }
     if (!w) w = new DS.World(Object.assign({}, cfg, { headless: false, view }));
     this.world = w; this.state = 'run'; this.paused = false; this.acc = 0; this.snapT = 0; this.slowT = 0;
+    // co-op teammates marked bot: true are played by the balance bot (DS.Bot), in their own survivor's shoes
+    this.buddies = [];
+    (w.cfg.coop || []).forEach((c, i) => { const q = w.players[i + 1]; if (c.bot && q && DS.Bot) { w.as(q); this.buddies.push({ q, bot: new DS.Bot(w, { seed: w.seed + 31 * (i + 1), skill: c.skill || 0.7 }) }); } });
+    w.as(w.players[0]);
     this.lastEnd = null; this.restoreFailed = fresh; this.menuCover = false;
     this.R.resetMap(); this.FX.parts.length = 0;
     DS.Input.setEnabled(true); DS.Overlay.setRunVisible(true);
@@ -169,6 +173,13 @@ DS.Game = {
     }
     this.adaptQuality(dt);
   },
+  /* one sim step's worth of input for each bot buddy (and its own level-up picks) */
+  driveBuddies(w) {
+    if (!this.buddies.length) return;
+    const P0 = w.players[0];
+    for (const b of this.buddies) { w.as(b.q); b.bot.tick(); }
+    w.as(P0);
+  },
   runFrame(dt, now) {
     const w = this.world, R = this.R;
     const ovOpen = DS.Overlay.isOpen();
@@ -181,6 +192,7 @@ DS.Game = {
         this.acc += dt * speed;
         let steps = 0;
         while (this.acc >= DS.DT && steps < 6) {
+          this.driveBuddies(w);
           w.step(); this.acc -= DS.DT; steps++;
           if (w.choice || w.over) { this.acc = 0; break; }
         }
@@ -190,6 +202,7 @@ DS.Game = {
       this.snapT += dt; if (this.snapT >= 10) { this.snapT = 0; this.saveSnapshot(); }
       if (DS.Audio && DS.Audio.update) DS.Audio.update(w, dt);
     } else if (w.choice && !ovOpen && !this.paused && !w.over) { DS.Overlay.show(w, w.choice); }
+    if (this.buddies.length && ovOpen) for (const b of this.buddies) if (b.q.choice) this.driveBuddies(w);   // buddies pick while you do
     DS.Overlay.tick(w);
     const alpha = DS.clamp(this.acc / DS.DT, 0, 1);
     this.FX.consume(w);

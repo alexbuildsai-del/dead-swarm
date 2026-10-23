@@ -40,7 +40,10 @@ const fontCss = FONTS.filter(([, f]) => fs.existsSync(path.join(SRC, 'fonts', f)
   `@font-face{font-family:'${fam}';font-style:normal;font-weight:400;font-display:swap;src:url(data:font/woff2;base64,${fs.readFileSync(path.join(SRC, 'fonts', f)).toString('base64')}) format('woff2')}`).join('\n');
 const css = fontCss + '\n' + cssFiles.map(f => fs.readFileSync(f, 'utf8')).join('\n');
 const tpl = fs.readFileSync(path.join(SRC, 'index.template.html'), 'utf8');
-const js = simJs + '\n;\n' + bundle(webFiles);
+// the balance bot plays co-op teammates in the browser (bot buddy); it stays one file, shared with tools/balance
+const botJs = '/* ===== tools/balance/bot.js (co-op bot buddy) ===== */\n(function () { const module = { exports: {} };\n' +
+  fs.readFileSync(path.join(ROOT, 'tools', 'balance', 'bot.js'), 'utf8') + '\nDS.Bot = module.exports.Bot; })();';
+const js = simJs + '\n;\n' + botJs + '\n;\n' + bundle(webFiles);
 // guard against a literal </script> inside the bundle
 const safeJs = js.replace(/<\/script/gi, '<\\/script');
 const html = tpl.replace('/*__CSS__*/', () => css).replace('/*__JS__*/', () => safeJs).replace('<title>Dead Swarm</title>', () => DEMO ? '<title>Dead Swarm (Demo)</title>' : '<title>Dead Swarm</title>');

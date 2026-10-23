@@ -85,9 +85,16 @@
     }
     ring(world) { const hd = world.halfDiag(); return world.spawnPos(hd + 60, hd + 220, world.rng.next() < 0.3 ? { x: world.player.vx, y: world.player.vy } : null); }
     spawn(type, o) {
-      const w = this.w, sp = this.ring(w);
-      if (!sp) return null;
-      const z = w.spawnZombie(type, sp.x, sp.y, o);
+      const w = this.w, P = w.players;
+      let prev = null;
+      if (P.length > 1) {   // co-op: take turns spawning at the edge of each standing survivor's screen
+        prev = w.player; const n = P.length;
+        for (let k = 0; k < n; k++) { this.rr = ((this.rr | 0) + 1) % n; if (w.reachable(P[this.rr])) break; }
+        w.as(P[this.rr]);
+      }
+      const sp = this.ring(w);
+      const z = sp ? w.spawnZombie(type, sp.x, sp.y, o) : null;
+      if (prev) w.as(prev);
       if (z) this.track(type);
       return z;
     }
@@ -147,10 +154,10 @@
       // ---- budget
       const throttle = this.bossActive() ? T.bossThrottle : 1;
       const press = (world.map.pressure || 1);
-      const rate = (1.0 + 0.5 * m + 0.035 * m * m) * world.diff.spawn * world.inf.spawn * T.spawnMult * press * throttle * this.holdMul() * (world.mapMod ? world.mapMod.spawn : 1);
+      const rate = (1.0 + 0.5 * m + 0.035 * m * m) * world.diff.spawn * world.inf.spawn * T.spawnMult * press * throttle * this.holdMul() * (world.mapMod ? world.mapMod.spawn : 1) * world.coopMul(T.coopSpawn);
       this.budget += rate * dt;
       const cap = T.capZombies;
-      const floor = Math.min(T.floorCap, T.floorBase + T.floorPerMin * m + (T.floorPerMin2 || 0) * m * m) * T.floorMult * (throttle < 1 ? Math.max(0.5, throttle) : 1) * (world.diff.floor || 1);
+      const floor = Math.min(T.floorCap, T.floorBase + T.floorPerMin * m + (T.floorPerMin2 || 0) * m * m) * T.floorMult * (throttle < 1 ? Math.max(0.5, throttle) : 1) * (world.diff.floor || 1) * world.coopMul(T.coopSpawn);
       let alive = this.alive, guard = 0;
       if (alive >= cap) this.budget = Math.min(this.budget, 8);
       while (alive < cap && guard++ < 40 && (this.budget >= 1 || (alive < floor && this.budget > -T.floorDebt))) {

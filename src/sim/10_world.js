@@ -23,6 +23,7 @@ DS.Zombie = class Zombie {
     this.pose = ''; this.ghost = false; this.sealed = false; this.aura = null; this.cdMul = 1; this.atkCdMul = 1; this.affixT = 0;
     this.phase = 0; this.windMul = 1; this.spin = 0; this.lift = 0; this.stuckT = 0; this.wallHit = false;
     this.lit = false;   // standing in a powered street lamp's light (Maple Hollow)
+    this.tgt = 0; this.burnOwner = null;   // co-op: index of the survivor it chases; whose fire is burning it
   }
 };
 
@@ -34,7 +35,7 @@ DS.Projectile = class Projectile {
     this.draw = 'bullet'; this.color = null; this.inst = null; this.hitN = 0; this.hcd = 0;
     this.update = null; this.onHit = null; this.onExpire = null; this.bounceEdges = false; this.bounceZombies = false;
     this.homing = 0; this.target = null; this.data = null; this.forceCrit = false; this.ang = 0; this.spin = 0; this.scale = 1;
-    this.wall = 'stop'; this.noHit = false; this.hitHostiles = false; this.maxSpeed = 0; this.trail = 0;
+    this.wall = 'stop'; this.noHit = false; this.hitHostiles = false; this.maxSpeed = 0; this.trail = 0; this.owner = null;
   }
 };
 
@@ -44,7 +45,7 @@ DS.Area = class Area {
     this.id = 0; this.alive = false; this.x = 0; this.y = 0; this.px = 0; this.py = 0; this.r = 40; this.t = 0; this.life = 1;
     this.tick = 0.25; this.tickT = 0; this.dmg = 0; this.src = null; this.wid = ''; this.friendly = true; this.hostile = false;
     this.pdmg = 0; this.draw = null; this.follow = null; this.data = null; this.onTick = null; this.onEnd = null; this.color = null;
-    this.kind = ''; this.slow = 0; this.light = 0; this.ignoreArmor = false; this.update = null;
+    this.kind = ''; this.slow = 0; this.light = 0; this.ignoreArmor = false; this.update = null; this.owner = null;
   }
 };
 
@@ -53,7 +54,7 @@ DS.Ally = class Ally {
   reset() {
     this.id = 0; this.alive = false; this.x = 0; this.y = 0; this.px = 0; this.py = 0; this.vx = 0; this.vy = 0; this.r = 10;
     this.t = 0; this.life = -1; this.update = null; this.draw = null; this.data = null; this.inst = null; this.ang = 0; this.kind = '';
-    this.onEnd = null; this.light = 0; this.scale = 1;
+    this.onEnd = null; this.light = 0; this.scale = 1; this.owner = null;
   }
 };
 
@@ -129,14 +130,13 @@ DS.World = class World extends DS.Emitter {
     this.xpVials = 0; this.vialCap = 260;
     this.zSpeedMul = 1;          // set by events (Siren Night)
     this.spawnPaused = false;
-    this.choice = null; this.choiceQueue = []; this.holdChoices = false;
+    this.holdChoices = false;   // choice / choiceQueue are the acting survivor's (getters below)
     this.over = null; this.paused = false;
     this.hitStop = 0;
     this.scrap = 0; this.serum = 0; this.holdBonus = 0;
     this.cleared = false; this.holdOut = false; this.holdT = 0; this.evac = null;
     this.dmgMods = [];   // fns(world, z, d, src) -> d    (perks / passives)
     this.lightPts = [];  // transient light sources (quarantine)
-    this._onScreenTick = -1; this._onScreen = [];
     this.zdm = 1;
     this.stats = {
       kills: 0, killsByType: {}, damage: {}, damageTaken: 0, healed: 0, crits: 0, frozen: 0, burned: 0,
@@ -153,12 +153,30 @@ DS.World = class World extends DS.Emitter {
     // Nights (the Maple Hollow on-ramp): Night 1 ends with evac after the 5:00 miniboss, Night 2 after the 10:00 one;
     // Night 3 (and stage 0) is the full run. The director skips the bosses a Night never reaches.
     this.stage = DS.clamp(cfg.stage | 0, 0, 3); this.stageSlot = this.stage === 1 ? 'm5' : this.stage === 2 ? 'm10' : null; this.stageClear = false;
-    this.player = new DS.Player(this, cfg);
+    // co-op: every survivor in the run (cfg.coop lists the others' own run configs). world.player is the ACTING
+    // survivor: the one whose weapon, bullet, perk or choice is running, or whom a zombie is after (see as()).
+    // Between ticks it is players[0], the local one; world.input follows it.
+    this.players = [];
+    this.player = new DS.Player(this, cfg); this.player.input = this.input; this.players.push(this.player);
+    (cfg.coop || []).forEach((pc, i) => {
+      const q = new DS.Player(this, Object.assign({}, cfg, { headStart: 0, perksStart: null, coop: null }, pc));
+      q.index = i + 1; q.x = q.px = this.player.x + 48 * (i + 1); q.y = q.py = this.player.y + 24; this.players.push(q);
+    });
     this.director = DS.Director ? new DS.Director(this) : null;
     this.radio = DS.RadioSim ? new DS.RadioSim(this) : null;
-    this.player.init();
+    for (const q of this.players) { this.as(q); q.init(); }
+    this.as(this.players[0]);
     this.map.start && this.map.start(this);
     this.emit('start');
+  }
+
+  /* a listener a survivor's kit, perk or weapon added (DS.Emitter): personal events only for that survivor's own deeds,
+     every other event run as that survivor. Solo: always the same survivor, so this is a plain call. */
+  emitOwned(ev, f, a, b, c, d) {
+    const o = f._owner, prev = this.player;
+    if (o === prev) { f(a, b, c, d); return; }
+    if (DS.PERSONAL_EVENTS[ev]) return;
+    this.as(o); f(a, b, c, d); this.as(prev);
   }
 
   /* ---------------- ids, fx, sound, radio ---------------- */
@@ -171,17 +189,43 @@ DS.World = class World extends DS.Emitter {
 
   /* ---------------- helpers ---------------- */
   get p() { return this.player; }
+  /* make q the acting survivor (co-op); cheap, so callers switch freely and switch back to players[0] */
+  as(q) { this.player = q; this.input = q.input; }
+  get choice() { return this.player.choice; }
+  set choice(c) { this.player.choice = c; }
+  get choiceQueue() { return this.player.choiceQueue; }
+  get coop() { return this.players.length > 1; }
+  /* co-op scaling: 1 + k per extra survivor still in the fight (1 in solo) */
+  coopMul(k) { const P = this.players; if (P.length === 1) return 1; let n = 0; for (const q of P) if (!q.dead && !q.boarded) n++; return 1 + k * Math.max(0, n - 1); }
+  /* can zombies, attacks and pickups reach q right now? */
+  reachable(q) { return !q.dead && !q.downed && !q.boarded; }
+  /* the survivor nearest (x, y) that zombies can reach; players[0] when none can (solo: always players[0]) */
+  nearestPlayer(x, y) {
+    const P = this.players; if (P.length === 1) return P[0];
+    let best = null, bd = 1e18;
+    for (let i = 0; i < P.length; i++) { const q = P[i]; if (!this.reachable(q)) continue; const d = DS.dist2(x, y, q.x, q.y); if (d < bd) { bd = d; best = q; } }
+    return best || P[0];
+  }
+  /* the group's middle (living survivors): spatial-hash centre, flow window, spawn ring */
+  centre() {
+    const P = this.players; if (P.length === 1) return P[0];
+    const c = this._ctr || (this._ctr = { x: 0, y: 0 }); let n = 0; c.x = 0; c.y = 0;
+    for (const q of P) if (!q.dead && !q.boarded) { c.x += q.x; c.y += q.y; n++; }
+    if (!n) { c.x = P[0].x; c.y = P[0].y; } else { c.x /= n; c.y /= n; }
+    return c;
+  }
   onScreen(x, y, m) { const p = this.player; m = m || 0; return Math.abs(x - p.x) < this.view.w / 2 + m && Math.abs(y - p.y) < this.view.h / 2 + m; }
   halfDiag() { return Math.sqrt(this.view.w * this.view.w + this.view.h * this.view.h) / 2; }
   zombiesIn(x, y, r, out) { return this.grid.query(x, y, r, out || this.qbuf, (out || this.qbuf).length); }
   nearestZombie(x, y, maxR, filter) { return this.grid.nearest(x, y, maxR || 2000, filter); }
   /* cached list of alive, non-hidden zombies currently on screen */
-  onScreenZombies() {
-    if (this._onScreenTick === this.tick) return this._onScreen;
-    const out = this._onScreen; out.length = 0;
-    const zs = this.zombies, p = this.player, hw = this.view.w / 2 + 30, hh = this.view.h / 2 + 30;
+  onScreenZombies() {   // per survivor: on the acting survivor's screen
+    const p = this.player;
+    if (p._osTick === this.tick) return p._os;
+    const out = p._os; out.length = 0;
+    const zs = this.zombies, hw = this.view.w / 2 + 30, hh = this.view.h / 2 + 30;
     for (let i = 0; i < zs.length; i++) { const z = zs[i]; if (z.alive && !z.hidden && Math.abs(z.x - p.x) < hw && Math.abs(z.y - p.y) < hh) out.push(z); }
-    this._onScreenTick = this.tick; return out;
+    p._osTick = this.tick; return out;
   }
   randomZombieOnScreen(filter) {
     const l = this.onScreenZombies(); if (!l.length) return null;
@@ -208,7 +252,7 @@ DS.World = class World extends DS.Emitter {
     const m = this.minuteF;
     const isBoss = !!DS.BOSSES[type] && !DS.ZOMBIES[type];
     let hp;
-    if (isBoss) hp = def.hp * this.diff.bossHp * this.inf.hp * DS.TUNE.bossHpMult;
+    if (isBoss) hp = def.hp * this.diff.bossHp * this.inf.hp * DS.TUNE.bossHpMult * this.coopMul(DS.TUNE.coopBossHp);
     else hp = def.hp * DS.hpMult(m) * this.diff.hp * this.inf.hp * DS.TUNE.hpMult * this.mapMod.hp;
     if (o && o.hpMult) hp *= o.hpMult;
     z.hp = z.maxHp = Math.max(1, hp);
@@ -238,7 +282,7 @@ DS.World = class World extends DS.Emitter {
       affixes = pick;
     }
     z.elite = 1; z.affixes = affixes;
-    const big = z.def.eliteHpMul || ((z.def.hp >= 100) ? 6 : 10);
+    const big = (z.def.eliteHpMul || ((z.def.hp >= 100) ? 6 : 10)) * this.coopMul(DS.TUNE.coopBossHp);
     z.hp *= big; z.maxHp *= big; z.r *= 1.35; z.dmg *= 1.3; z.xp *= 10; z.kbRes = Math.min(1, z.kbRes + 0.3); z.noRecycle = true;
     z.mass *= 2;
     for (const a of affixes) { const A = DS.AFFIXES[a]; if (A && A.init) A.init(this, z); }
@@ -250,7 +294,7 @@ DS.World = class World extends DS.Emitter {
   spawnProj(o) {
     const pr = this.pPool.get(); pr.id = this.id(); pr.alive = true;
     for (const k in o) pr[k] = o[k];
-    pr.px = pr.x; pr.py = pr.y; pr.hitN = 0;
+    pr.px = pr.x; pr.py = pr.y; pr.hitN = 0; if (!pr.owner) pr.owner = this.player;
     if (pr.src && !pr.wid) pr.wid = pr.src.wid;
     if (pr.ang === 0 && (pr.vx || pr.vy)) pr.ang = Math.atan2(pr.vy, pr.vx);
     this.projs.push(pr); return pr;
@@ -258,12 +302,12 @@ DS.World = class World extends DS.Emitter {
   spawnArea(o) {
     const a = this.aPool.get(); a.id = this.id(); a.alive = true;
     for (const k in o) a[k] = o[k];
-    a.px = a.x; a.py = a.y; this.areas.push(a); return a;
+    a.px = a.x; a.py = a.y; if (!a.owner) a.owner = this.player; this.areas.push(a); return a;
   }
   spawnAlly(o) {
     const a = this.alPool.get(); a.id = this.id(); a.alive = true;
     for (const k in o) a[k] = o[k];
-    a.px = a.x; a.py = a.y; this.allies.push(a); return a;
+    a.px = a.x; a.py = a.y; if (!a.owner) a.owner = this.player; this.allies.push(a); return a;
   }
   spawnHostile(o) {
     const h = this.hPool.get(); h.id = this.id(); h.alive = true;
@@ -318,7 +362,7 @@ DS.World = class World extends DS.Emitter {
     d *= z.dmgTakenMul;
     if (z.lit) d *= DS.TUNE.litDmg;
     if (z.boss) d *= src.bossMul;
-    for (let i = 0; i < this.dmgMods.length; i++) d = this.dmgMods[i](this, z, d, src, crit);
+    for (let i = 0; i < this.dmgMods.length; i++) { const f = this.dmgMods[i]; if (!f._owner || f._owner === p) d = f(this, z, d, src, crit); }
     if (z.frozenT > 0 && z.frozenBy === 'flashfreeze') d *= 2;
     if (z.def.onDamaged) d = z.def.onDamaged(this, z, d, src);
     if (d <= 0) return 0;
@@ -350,7 +394,7 @@ DS.World = class World extends DS.Emitter {
   burnZombie(z, dps, dur, wid) {
     if (z.def.resist && z.def.resist.fire !== undefined) dps *= z.def.resist.fire;
     if (z.burnT <= 0) this.stats.burned++;
-    z.burnDps = Math.max(z.burnDps * (z.burnT > 0 ? 1 : 0), dps); z.burnT = Math.max(z.burnT, dur); z.burnWid = wid || 'burn';
+    z.burnDps = Math.max(z.burnDps * (z.burnT > 0 ? 1 : 0), dps); z.burnT = Math.max(z.burnT, dur); z.burnWid = wid || 'burn'; z.burnOwner = this.player;
     this.emit('burn', z);
   }
   slowZombie(z, amt, dur) { if (amt >= z.slowAmt || z.slowT <= 0) z.slowAmt = amt; z.slowT = Math.max(z.slowT, dur); }
@@ -373,7 +417,10 @@ DS.World = class World extends DS.Emitter {
       this.fx('explode', x, y, r, src.el === 'cold' ? 1 : src.el === 'holy' ? 2 : src.el === 'elec' ? 3 : 0);
       this.lightPts.push({ x, y, r: r * 2.2, t: 0.25 });
     }
-    if (o && o.player && DS.dist2(x, y, this.player.x, this.player.y) < (r + this.player.r) ** 2) this.hurtPlayer(o.player, null);
+    if (o && o.player) {   // it hurts survivors too (co-op: everyone in the blast)
+      if (this.players.length === 1) { if (DS.dist2(x, y, this.player.x, this.player.y) < (r + this.player.r) ** 2) this.hurtPlayer(o.player, null); }
+      else { const prev = this.player; for (const q of this.players) if (this.reachable(q) && DS.dist2(x, y, q.x, q.y) < (r + q.r) ** 2) { this.as(q); this.hurtPlayer(o.player, null); } this.as(prev); }
+    }
     return killed;
   }
   /* chain lightning from (x0,y0) starting at zombie `first` */
@@ -438,10 +485,10 @@ DS.World = class World extends DS.Emitter {
       // the boss that ends a Night: its crate opens on the spot and its XP flies in, so boarding loses nothing
       const nightEnd = this.stageSlot && !this.stageClear && !z.parentId && this.director && this.director.bossDone[this.stageSlot] &&
         !this.bosses.some(b => b.alive && b.def.kind === 'mini');
-      if (nightEnd) this.queueChoice({ type: 'crate', min: 3 }); else this.dropPickup('crate', z.x, z.y, 3);
+      if (nightEnd) this.forEachPlayer(() => this.queueChoice({ type: 'crate', min: 3 })); else this.dropPickup('crate', z.x, z.y, 3);
       this.addScrap(12); this.serum += 1;
-      this.player.ultCharge += 60;
-      if (!z.parentId && !nightEnd) this.queuePerkChoice();
+      this.forEachPlayer(q => { q.ultCharge += 60; });
+      if (!z.parentId && !nightEnd) this.forEachPlayer(() => this.queuePerkChoice());
       if (nightEnd) {
         this.stageClear = true;
         for (const q of this.pickups) if (q.alive && q.kind === 'xp') q.homing = true;
@@ -458,7 +505,7 @@ DS.World = class World extends DS.Emitter {
   /* ---------------- player damage / heal ---------------- */
   hurtPlayer(raw, attacker, o) {
     const p = this.player;
-    if (p.dead || this.over) return 0;
+    if (p.dead || p.downed || p.boarded || this.over) return 0;
     if (p.invulnT > 0 || p.iframeT > 0 || p.dashIframes > 0) return 0;
     let d = (o && o.raw) ? raw : raw * this.zdm;
     if (attacker && attacker.boss && attacker.data && attacker.data.enraged) d *= (this.inf.bossEnrage ? 2 : 1.5) * (1 + 0.25 * Math.floor(attacker.data.fury || 0));
@@ -473,7 +520,7 @@ DS.World = class World extends DS.Emitter {
     return d;
   }
   heal(amt, why) {
-    const p = this.player; if (p.dead) return 0;
+    const p = this.player; if (p.dead || p.downed) return 0;
     amt *= this.inf.heal * p.healMul;
     const before = p.hp; p.hp = Math.min(p.stats.maxHp, p.hp + amt);
     const got = p.hp - before;
@@ -491,14 +538,66 @@ DS.World = class World extends DS.Emitter {
       this.emit('revive');
       return;
     }
+    if (this.players.length > 1) { this.downPlayer(p); return; }
     p.dead = true; p.hp = 0;
     this.sound('death');
     this.endRun('death');
   }
 
+  /* ---------------- co-op: down, bleed out, revive ---------------- */
+  /* at 0 HP in co-op you go down: you crawl, your weapons stop, and a teammate standing over you for TUNE.coopReviveT
+     seconds brings you back. Nobody comes within TUNE.coopBleed seconds: you're out for the run. */
+  downPlayer(p) {
+    const T = DS.TUNE;
+    p.downed = true; p.hp = 0; p.downT = T.coopBleed; p.reviveT = 0; p.dash.active = false;
+    if (p.ultActive) { p.ultActive = false; p.ultMove = null; if (p.surv.ultEnd) p.surv.ultEnd(this, p); }
+    this.stats.downs = (this.stats.downs | 0) + 1;
+    this.sound('death', p.x, p.y, 0.8); this.fx('text', p.x, p.y - 40, 16, 0, 0, 'DOWN');
+    this.say(DS.radioLine ? DS.radioLine(this, 'coopDown', p) : p.surv.name + '\'s down! Get to them!', 3);
+    this.emit('downed', p);
+    this.checkTeamOut();
+  }
+  revivePlayer(p, by) {
+    const T = DS.TUNE;
+    p.downed = false; p.reviveT = 0; p.revivedN++;
+    p.maxHpLoss = (p.maxHpLoss || 0) + T.coopReviveLoss; p.recalc();
+    p.hp = p.stats.maxHp * 0.5; p.invulnT = 2;
+    for (const z of this.onScreenZombies()) { if (z.boss) continue; const dx = z.x - p.x, dy = z.y - p.y, d = Math.sqrt(dx * dx + dy * dy) || 1; if (d < 220) { z.kbx += dx / d * 700; z.kby += dy / d * 700; z.stunT = Math.max(z.stunT, 0.6); } }
+    this.stats.revives = (this.stats.revives | 0) + 1;
+    this.fx('revive', p.x, p.y); this.sound('revive', p.x, p.y);
+    this.say(DS.radioLine ? DS.radioLine(this, 'coopRevive', p, by) : p.surv.name + '\'s back up. Don\'t do that again.', 2);
+    this.emit('coopRevive', p, by);
+  }
+  updateDowned(dt) {
+    const P = this.players, T = DS.TUNE, R2 = T.coopReviveR * T.coopReviveR;
+    for (const p of P) {
+      if (!p.downed) continue;
+      let helper = null;
+      for (const q of P) if (q !== p && this.reachable(q) && DS.dist2(q.x, q.y, p.x, p.y) < R2) { helper = q; break; }
+      if (helper) { p.reviveT += dt; if (p.reviveT >= T.coopReviveT) { this.revivePlayer(p, helper); continue; } }
+      else { p.downT -= dt; if (p.reviveT > 0) p.reviveT = Math.max(0, p.reviveT - dt * 0.5); }
+      if (p.downT <= 0) {
+        p.downed = false; p.dead = true; p.hp = 0;
+        this.say(DS.radioLine ? DS.radioLine(this, 'coopBleed', p) : 'We lost ' + p.surv.name + '. Keep moving. For them.', 3);
+        this.emit('bledOut', p);
+        this.checkTeamOut();
+      }
+    }
+  }
+  /* the run ends when nobody is left standing: evac if someone made it aboard, death otherwise */
+  checkTeamOut() {
+    let standing = 0, aboard = 0;
+    for (const q of this.players) { if (q.boarded) aboard++; else if (!q.dead && !q.downed) standing++; }
+    if (standing) return;
+    if (aboard) { this.endRun('evac'); return; }
+    for (const q of this.players) if (q.downed) { q.downed = false; q.dead = true; }
+    this.sound('death'); this.endRun('death');
+  }
+
   /* ---------------- economy ---------------- */
   addScrap(v, noMult) { const add = noMult ? v * this.diff.scrap * this.inf.scrap : v * this.player.stats.scrapMult; this.scrap += add; this.stats.scrapPicked += add; this.emit('scrap', add); }
   addXP(v) {
+    if (this.players.length > 1) { this.addTeamXP(v); return; }
     const p = this.player; if (p.dead) return;
     const g = v * p.stats.xpMult; p.xp += g; this.stats.xpGained += g;
     while (p.xp >= p.xpNeed) {
@@ -507,6 +606,26 @@ DS.World = class World extends DS.Emitter {
       this.emit('levelup', p.level);
     }
   }
+  /* co-op: every vial counts for everyone. One gain for the whole team (the survivors' average XP bonus, slowed by
+     TUNE.coopXp because two survivors kill about twice as fast), so the team levels up together and picks together. */
+  addTeamXP(v) {
+    const P = this.players, prev = this.player; let m = 0, n = 0;
+    for (const q of P) if (!q.dead) { m += q.stats.xpMult; n++; }
+    if (!n) return;
+    const g = v * m / n / (1 + DS.TUNE.coopXp * (P.length - 1)); this.stats.xpGained += g;
+    for (const q of P) {
+      if (q.dead) continue;
+      q.xp += g;
+      while (q.xp >= q.xpNeed) {
+        q.xp -= q.xpNeed; q.level++; q.xpNeed = DS.xpNeed(q.level);
+        this.as(q); this.queueChoice({ type: 'levelup' }); this.emit('levelup', q.level);
+      }
+      if (q.level > this.stats.level) this.stats.level = q.level;
+    }
+    this.as(prev);
+  }
+  /* run fn(survivor) as each survivor in turn (co-op rewards everyone gets: boss perks, objective crates) */
+  forEachPlayer(fn) { const prev = this.player; for (const q of this.players) { if (q.dead) continue; this.as(q); fn(q); } this.as(prev); }
 
   /* ---------------- choices (level-up / crate / perk) ---------------- */
   queueChoice(c) { this.choiceQueue.push(c); }
@@ -531,11 +650,16 @@ DS.World = class World extends DS.Emitter {
   rerollChoice() { if (this.choice && this.choice.type === 'levelup' && this.player.rerolls > 0) { this.player.rerolls--; this.choice = this.player.buildChoice({ type: 'levelup', reroll: true }); } }
   banishChoice(i) { if (this.choice && this.choice.type === 'levelup' && this.player.banishes > 0) { const o = this.choice.options[i]; if (!o || !o.id || o.kind === 'item') return; this.player.banishes--; this.player.banished.add(o.id); this.player.replaceOption(this.choice, i); } }
   skipChoice() { if (this.choice && this.choice.type === 'levelup' && this.player.skips > 0) { this.player.skips--; this.choice = null; this.nextChoice(); } }
+  /* co-op: the same, for survivor i (the UI and the bot act for one survivor; picks are made at the same time) */
+  choiceOf(i) { const q = this.players[i]; return q ? q.choice : null; }
+  forPlayer(i, fn) { const q = this.players[i]; if (!q) return; const prev = this.player; this.as(q); try { fn(); } finally { this.as(prev); } }
+  /* is the run waiting on anyone's choice? (world.choice alone is only the acting survivor's) */
+  anyChoice() { for (const q of this.players) if (q.choice) return true; return false; }
 
   /* ---------------- evac / hold out ---------------- */
   /* a landing pad near the survivor: open ground, inside the gas line, and a short walk (not across a wall) */
   evacSpot(dist) {
-    const p = this.player, map = this.map, f = map.flow && map.bounded && map.flow.qn > 0 ? map.flow : null, g = map.gas;
+    const p = this.players.length > 1 ? this.centre() : this.player, map = this.map, f = map.flow && map.bounded && map.flow.qn > 0 ? map.flow : null, g = map.gas;
     let best = null, bestS = 1e9;
     for (let k = 0; k < 24; k++) {
       const a = this.rng.angle(), d = dist * this.rng.range(0.85, 1.1);
@@ -561,6 +685,7 @@ DS.World = class World extends DS.Emitter {
     const p = this.player; e.t += dt;
     if (e.state === 'incoming') { if (e.t >= 6) { e.state = 'landed'; e.t = 0; e.landedAt = this.t; this.sound('heli'); this.emit('evacLanded'); } return; }
     if (e.state === 'landed') {
+      if (this.players.length > 1) { this.updateBoarding(e, dt); return; }
       const inR = DS.dist2(p.x, p.y, e.x, e.y) < e.r * e.r;
       if (inR) { e.board += dt; e.awayT = 0; if (e.board >= 3) { if (this.stats.evacTime < 0) this.stats.evacTime = this.t - e.landedAt; this.endRun('evac'); return; } }
       else { e.board = Math.max(0, e.board - dt * DS.TUNE.boardDrain); }
@@ -586,7 +711,28 @@ DS.World = class World extends DS.Emitter {
       }
     }
   }
-  canHoldOut() { return !this.stageSlot; }
+  /* co-op: each survivor boards on their own (3 s in the ring) and waits aboard; the chopper waits for everyone still
+     alive. Nobody boards while a teammate is down: pick them up first. */
+  updateBoarding(e, dt) {
+    const P = this.players, R2 = e.r * e.r; let downed = false;
+    for (const q of P) if (q.downed) downed = true;
+    for (const q of P) {
+      if (q.dead || q.boarded || q.downed) continue;
+      const inR = DS.dist2(q.x, q.y, e.x, e.y) < R2;
+      if (inR && !downed) {
+        q.board += dt;
+        if (q.board >= 3) {
+          q.boarded = true; q.board = 3; q.x = e.x; q.y = e.y; q.vx = q.vy = 0;
+          this.sound('heli', e.x, e.y, 0.6); this.fx('text', e.x, e.y - 50, 16, 0, 0, q.surv.name.toUpperCase() + ' ABOARD');
+          this.emit('boarded', q);
+        }
+      } else q.board = Math.max(0, q.board - dt * DS.TUNE.boardDrain);
+    }
+    e.board = P[0].board;   // the local survivor's meter (HUD)
+    let left = 0; for (const q of P) if (!q.dead && !q.boarded) left++;
+    if (!left) { if (this.stats.evacTime < 0) this.stats.evacTime = this.t - e.landedAt; this.endRun('evac'); }
+  }
+  canHoldOut() { return !this.stageSlot && this.players.length === 1; }   // co-op: the chopper waits for everyone
   beginHoldOut() {
     const e = this.evac; this.holdOut = true; this.holdT = 0; e.state = 'away'; e.t = 0; e.board = 0;
     this.say(DS.RADIO.holdOut ? this.rng.pick(DS.RADIO.holdOut) : 'You\'re staying? You beautiful lunatic.', 3);
@@ -606,6 +752,8 @@ DS.World = class World extends DS.Emitter {
   /* ---------------- run end ---------------- */
   endRun(result) {
     if (this.over) return;
+    const P0 = this.players[0]; if (this.player !== P0) this.as(P0);   // the summary is the local survivor's
+    if (this.players.length > 1 && result === 'evac' && !P0.boarded) result = 'death';   // co-op: your teammate made it, you didn't
     const evac = result === 'evac';
     const runScrap = this.scrap;
     const evacBonus = evac ? runScrap * 0.4 : 0;
@@ -619,26 +767,34 @@ DS.World = class World extends DS.Emitter {
       gear: this.player.gear.map(g => ({ id: g.id, level: g.level })), perks: this.player.perks.slice(),
       damage: Object.assign({}, this.stats.damage), xp: this.stats.xpGained, killedBy: result === 'death' ? (this.lastHitBy || '?') : null
     };
+    if (this.players.length > 1) this.over.players = this.players.map(q => ({ survivor: q.surv.id, name: q.name || '', level: q.level, boarded: !!q.boarded, dead: !!q.dead, revives: q.revivedN,
+      weapons: q.weapons.map(w => ({ id: w.def.id, level: w.level, evo: !!w.def.evolved, dmg: Math.round(w.dmg) })), gear: q.gear.map(g => ({ id: g.id, level: g.level })), perks: q.perks.slice() }));
     this.emit('end', this.over);
   }
 
   /* ---------------- the tick ---------------- */
   step() {
     if (this.over) return;
-    if (!this.choice && this.choiceQueue.length && !this.holdChoices) this.nextChoice();
-    if (this.choice || this.paused) return;
+    // every survivor's open choice pauses the run for everyone; co-op picks happen at the same time
+    const P = this.players, P0 = P[0]; let open = false;
+    for (let i = 0; i < P.length; i++) { const q = P[i]; if (!q.choice && q.choiceQueue.length && !this.holdChoices) { this.as(q); this.nextChoice(); } if (q.choice) open = true; }
+    if (this.player !== P0) this.as(P0);
+    if (open || this.paused) return;
     const dt = DS.DT;
     this.tick++; this.t += dt; this.minute = (this.t / 60) | 0;
     this.zdm = this.diff.dmg * this.inf.dmg * DS.TUNE.zombieDmgMult * DS.dmgMult(this.t / 60) * this.mapMod.dmg * (this.holdOut ? 1 + 0.12 * this.holdT / 60 : 1);
     this.savePrev();
-    const p = this.player;
-    p.update(dt);
+    for (let i = 0; i < P.length; i++) { this.as(P[i]); P[i].update(dt); }
+    this.as(P0);
     this.map.update(this, dt);
     if (this.director) this.director.update(this, dt);
-    this.grid.rebuild(this.zombies, this.zombies.length, p.x, p.y);
+    let c = this.centre();
+    this.grid.rebuild(this.zombies, this.zombies.length, c.x, c.y);
     this.updateZombies(dt);
-    this.grid.rebuild(this.zombies, this.zombies.length, p.x, p.y);
-    p.updateWeapons(dt);
+    c = this.centre();
+    this.grid.rebuild(this.zombies, this.zombies.length, c.x, c.y);
+    for (let i = 0; i < P.length; i++) { this.as(P[i]); P[i].updateWeapons(dt); }
+    this.as(P0);
     this.updateProjs(dt);
     this.updateAreas(dt);
     this.updateAllies(dt);
@@ -646,6 +802,7 @@ DS.World = class World extends DS.Emitter {
     this.updateTelegraphs(dt);
     this.updatePickups(dt);
     if (this.radio) this.radio.update(this, dt);
+    if (P.length > 1) this.updateDowned(dt);
     this.updateEvac(dt);
     this.updateHoldOut(dt);
     for (let i = this.lightPts.length - 1; i >= 0; i--) { const l = this.lightPts[i]; l.t -= dt; if (l.t <= 0) this.lightPts.splice(i, 1); }
@@ -661,7 +818,7 @@ DS.World = class World extends DS.Emitter {
     if (this.zombies.length > this.stats.maxZombies) this.stats.maxZombies = this.zombies.length;
   }
   savePrev() {
-    const p = this.player; p.px = p.x; p.py = p.y;
+    for (const p of this.players) { p.px = p.x; p.py = p.y; }
     const L = [this.zombies, this.projs, this.allies, this.pickups, this.hostiles, this.areas];
     for (let k = 0; k < L.length; k++) { const a = L[k]; for (let i = 0; i < a.length; i++) { const e = a[i]; e.px = e.x; e.py = e.y; } }
   }
@@ -682,23 +839,31 @@ DS.World = class World extends DS.Emitter {
 
   /* ---------------- zombies ---------------- */
   updateZombies(dt) {
-    const p = this.player, zs = this.zombies, n = zs.length, map = this.map;
+    const P = this.players, P0 = P[0], zs = this.zombies, n = zs.length, map = this.map;
     const recycleD = this.halfDiag() * 1.5, recycleD2 = recycleD * recycleD;
     const reachPad = 4, T = DS.TUNE;
     const spdMulG = this.zSpeedMul;
-    p.crowd = 0;
+    for (let k = 0; k < P.length; k++) P[k].crowd = 0;
     const flow = map.flow;
     for (let i = 0; i < n; i++) {
       const z = zs[i];
       if (!z.alive) continue;
+      // co-op: chase the nearest survivor it can reach (a little stickiness so it doesn't flip between two)
+      let p = P0;
+      if (P.length > 1) {
+        const cur = P[z.tgt] || P0, nb = this.nearestPlayer(z.x, z.y);
+        p = !this.reachable(cur) || DS.dist2(z.x, z.y, nb.x, nb.y) < DS.dist2(z.x, z.y, cur.x, cur.y) * 0.7 ? nb : cur;
+        z.tgt = p.index;
+      }
       z.age += dt;
       if (z.flashT > 0) z.flashT -= dt;
-      // burning
+      // burning (as whoever set it alight: their might)
       if (z.burnT > 0) {
         z.burnT -= dt; z.burnAcc += dt;
-        if (z.burnAcc >= 0.5) { z.burnAcc -= 0.5; this.hit(z, z.burnDps * 0.5, this.burnSrc(z.burnWid), 0, 0); if (!z.alive) continue; }
+        if (z.burnAcc >= 0.5) { z.burnAcc -= 0.5; this.as(z.burnOwner || p); this.hit(z, z.burnDps * 0.5, this.burnSrc(z.burnWid), 0, 0); if (!z.alive) continue; }
         if (z.burnT <= 0) { z.burnDps = 0; z.burnAcc = 0; }
       }
+      if (this.player !== p) this.as(p);
       if (z.regen > 0 && z.hp < z.maxHp) z.hp = Math.min(z.maxHp, z.hp + z.regen * z.maxHp * dt);
       if (z.affixes) for (let a = 0; a < z.affixes.length; a++) { const A = DS.AFFIXES[z.affixes[a]]; if (A && A.update) A.update(this, z, dt); }
       if (!z.alive) continue;
@@ -752,7 +917,13 @@ DS.World = class World extends DS.Emitter {
       if (d < rr && !z.hidden && !p.ghost) {
         const push = (rr - d) / d; z.x -= dx * push; z.y -= dy * push; p.crowd++;
       }
+      if (P.length > 1 && !z.hidden) for (let k = 0; k < P.length; k++) {   // the survivor it isn't chasing is solid too
+        const q = P[k]; if (q === p || !this.reachable(q) || q.ghost) continue;
+        const ex = q.x - z.x, ey = q.y - z.y, e2 = ex * ex + ey * ey, qr = z.r + q.r;
+        if (e2 < qr * qr) { const e = Math.sqrt(e2) || 0.001, push = (qr - e) / e; z.x -= ex * push; z.y -= ey * push; q.crowd++; }
+      }
     }
+    if (this.player !== P0) this.as(P0);
     this.separate();
     // map collision after separation
     for (let i = 0; i < n; i++) { const z = zs[i]; if (z.alive && !z.ghost) map.collide(z); }
@@ -806,10 +977,12 @@ DS.World = class World extends DS.Emitter {
 
   /* ---------------- projectiles ---------------- */
   updateProjs(dt) {
-    const ps = this.projs, p = this.player, map = this.map, hw = this.view.w / 2, hh = this.view.h / 2;
+    const ps = this.projs, P0 = this.players[0], map = this.map, hw = this.view.w / 2, hh = this.view.h / 2;
     const buf = this.qbuf2;
+    let p = P0;
     for (let i = 0; i < ps.length; i++) {
       const pr = ps[i]; if (!pr.alive) continue;
+      if (pr.owner && pr.owner !== p) { p = pr.owner; this.as(p); } else if (!pr.owner && p !== P0) { p = P0; this.as(p); }
       pr.t += dt;
       if (pr.homing > 0) {
         if (!pr.target || !pr.target.alive || pr.target.hidden) pr.target = this.grid.nearest(pr.x, pr.y, 700, z => !z.hidden);
@@ -854,6 +1027,7 @@ DS.World = class World extends DS.Emitter {
       if (pr.hitHostiles) this.projVsHostiles(pr);
       if (pr.life > 0 && pr.t >= pr.life) { if (pr.onExpire) pr.onExpire(this, pr); this.killProj(pr); }
     }
+    if (this.player !== P0) this.as(P0);
   }
   killProj(pr) { pr.alive = false; }
   projHitBefore(pr, z) {
@@ -875,9 +1049,10 @@ DS.World = class World extends DS.Emitter {
 
   /* ---------------- areas ---------------- */
   updateAreas(dt) {
-    const as = this.areas, p = this.player, buf = this.qbuf2;
+    const as = this.areas, P = this.players, P0 = P[0], buf = this.qbuf2;
     for (let i = 0; i < as.length; i++) {
       const a = as[i]; if (!a.alive) continue;
+      const o = a.owner || P0; if (this.player !== o) this.as(o);
       a.t += dt;
       if (a.follow) { if (a.follow.alive === false) a.follow = null; else { a.x = a.follow.x; a.y = a.follow.y; } }
       if (a.update) a.update(this, a, dt);
@@ -889,38 +1064,45 @@ DS.World = class World extends DS.Emitter {
           const n = this.grid.query(a.x, a.y, a.r, buf, buf.length);
           for (let k = 0; k < n; k++) { const z = buf[k]; if (!z.alive) continue; let dx = z.x - a.x, dy = z.y - a.y; const d = Math.sqrt(dx * dx + dy * dy) || 1; this.hit(z, a.dmg, a.src, dx / d, dy / d); if (a.slow) this.slowZombie(z, a.slow, a.tick + 0.1); }
         }
-        if (a.hostile && a.pdmg > 0) {
+        if (a.hostile && a.pdmg > 0) for (let k = 0; k < P.length; k++) {
+          const p = P[k]; if (P.length > 1 && !this.reachable(p)) continue;
           const rr = a.r + p.r * 0.5;
-          if (DS.dist2(a.x, a.y, p.x, p.y) < rr * rr) this.hurtPlayer(a.pdmg, null, { ignoreArmor: a.ignoreArmor, area: a });
+          if (DS.dist2(a.x, a.y, p.x, p.y) < rr * rr) { this.as(p); this.hurtPlayer(a.pdmg, null, { ignoreArmor: a.ignoreArmor, area: a }); this.as(o); }
         }
         if (a.onTick) a.onTick(this, a);
       }
       if (a.light && this.fxOn) this.lightPts.push({ x: a.x, y: a.y, r: a.r * a.light, t: dt * 1.5 });
       if (a.life > 0 && a.t >= a.life) { a.alive = false; if (a.onEnd) a.onEnd(this, a); }
     }
+    if (this.player !== P0) this.as(P0);
   }
   /* ---------------- allies ---------------- */
   updateAllies(dt) {
-    const al = this.allies;
+    const al = this.allies, P0 = this.players[0];
     for (let i = 0; i < al.length; i++) {
       const a = al[i]; if (!a.alive) continue;
+      const o = a.owner || P0; if (this.player !== o) this.as(o);
       a.t += dt;
       if (a.update) a.update(this, a, dt);
       if (a.alive && a.life > 0 && a.t >= a.life) { a.alive = false; if (a.onEnd) a.onEnd(this, a); }
     }
+    if (this.player !== P0) this.as(P0);
   }
   /* ---------------- hostile projectiles ---------------- */
   updateHostiles(dt) {
-    const hs = this.hostiles, p = this.player, map = this.map;
+    const hs = this.hostiles, P = this.players, P0 = P[0], map = this.map;
     for (let i = 0; i < hs.length; i++) {
       const h = hs[i]; if (!h.alive) continue;
       h.t += dt;
       if (h.update) { if (h.update(this, h, dt) === false) { h.alive = false; if (h.onEnd) h.onEnd(this, h); continue; } }
       else { h.x += h.vx * dt; h.y += h.vy * dt; }
       if (!h.lob) {
-        const rr = h.r + p.r;
-        if (DS.dist2(h.x, h.y, p.x, p.y) < rr * rr) {
+        let hitP = null;
+        for (let k = 0; k < P.length; k++) { const p = P[k]; if (P.length > 1 && !this.reachable(p)) continue; const rr = h.r + p.r; if (DS.dist2(h.x, h.y, p.x, p.y) < rr * rr) { hitP = p; break; } }
+        if (hitP) {
+          this.as(hitP);
           if (h.onHit) h.onHit(this, h); else this.hurtPlayer(h.dmg, h.owner, { raw: h.raw });
+          this.as(P0);
           h.alive = false; continue;
         }
         if (h.wall && map.bounded && map.blockedPoint(h.x, h.y)) { h.alive = false; if (h.onEnd) h.onEnd(this, h); continue; }
@@ -954,10 +1136,12 @@ DS.World = class World extends DS.Emitter {
   }
   /* ---------------- pickups ---------------- */
   updatePickups(dt) {
-    const pk = this.pickups, p = this.player, R = p.stats.pickup, R2 = R * R;
+    const pk = this.pickups, P = this.players, P0 = P[0];
+    let p = P0, R = p.stats.pickup, R2 = R * R;
     for (let i = 0; i < pk.length; i++) {
       const k = pk[i]; if (!k.alive) continue;
       k.t += dt;
+      if (P.length > 1) { const q = this.nearestPlayer(k.x, k.y); if (q !== p) { p = q; this.as(p); R = p.stats.pickup; R2 = R * R; } if (!this.reachable(p)) continue; }
       const dx = p.x - k.x, dy = p.y - k.y, d2 = dx * dx + dy * dy;
       if (!k.homing && d2 < R2 && k.kind !== 'crate') k.homing = true;
       if (k.kind === 'crate' && d2 < (p.r + 22) * (p.r + 22)) { this.collect(k); continue; }
@@ -968,6 +1152,7 @@ DS.World = class World extends DS.Emitter {
         if (d2 < (p.r + 8) * (p.r + 8)) this.collect(k);
       }
     }
+    if (this.player !== P0) this.as(P0);
   }
   collect(k) {
     k.alive = false; const p = this.player;

@@ -164,14 +164,23 @@ DS.TUNE = {
   benchTime: 3, benchCd: 60,  // generator 2's workbench: seconds to use it, cooldown
   lootR: 45, lootTime: 2.5, lootCd: 20, // loot spots: reach from the door, seconds to loot, global cooldown after a loot
   maxSpit: 3, maxAcid: 4, maxCharge: 4, maxGurney: 2, gurneyDmg: 9, // at most this many live ranged telegraphs of each kind (readability)
+  coopXp: 0.7,                 // co-op: each extra survivor slows the shared XP bar by this much (both kill, both level)
+  coopSpawn: 0.7, coopBossHp: 0.8, // co-op: per extra standing survivor, spawn budget/floor ×(1 + coopSpawn), boss and elite HP ×(1 + coopBossHp)
+  coopBleed: 20, coopReviveT: 3, coopReviveR: 70, coopReviveLoss: 20, // downed: seconds to bleed out; a teammate within R for T s revives; each revive costs this much max HP (never below half)
   boardDrain: 0,               // evac pad: boarding seconds lost per second spent outside the ring (0: stepping out to dodge only pauses it)
   n1MaxAcid: 2, n1Lobber: 0.5, n1Gasbag: 0.5, n1GasDeath: 0.5, // Night 1 only (the first win): acid cap, Lobber and Gasbag spawn weight, Gasbag death-burst damage
 };
 
-/* tiny event emitter mixin */
+/* tiny event emitter mixin. A listener added while this._regOwner is set (a survivor's kit, perk or weapon being set
+   up) belongs to that survivor: the world calls it through emitOwned (co-op: only for that survivor's own deeds). */
 DS.Emitter = class Emitter {
-  constructor() { this._ls = {}; }
-  on(ev, fn) { (this._ls[ev] || (this._ls[ev] = [])).push(fn); return fn; }
+  constructor() { this._ls = {}; this._regOwner = null; }
+  on(ev, fn) { if (this._regOwner) fn._owner = this._regOwner; (this._ls[ev] || (this._ls[ev] = [])).push(fn); return fn; }
   off(ev, fn) { const a = this._ls[ev]; if (!a) return; const i = a.indexOf(fn); if (i >= 0) a.splice(i, 1); }
-  emit(ev, a, b, c, d) { const ls = this._ls[ev]; if (!ls) return; for (let i = 0; i < ls.length; i++) ls[i](a, b, c, d); }
+  emit(ev, a, b, c, d) { const ls = this._ls[ev]; if (!ls) return; for (let i = 0; i < ls.length; i++) { const f = ls[i]; if (f._owner) this.emitOwned(ev, f, a, b, c, d); else f(a, b, c, d); } }
+  emitOwned(ev, f, a, b, c, d) { f(a, b, c, d); }
 };
+/* events about one survivor's own deed: they fire while that survivor is the acting one (world.player), so a listener
+   owned by another survivor skips them. Every other event reaches every owner, run as that owner. */
+DS.PERSONAL_EVENTS = { kill: 1, hit: 1, crit: 1, execute: 1, burn: 1, freeze: 1, shot: 1, dash: 1, ult: 1, playerHit: 1, heal: 1,
+  levelup: 1, pickup: 1, scrap: 1, perk: 1, upgrade: 1, weaponAdded: 1, evolve: 1, crateOpened: 1, revive: 1, choice: 1, loot: 1, defib: 1, cdCut: 1 };

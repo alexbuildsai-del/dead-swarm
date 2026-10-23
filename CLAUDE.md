@@ -23,6 +23,7 @@ and `DS_ROOT` (default: the current directory). Browser scripts need Playwright:
 ```bash
 DS_OUT=build node tools/agents/review/fuzz.js --n 4 --seed 1 --minutes 16 --mode bot   # 0 problems expected
 DS_OUT=build node tools/agents/review/saves.js && DS_OUT=build node tools/agents/meta/test_meta.js
+DS_OUT=build node tools/agents/coop/coop.js && DS_OUT=build node tools/agents/coop/solo_golden.js   # co-op rules; solo unchanged
 DS_OUT=build python3 tools/agents/review/input.py        # plus any browser script for the area you touched
 python3 tools/shot.py "run=suburbs&god=1&t=8" /tmp/deadswarm/x.png 6 844 390   # then look at the screenshot
 ```
@@ -65,6 +66,10 @@ python3 tools/shot.py "run=suburbs&god=1&t=8" /tmp/deadswarm/x.png 6 844 390   #
 - **Overlays** capture all input. Touch controls are hidden while an overlay is open, and taps get a 350 ms grace.
 - **Fonts** are embedded (`src/fonts/`, base64 via `tools/build.js`); the page makes no network requests and must
   stay that way (`tools/agents/review/offline.py` checks it).
+- **Co-op:** `world.player` is the *acting* survivor (`world.as(q)` switches it; between ticks it is `players[0]`).
+  Shared code that asks "is the survivor here?" must loop `world.players` (see ENGINE_API.md → Co-op). Run
+  `tools/agents/coop/solo_golden.js` after any sim change: solo runs must stay bit-identical (re-record with `--record`
+  only for an intended solo change). Co-op runs are not snapshotted.
 - **Account sync:** `src/web/22_cloud.js` mirrors the save to the viewer's private claude.ai artifact storage. It only
   does anything when the page runs as a claude.ai artifact; anywhere else it's a no-op.
 

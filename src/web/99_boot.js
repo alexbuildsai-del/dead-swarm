@@ -13,8 +13,11 @@ DS.boot = async function () {
   const q = new URLSearchParams(location.search);
   if (bootEl) { bootEl.classList.add('gone'); setTimeout(() => bootEl.remove(), 600); }
   if (q.get('run') && !DS.DEMO) {   // dev URL flags; the demo ignores them
-    const cfg = { map: q.get('run'), survivor: q.get('surv') || 'rook', difficulty: q.get('diff') || 'normal', seed: +q.get('seed') || 0 };
-    const w = DS.Game.start(DS.Meta && DS.Meta.buildRunConfig ? DS.Meta.buildRunConfig(cfg) : cfg);
+    const cfg = { map: q.get('run'), survivor: q.get('surv') || 'rook', difficulty: q.get('diff') || 'normal', seed: +q.get('seed') || 0, stage: +q.get('night') || 0 };
+    const rc = DS.Meta && DS.Meta.buildRunConfig ? DS.Meta.buildRunConfig(cfg) : cfg;
+    // ?coop=juno: a bot buddy playing that survivor (co-op step 1); your own save's upgrades for both
+    if (q.get('coop')) { const b = DS.Meta && DS.Meta.buildRunConfig ? DS.Meta.buildRunConfig(Object.assign({}, cfg, { survivor: q.get('coop') })) : { survivor: q.get('coop') }; rc.coop = [{ survivor: b.survivor, meta: b.meta, mastery: b.mastery, unlocked: b.unlocked, revives: b.revives, rerolls: b.rerolls, banishes: b.banishes, skips: b.skips, bot: true }]; }
+    const w = DS.Game.start(rc);
     const n = +q.get('stress') || 0;
     if (q.get('q')) { DS.Settings.quality = q.get('q'); DS.Game.applyQualitySetting(); }
     if (n) { w.holdChoices = true; w.spawnPaused = true; w.player.invulnT = 1e9; for (let i = 0; i < n; i++) { const a = Math.random() * DS.TAU, d = 120 + Math.random() * 900; w.spawnZombie(i % 4 ? 'shambler' : 'sprinter', w.player.x + Math.cos(a) * d, w.player.y + Math.sin(a) * d); } }

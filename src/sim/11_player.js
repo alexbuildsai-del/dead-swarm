@@ -39,9 +39,22 @@ DS.Player = class Player {
     this.stats = {};
     this.hp = 1;
     this.medicPool = 0; this.medicT = 0;
+    // co-op: each survivor has its own input, choices and on-screen list; index = place in world.players
+    this.index = 0; this.input = { mx: 0, my: 0, dash: false, ult: false, holdOut: false };
+    this.choice = null; this.choiceQueue = [];
+    this._os = []; this._osTick = -1;
+    this.downed = false; this.boarded = false; this.board = 0; this.downT = 0; this.reviveT = 0; this.revivedN = 0; this.maxHpLoss = 0;
   }
 
-  init() {
+  /* run fn with this survivor as the owner of whatever it sets up: event listeners (DS.Emitter) and damage mods */
+  own(fn) {
+    const w = this.w, prev = w._regOwner, n0 = w.dmgMods.length; w._regOwner = this;
+    try { return fn(); }
+    finally { w._regOwner = prev; for (let i = n0; i < w.dmgMods.length; i++) if (!w.dmgMods[i]._owner) w.dmgMods[i]._owner = this; }
+  }
+
+  init() { this.own(() => this.init0()); }
+  init0() {
     const w = this.w, S = this.surv;
     this.recalc();
     this.hp = this.stats.maxHp;
@@ -87,6 +100,7 @@ DS.Player = class Player {
     s.medicCap = 0.6 * G('medic');
     for (const pid of this.perks) { const P = DS.PERKS[pid]; if (P && P.stats) P.stats(s, this.w, this); }
     if (this.surv.stats && this.surv.statsHook) this.surv.statsHook(s, this.w, this);
+    if (this.maxHpLoss) s.maxHp = Math.max(s.maxHp * 0.5, s.maxHp - this.maxHpLoss);   // co-op revives
     s.maxHp = Math.max(1, s.maxHp);
     if (prevMax > 0) { if (s.maxHp > prevMax) this.hp += s.maxHp - prevMax; this.hp = Math.min(this.hp, s.maxHp); }
   }
@@ -113,7 +127,8 @@ DS.Player = class Player {
   /* ---------------- per-tick ---------------- */
   update(dt) {
     const w = this.w, inp = w.input, S = this.surv, s = this.stats;
-    if (this.dead) return;
+    if (this.dead || this.boarded) return;
+    if (this.downed) { this.crawl(dt, inp); return; }
     // timers
     if (this.iframeT > 0) this.iframeT -= dt;
     if (this.invulnT > 0) this.invulnT -= dt;
@@ -165,6 +180,16 @@ DS.Player = class Player {
     }
     w.map.collidePlayer(this);
   }
+  /* co-op, downed: no weapons, no dash, a slow crawl toward help */
+  crawl(dt, inp) {
+    if (this.hurtFlash > 0) this.hurtFlash -= dt;
+    inp.dash = false; inp.ult = false;
+    let mx = inp.mx, my = inp.my; const ml = Math.sqrt(mx * mx + my * my); if (ml > 1) { mx /= ml; my /= ml; }
+    this.moving = ml > 0.12; if (this.moving) { this.facingX = mx / ml; this.facingY = my / ml; }
+    const sp = this.stats.moveSpeed * 0.25; this.vx = mx * sp; this.vy = my * sp; this.x += this.vx * dt; this.y += this.vy * dt;
+    if (this.moving) this.walk += dt * 0.4;
+    this.w.map.collidePlayer(this);
+  }
   dashCooldown() { return (this.surv.dash ? this.surv.dash.cd : 2.5) * this.stats.dashCd; }
   canDash() { return !this.dead && !this.dash.active && this.dash.charges > 0 && this.rootT <= 0 && !(this.ultActive && this.surv.noDashDuringUlt); }
   tryDash() {
@@ -206,7 +231,7 @@ DS.Player = class Player {
   power() { return 1 + 0.15 * this.w.t / 60; }
 
   updateWeapons(dt) {
-    if (this.dead) return;
+    if (this.dead || this.downed || this.boarded) return;
     const w = this.w;
     for (let i = 0; i < this.weapons.length; i++) { const inst = this.weapons[i]; if (inst.def.update) inst.def.update(w, inst, dt); }
   }
@@ -216,7 +241,7 @@ DS.Player = class Player {
     const inst = { def, id: def.id, level: level || 1, L: null, data: {}, t: 0, dmg: 0, src: null, evo: !!def.evolved, acquiredAt: this.w.t };
     inst.L = def.levels ? def.levels[Math.min(def.levels.length, inst.level) - 1] : (def.stats || {});
     inst.src = DS.makeSrc(def.id, Object.assign({ inst: inst }, def.src || {}));
-    inst.src.inst = inst;
+    inst.src.inst = inst; inst.owner = this;
     return inst;
   }
   addWeapon(id) {
@@ -225,7 +250,7 @@ DS.Player = class Player {
     if (this.weapons.length >= 5) return null;
     const inst = this.makeInst(def, 1);
     this.weapons.push(inst);
-    if (def.create) def.create(this.w, inst);
+    if (def.create) this.own(() => def.create(this.w, inst));
     this.w.stats.weaponsOwned = Math.max(this.w.stats.weaponsOwned, this.weapons.length);
     this.w.emit('weaponAdded', inst);
     return inst;
@@ -251,7 +276,7 @@ DS.Player = class Player {
   addPerk(id) {
     const P = DS.PERKS[id]; if (!P || this.hasPerk(id)) return;
     this.perks.push(id); this.w.stats.perksTaken.push(id);
-    if (P.apply) P.apply(this.w, this);
+    if (P.apply) this.own(() => P.apply(this.w, this));
     this.recalc();
     this.w.sound('perk'); this.w.emit('perk', id);
   }
@@ -262,7 +287,7 @@ DS.Player = class Player {
     const idx = this.weapons.indexOf(inst);
     const ni = this.makeInst(evoDef, 1); ni.dmg = inst.dmg; ni.evo = true; ni.from = inst.def.id;
     this.weapons[idx] = ni;
-    if (evoDef.create) evoDef.create(this.w, ni);
+    if (evoDef.create) this.own(() => evoDef.create(this.w, ni));
     this.w.stats.evolutions.push(evoId); (this.w.stats.evoTimes || (this.w.stats.evoTimes = [])).push(Math.round(this.w.t));
     this.w.fx('evolve', this.x, this.y, 0, 0, 0, evoId); this.w.sound('evolve'); this.w.shake(10);
     this.w.emit('evolve', evoId, ni);

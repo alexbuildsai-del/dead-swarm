@@ -17,7 +17,7 @@ DS.devApply = function (w, o) {
       const def = DS.WEAPONS[id];
       if (def.evolved) {
         if (p.weapons.length >= 5) dropLast();
-        const inst = p.makeInst(def, 1); inst.evo = true; inst.from = def.from; p.weapons.push(inst); if (def.create) def.create(w, inst);
+        const inst = p.makeInst(def, 1); inst.evo = true; inst.from = def.from; p.weapons.push(inst); if (def.create) p.own(() => def.create(w, inst));
       } else { if (!p.hasWeapon(id)) { if (p.weapons.length >= 5) dropLast(); p.addWeapon(id); } for (let i = 1; i < lv; i++) p.levelWeapon(id); }
     } else if (DS.GEAR[id]) { for (let i = 0; i < lv; i++) p.addGear(id); }
   }

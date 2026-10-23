@@ -94,16 +94,16 @@ Tick a box and add a one-line note when an item lands.
 - Balance rule for all of these: every new power source costs time, standing still, a detour or extra zombies. If
   in-run power rises, pay for it by trimming Safehouse ranks, which moves power from grinding to playing the map well.
 
-## Multiplayer (Steam)
-Co-op for 2–4 players. Full design and plan: [`docs/plans/multiplayer.md`](plans/multiplayer.md). Proposed: local co-op plus
-Steam Remote Play Together at launch, then native online co-op (deterministic lockstep over Steam's relay) as the first
-big update. The four open decisions are listed at the end of the plan.
-- [ ] M0: determinism audit, fixed logical view, desync harness
-- [ ] M1: multi-survivor sim, co-op rules (shared XP, revives, scaling), bot teammates
-- [ ] M2: local co-op (gamepads, shared camera) and Remote Play Together
-- [ ] M3: lockstep netcode, desync fuzz in CI
-- [ ] M4: Steam lobbies, invites, P2P transport, rich presence, rejoin
-- [ ] M5: co-op balance with bots, co-op achievements, Steam Playtest beta
+## Multiplayer (co-op for two)
+Plan and status: [`docs/plans/multiplayer.md`](plans/multiplayer.md). Decided: two players, built before the Steam
+launch; online first without Steam (two browsers, copy-paste codes); a separate CO-OP mode next to the solo journey;
+normal progression into each player's own save; demo content first, in the free demo too; shared level-up pause;
+the same survivor twice allowed; revives cost 20 max HP.
+- [x] Step 1: two survivors in one world (co-op rules, revives, boarding, scaling), a bot buddy, the Co-op screen
+  (tests `tools/agents/coop/coop.js`, `tools/agents/coop/solo_golden.js`)
+- [ ] Step 2: online with a friend: lockstep over WebRTC, Host / Join codes, waiting screen, desync check
+- [ ] Step 3: play it together; co-op balance pass with bots; St. Agnes and Quarantine in co-op
+- [ ] Step 4 (Steam): invites, Steam relay transport, rich presence, rejoin
 
 ## Steam prep
 - Controller support and a fullscreen toggle (neither exists yet). Test on Steam Deck.

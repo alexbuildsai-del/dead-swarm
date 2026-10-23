@@ -729,3 +729,24 @@ DS.RADIO.bossEnrage = [
   'Listeners, it\'s gone red in the face. Whatever you\'ve got left, now\'s the time.',
   'That thing just found a second wind. Find yours.'
 ];
+
+/* co-op: a survivor goes down, gets picked up, or bleeds out ({name} = them, {by} = whoever helped) */
+DS.RADIO.coopDown = [
+  '{name}\'s down! Somebody get over there!',
+  'Man down, it\'s {name}. Stand over them, I\'ll keep the music going.',
+  '{name} just hit the pavement. Get them up before the dead get comfortable.'
+];
+DS.RADIO.coopRevive = [
+  '{name}\'s back on their feet. {by}, you\'re a saint.',
+  'Up you get, {name}. That one\'s going on the wall.',
+  'Look at that, {name} lives. Thank {by} later.'
+];
+DS.RADIO.coopBleed = [
+  'We lost {name}. Keep going. For them.',
+  '{name}\'s gone quiet. Don\'t you dare stop.',
+  'That\'s {name} off the air. You\'re the whole show now.'
+];
+DS.radioLine = function (world, key, p, by) {
+  const pool = DS.RADIO[key]; if (!pool || !pool.length) return '';
+  return DS.radioFormat(world.rng.pick(pool), world, { name: p && p.surv ? p.surv.name : 'friend', by: by && by.surv ? by.surv.name : 'friend' });
+};

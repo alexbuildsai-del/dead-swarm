@@ -28,19 +28,24 @@
     cracks(world, z, x, y, r, T, d) { return BK.tg(world, z, { shape: 'cracks', x, y, r, T, kind: (d && d.kind) || 'boss' }, d); },
     /* generic onFire: damage (once per group), side effects, fx, sound, follow-up */
     fire(world, tg) {
-      const d = tg.data || NIL, z = tg.owner, p = world.player;
+      const d = tg.data || NIL, z = tg.owner, P = world.players, prev = world.player;
       const att = z && z.alive && z.id === tg.ownerId ? z : null;
       let dealt = 0;
-      if (d.pd > 0 && !(d.grp && d.grp.hit) && world.inTelegraph(tg, p.x, p.y, p.r * 0.6)) {
-        dealt = world.hurtPlayer(d.pd, att, !att && tg.by ? { by: tg.by } : undefined);
-        if (d.grp) d.grp.hit = 1;
-        if (dealt > 0) {
+      for (let k = 0; k < P.length; k++) {   // co-op: everyone standing in it (grp.hit: one bit per survivor)
+        const p = P.length === 1 ? prev : P[k], bit = P.length === 1 ? 1 : 1 << k;
+        if (P.length > 1 && !world.reachable(p)) continue;
+        if (!(d.pd > 0 && !(d.grp && (d.grp.hit & bit)) && world.inTelegraph(tg, p.x, p.y, p.r * 0.6))) continue;
+        if (p !== world.player) world.as(p);
+        const got = world.hurtPlayer(d.pd, att, !att && tg.by ? { by: tg.by } : undefined); dealt += got;
+        if (d.grp) d.grp.hit |= bit;
+        if (got > 0) {
           if (d.slow) p.addBuff('zslow', d.slow[1], { speed: -d.slow[0] });
           if (d.root && !p.dash.active) { p.rootT = Math.max(p.rootT, d.root); world.fx('zroot', p.x, p.y, d.root); }
           if (d.pull && att) ZU.pull(world, att.x, att.y, d.pull * (p.stats.kbTaken === undefined ? 1 : p.stats.kbTaken), 0.25);
           if (d.push) { const dx = p.x - tg.x, dy = p.y - tg.y, l = Math.sqrt(dx * dx + dy * dy) || 1, k = d.push * (p.stats.kbTaken === undefined ? 1 : p.stats.kbTaken); ZU.pull(world, p.x + dx / l * (k + 40), p.y + dy / l * (k + 40), k, 0.2); }
         }
       }
+      if (world.player !== prev) world.as(prev);
       if (d.pud) ZU.puddle(world, tg.x, tg.y, d.pud[0], d.pud[1], d.pud[2], d.pud[3]);
       const fx = d.fx !== undefined ? d.fx : (tg.shape === 'line' ? 'zline' : tg.shape === 'cone' ? 'zcone' : tg.shape === 'ring' ? 'zring' : tg.shape === 'cross' ? 'zcross' : 'zslam');
       if (fx) {

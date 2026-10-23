@@ -1,6 +1,8 @@
 # Multiplayer (Steam, PC): co-op design and implementation plan
 
-Status: proposal, nothing built yet. Linked from `docs/ROADMAP.md` → Multiplayer.
+Status: **step 1 built** (two survivors in one world, a bot buddy, the Co-op screen; see "Decisions" and "Status" at the
+end). Linked from `docs/ROADMAP.md` → Multiplayer. The sections below are the original proposal; where the decisions
+changed it, the decisions win.
 
 ## The recommendation in short
 **Co-op for 2–4 players, built in two stages that share most of the work:**
@@ -146,13 +148,50 @@ every 60 ticks:    send hash(world) ──► host compares ──► mismatch? 
 | M4 | Steam: Electron, lobbies, invites, P2P transport, rich presence, bot takeover and rejoin | M | Native online co-op on Steam |
 | M5 | Co-op balance with bots (2, 3 and 4 players), co-op achievements, Steam Playtest beta | M | Ready to ship as the update |
 
-## Decisions needed from you
-1. **Remote Play Together at launch, native online as an update?** (recommended) Or hold the launch until native online
-   works?
-2. **Player count:** 2–4 (recommended), or 2 only at first, which halves the balance and UI work.
-3. **Level-ups:** shared pause with simultaneous picks (recommended), or no pause, with a choosing player briefly
-   protected in a bubble?
-4. **Duplicate survivors in one team:** no at first (recommended), or allowed with colour tints?
+## Decisions (October 2026)
+1. **Two players, built before the Steam launch.** No 3–4 player mode for now, which halves the UI and balance work.
+2. **Online first, no Steam needed to test it.** Two browsers connect directly (WebRTC). The host sends a code over
+   Discord or WhatsApp, the friend pastes it and sends a reply code back. On the same Wi-Fi it connects over the LAN by
+   itself. No server, no accounts. Steam invites replace the codes at launch. Remote Play Together and couch co-op are
+   no longer needed for launch.
+3. **A separate CO-OP mode** in the menu, next to the solo journey, which is untouched.
+4. **Normal progression, not a sandbox.** Each player plays with their own save: starting survivors, their own
+   Safehouse upgrades, and the Scrap, Serum, mastery, Nights and achievements of every co-op run go into their own save.
+   Co-op runs themselves are not resumable (a dropped connection ends the run; you keep what you earned).
+5. **Demo content first, in the same build**: co-op ships in the free demo (Maple Hollow, Rook and Juno) on GitHub
+   Pages and itch.io, so anyone can try it. The other maps follow before Steam.
+6. **Level-ups pause the game for both**, and each picks their own card at the same time.
+7. **The same survivor twice is allowed.**
+8. **Revives cost max HP**: each time a teammate picks you up you come back with 20 less max HP (never below half).
+   First Aid Kit (+20 max HP and a 20 HP heal, from level-ups and crates) wins it back.
+9. **No password, no private site.** With GitHub Pro the repository can be made private while the Pages site stays
+   public (only the code is hidden).
+
+## Status
+**Step 1 (done): two survivors in one world.** Playable offline with a bot buddy from the menu (Co-op → With → a bot).
+- `world.players`; `world.player` is now the **acting survivor**: the one whose weapon, bullet, perk or choice is
+  running, or whom a zombie is after. `world.as(q)` switches it; between ticks it is `players[0]` (the local one).
+  This keeps the ~250 existing `world.player` references working without edits.
+- Listeners and damage mods a survivor's kit, perk or weapon sets up belong to that survivor (`Player.own`,
+  `DS.Emitter`): personal events (kill, dash, hit…) only fire for its own deeds. Projectiles, areas and allies carry
+  an `owner` and run as it.
+- Zombies chase the nearest standing survivor; contact, puddles, enemy shots, telegraphs and boss attacks hit every
+  survivor in them; pickups go to the nearest; the flow field has a source per survivor.
+- Shared XP (TUNE.coopXp), choices per survivor (the run waits on everyone), boss perks and objective crates for
+  everyone, co-op spawn and boss/elite HP scaling (TUNE.coopSpawn, coopBossHp).
+- Down at 0 HP, crawl, 20 s bleed-out, a teammate within 70 for 3 s revives (−20 max HP). Each survivor boards the
+  chopper on their own; nobody boards while a teammate is down; no Hold Out in co-op.
+- Maple Hollow: generators charge for either survivor (50% faster with both inside), loot and the workbench for either.
+- Tests: `tools/agents/coop/coop.js` (rules, ownership, determinism) and `tools/agents/coop/solo_golden.js` (solo
+  runs are bit-identical to before co-op).
+- Known gaps: set-piece events, boss arrival points and St. Agnes / Quarantine objectives still centre on players[0]
+  (co-op is Maple Hollow only for now); no co-op balance pass yet; the damage meter merges both survivors.
+
+**Step 2 (next): online with a friend.** Lockstep over a browser-to-browser connection (WebRTC data channel), Host /
+Join with copy-paste codes, a waiting screen, the desync check, the friend's own save and run config sent at the start.
+
+**Step 3:** play it together, then a co-op balance pass with the bots. **Step 4 (Steam):** invites instead of codes,
+Steam's relay as the transport, rich presence.
 
 ## Sources
 - Vampire Survivors co-op history: [mp1st: update 1.6 adds local co-op](https://mp1st.com/news/vampire-survivors-update-1-6-for-august-17-adds-local-co-op-and-more), [Prima: playing it online via Remote Play](https://primagames.com/tips/how-to-play-vampire-survivors-co-op-online-via-steam-remote-play)

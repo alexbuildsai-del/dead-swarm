@@ -15,8 +15,12 @@
      buffers of whatever weapon is mid-iteration, so they run at the end of the tick */
   function later(world, fn, a, b, c) {
     let q = world._perkQ;
-    if (!q) { q = world._perkQ = []; world.on('tick', () => { const n = q.length; for (let i = 0; i < n; i++) { const e = q[i]; e[0](e[1], e[2], e[3]); } q.splice(0, n); }); }
-    if (q.length < 400) q.push([fn, a, b, c]);
+    if (!q) {
+      const own = world._regOwner; world._regOwner = null;   // one runner for every survivor; each entry runs as its own
+      q = world._perkQ = []; world.on('tick', () => { const n = q.length, prev = world.player; for (let i = 0; i < n; i++) { const e = q[i]; if (e[4] !== world.player) world.as(e[4]); e[0](e[1], e[2], e[3]); } if (world.player !== prev) world.as(prev); q.splice(0, n); });
+      world._regOwner = own;
+    }
+    if (q.length < 400) q.push([fn, a, b, c, world.player]);
   }
 
   P('hotlead', {

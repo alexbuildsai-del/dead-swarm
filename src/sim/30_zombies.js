@@ -34,9 +34,18 @@
     },
     /* damage the survivor if inside telegraph tg; returns damage dealt */
     hitP(world, tg, dmg, z, pad) {
-      const p = world.player;
-      if (world.inTelegraph(tg, p.x, p.y, pad === undefined ? p.r * 0.6 : pad)) return world.hurtPlayer(dmg, z || null, !z && tg.by ? { by: tg.by } : undefined);
-      return 0;
+      const P = world.players;
+      if (P.length === 1) {
+        const p = world.player;
+        if (world.inTelegraph(tg, p.x, p.y, pad === undefined ? p.r * 0.6 : pad)) return world.hurtPlayer(dmg, z || null, !z && tg.by ? { by: tg.by } : undefined);
+        return 0;
+      }
+      const prev = world.player; let sum = 0;   // co-op: everyone standing in it is hit
+      for (const p of P) {
+        if (!world.reachable(p) || !world.inTelegraph(tg, p.x, p.y, pad === undefined ? p.r * 0.6 : pad)) continue;
+        world.as(p); sum += world.hurtPlayer(dmg, z || null, !z && tg.by ? { by: tg.by } : undefined);
+      }
+      world.as(prev); return sum;
     },
     spd(world, z) { return z.spd * z.spdMul * world.zSpeedMul * (1 + (z.buffT > 0 ? z.buffAmt : 0)) * (1 - z.slowAmt); },
     stop(z) { z.ctrl = 1; z.vx = 0; z.vy = 0; },

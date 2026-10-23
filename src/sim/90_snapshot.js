@@ -76,7 +76,7 @@ DS.Snapshot = {
     for (const id of SP.perks) p.addPerk(id);
     for (const wi of SP.weapons) {
       const def = DS.WEAPONS[wi.id]; if (!def) continue;
-      if (wi.evo || def.evolved) { const inst = p.makeInst(def, 1); inst.evo = true; inst.from = wi.from || def.from; inst.dmg = wi.dmg || 0; p.weapons.push(inst); if (def.create) def.create(w, inst); }
+      if (wi.evo || def.evolved) { const inst = p.makeInst(def, 1); inst.evo = true; inst.from = wi.from || def.from; inst.dmg = wi.dmg || 0; p.weapons.push(inst); if (def.create) p.own(() => def.create(w, inst)); }
       else { const inst = p.addWeapon(wi.id); if (!inst) continue; while (inst.level < wi.level) p.levelWeapon(wi.id); inst.dmg = wi.dmg || 0; }
     }
     p.recalc();
@@ -117,7 +117,7 @@ DS.Snapshot = {
     return w;
   },
   save(w) {
-    if (!this.storage || !w || w.over || w.menu) return false;
+    if (!this.storage || !w || w.over || w.menu || w.players.length > 1) return false;   // co-op runs are not resumable
     try { return this.storage.set(this.KEY, JSON.stringify(this.serialize(w))); } catch (e) { return false; }
   },
   load() {

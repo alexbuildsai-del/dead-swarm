@@ -106,9 +106,10 @@ DS.Renderer = class Renderer {
     if (world.map !== this.mapRef) { this.mapRef = world.map; this.resetMap(); }
     const ctx = this.ctx, p = world.player, dpr = this.dpr, z0 = this.zoom;
     DS.Art.boil = ((t * 8) | 0) % 3;
-    // camera
+    // camera (co-op: once you're out or aboard it follows the teammate still fighting)
     const px = p.px + (p.x - p.px) * alpha, py = p.py + (p.y - p.py) * alpha;
-    this.camX = px; this.camY = py;
+    const cam = (p.dead || p.boarded) && world.players ? world.players.find(q => !q.dead && !q.boarded) : null;
+    this.camX = cam ? cam.px + (cam.x - cam.px) * alpha : px; this.camY = cam ? cam.py + (cam.y - cam.py) * alpha : py;
     if (this.shakeAmp > 0.1 && DS.Settings.shake) { this.shakeX = (Math.random() * 2 - 1) * this.shakeAmp; this.shakeY = (Math.random() * 2 - 1) * this.shakeAmp; this.shakeAmp *= Math.pow(0.0008, dt); }
     else { this.shakeX = this.shakeY = 0; this.shakeAmp = 0; }
     world.view.w = this.vw; world.view.h = this.vh;
@@ -138,13 +139,16 @@ DS.Renderer = class Renderer {
     ctx.setTransform(s, 0, 0, s, -cx * s + this.cv.width / 2, -cy * s + this.cv.height / 2);
 
     const inView = (x, y, m) => x > L - m && x < R + m && y > T - m && y < B + m;
+    const P = world.players || [p], coop = P.length > 1;   // co-op: draw hooks run as the entity's owner (world.as)
     // areas (ground zones)
     for (const a of world.areas) {
       if (!a.alive || !inView(a.x, a.y, a.r)) continue;
       const fn = a.draw && DS.DRAW.area[a.draw];
+      if (coop && a.owner && a.owner !== world.player) world.as(a.owner);
       if (fn) fn(ctx, a, a.px + (a.x - a.px) * alpha, a.py + (a.y - a.py) * alpha, t, world);
       else if (a.draw !== 'none') this.defaultArea(ctx, a, t);
     }
+    if (world.player !== p) world.as(p);
     // props under entities
     for (const pr of world.map.props) if (inView(pr.x, pr.y, 160)) DS.Art.drawProp(ctx, pr, t, world);
     if (world.props) for (const pr of world.props) if (inView(pr.x, pr.y, 160)) DS.Art.drawProp(ctx, pr, t, world);
@@ -170,24 +174,27 @@ DS.Renderer = class Renderer {
     }
     const al = world.allies;
     for (let i = 0; i < al.length && n < 4090; i++) { const a = al[i]; if (!a.alive || a.layer === 'ground' || a.layer === 'top') continue; const y = a.py + (a.y - a.py) * alpha; refs[n] = a; keys[n] = Math.floor(y + 100000) * 4096 + n; n++; }
-    refs[n] = p; keys[n] = Math.floor(py + 100000) * 4096 + n; n++;
+    for (const q of P) { if (q.dead || q.boarded) continue; const y = q === p ? py : q.py + (q.y - q.py) * alpha; refs[n] = q; keys[n] = Math.floor(y + 100000) * 4096 + n; n++; }
     const sub = keys.subarray(0, n); sub.sort();
     for (let k = 0; k < n; k++) {
       const e = refs[sub[k] % 4096];
-      if (e === p) this.drawPlayer(ctx, world, px, py, t);
+      if (e === p) this.drawPlayer(ctx, world, px, py, t, p);
       else if (e instanceof DS.Zombie) this.drawZombie(ctx, e, alpha, t, world);
-      else this.drawAlly(ctx, e, alpha, t, world, inView);
+      else if (e instanceof DS.Player) this.drawPlayer(ctx, world, e.px + (e.x - e.px) * alpha, e.py + (e.y - e.py) * alpha, t, e);
+      else { if (coop && e.owner && e.owner !== world.player) world.as(e.owner); this.drawAlly(ctx, e, alpha, t, world, inView); }
     }
     // top allies (drones etc.)
-    for (const a of world.allies) { if (!a.alive || a.layer !== 'top') continue; this.drawAlly(ctx, a, alpha, t, world, inView); }
+    for (const a of world.allies) { if (!a.alive || a.layer !== 'top') continue; if (coop && a.owner && a.owner !== world.player) world.as(a.owner); this.drawAlly(ctx, a, alpha, t, world, inView); }
     // projectiles
     for (const pr of world.projs) {
       if (!pr.alive) continue;
       const x = pr.px + (pr.x - pr.px) * alpha, y = pr.py + (pr.y - pr.py) * alpha;
       if (!inView(x, y, 60)) continue;
       const fn = DS.DRAW.proj[pr.draw];
+      if (coop && pr.owner && pr.owner !== world.player) world.as(pr.owner);
       if (fn) fn(ctx, pr, x, y, t, world); else this.defaultProj(ctx, pr, x, y);
     }
+    if (world.player !== p) world.as(p);
     // hostile projectiles
     for (const h of world.hostiles) {
       if (!h.alive) continue;
@@ -196,9 +203,14 @@ DS.Renderer = class Renderer {
       const fn = DS.DRAW.hostile[h.draw];
       if (fn) fn(ctx, h, x, y, t, world); else this.defaultHostile(ctx, h, x, y, t);
     }
-    // weapon overlays (arcs, beams…) drawn by weapon modules
-    for (const inst of p.weapons) { const fn = DS.DRAW.weapon[inst.def.id]; if (fn) fn(ctx, inst, world, alpha, t); }
-    const sd = DS.DRAW.survivor[p.id]; if (sd) sd(ctx, p, world, alpha, t);
+    // weapon overlays (arcs, beams…) drawn by weapon modules, each survivor's as that survivor
+    for (const q of P) {
+      if (q.dead || q.boarded || q.downed) continue;
+      if (q !== world.player) world.as(q);
+      for (const inst of q.weapons) { const fn = DS.DRAW.weapon[inst.def.id]; if (fn) fn(ctx, inst, world, alpha, t); }
+      const sd = DS.DRAW.survivor[q.id]; if (sd) sd(ctx, q, world, alpha, t);
+    }
+    if (world.player !== p) world.as(p);
     if (!darkish) { this.drawTelegraphs(ctx, world, t, 'edge'); this.drawDangerCue(ctx, world, px, py, t); }
     // world fx
     if (DS.FXS) DS.FXS.drawWorld(ctx, t, dt, this);
@@ -245,13 +257,42 @@ DS.Renderer = class Renderer {
     if (fn) fn(ctx, a, x, y, t, world);
     else { ctx.fillStyle = DS.COL.uv; ctx.beginPath(); ctx.arc(x, y, a.r, 0, DS.TAU); ctx.fill(); }
   }
-  drawPlayer(ctx, world, x, y, t) {
-    const p = world.player;
-    if (p.dead) return;
-    // i-frame blink
-    if ((p.invulnT > 0 || p.dashIframes > 0) && ((t * 20) | 0) % 2 === 0 && !p.dash.active) ctx.globalAlpha = 0.55;
-    DS.Art.drawSurvivor(ctx, p, x, y, t, world);
-    ctx.globalAlpha = 1;
+  drawPlayer(ctx, world, x, y, t, q) {
+    const p = q || world.player, local = world.player;
+    if (p.dead || p.boarded) return;
+    if (p !== local) world.as(p);
+    if (p.downed) this.drawDowned(ctx, world, p, x, y, t);
+    else {
+      // i-frame blink
+      if ((p.invulnT > 0 || p.dashIframes > 0) && ((t * 20) | 0) % 2 === 0 && !p.dash.active) ctx.globalAlpha = 0.55;
+      DS.Art.drawSurvivor(ctx, p, x, y, t, world);
+      ctx.globalAlpha = 1;
+    }
+    if (p !== local) { world.as(local); this.drawMateTag(ctx, p, x, y); }
+  }
+  /* co-op, downed: lying on their side inside the yellow revive ring; the ring fills while a teammate stands in it,
+     and a pale arc runs down the bleed-out time */
+  drawDowned(ctx, world, p, x, y, t) {
+    const T = DS.TUNE, R = T.coopReviveR, C = DS.COL;
+    ctx.save(); ctx.translate(x, y); ctx.globalAlpha = 0.85;
+    ctx.fillStyle = 'rgba(242,200,75,' + (0.1 + 0.06 * Math.sin(t * 4)) + ')'; ctx.beginPath(); ctx.arc(0, 0, R, 0, DS.TAU); ctx.fill();
+    ctx.globalAlpha = 1; ctx.setLineDash([8, 6]); ctx.lineWidth = 3; ctx.strokeStyle = C.yellow; ctx.beginPath(); ctx.arc(0, 0, R, 0, DS.TAU); ctx.stroke(); ctx.setLineDash([]);
+    if (p.reviveT > 0) { ctx.lineWidth = 6; ctx.strokeStyle = C.yellow; ctx.beginPath(); ctx.arc(0, 0, R, -Math.PI / 2, -Math.PI / 2 + DS.TAU * DS.clamp(p.reviveT / T.coopReviveT, 0, 1)); ctx.stroke(); }
+    ctx.lineWidth = 3; ctx.strokeStyle = C.paper; ctx.globalAlpha = 0.7; ctx.beginPath(); ctx.arc(0, 0, R + 7, -Math.PI / 2, -Math.PI / 2 + DS.TAU * DS.clamp(p.downT / T.coopBleed, 0, 1)); ctx.stroke(); ctx.globalAlpha = 1;
+    ctx.rotate((p.facingX < 0 ? -1 : 1) * Math.PI / 2); ctx.globalAlpha = 0.9;
+    DS.Art.drawSurvivor(ctx, p, 0, 0, t, world);
+    ctx.restore(); ctx.globalAlpha = 1;
+    ctx.font = '13px ' + DS.FONT.head; ctx.textAlign = 'center'; ctx.lineWidth = 3.5; ctx.strokeStyle = C.ink; ctx.fillStyle = C.yellow;
+    const s = p.reviveT > 0 ? 'REVIVING' : 'DOWN · ' + Math.ceil(Math.max(0, p.downT)) + 's';
+    ctx.strokeText(s, x, y - R - 12); ctx.fillText(s, x, y - R - 12);
+  }
+  /* the teammate's name and HP over their head */
+  drawMateTag(ctx, p, x, y) {
+    const C = DS.COL, w = 40, k = DS.clamp(p.hp / p.stats.maxHp, 0, 1), ty = y - 58;
+    ctx.font = '11px ' + DS.FONT.head; ctx.textAlign = 'center'; ctx.lineWidth = 3; ctx.strokeStyle = C.ink; ctx.fillStyle = C.paper;
+    const nm = (p.name || p.surv.name || '').toUpperCase(); ctx.strokeText(nm, x, ty); ctx.fillText(nm, x, ty);
+    if (p.downed) return;
+    ctx.fillStyle = C.ink; ctx.fillRect(x - w / 2 - 1, ty + 6, w + 2, 6); ctx.fillStyle = '#9fe08a'; ctx.fillRect(x - w / 2, ty + 7, w * k, 4);
   }
   /* a red warning sign over the survivor only in the last moment before an attack they stand in lands (CUE
      seconds), so it means "move now" rather than "you are in a circle"; it beats faster as the hit nears. Same test the

@@ -981,13 +981,7 @@
     prepRun(world) {
       if (!world || !world.map || this._prepped === world) return; this._prepped = world;
       if (world.menu) return;            // the backdrop only shows the two core zombies
-      const p = world.player, id = (p.surv && p.surv.id) || p.id || 'rook', of = (p.mastery && p.mastery.outfit) | 0;
-      const s = K.svset(id, of), sp = s.spec;
-      for (let i = 0; i < s.nw; i++) setFrame(s, 'walk' + i, 0);     // drawn this frame
-      const keys = ['idle0', 'idle1', 'dash0'].concat(sp.bike ? ['bike0', 'bike1'] : []);
-      for (let i = s.nw - 1; i >= 0; i--) for (let b = 2; b >= 1; b--) K.warm(() => setFrame(s, 'walk' + i, b), true, true);
-      for (const k of keys) for (let b = 0; b < 3; b++) K.warm(() => setFrame(s, k, b), false, true);
-      for (let i = 0; i < s.nw; i++) for (let b = 0; b < 3; b++) K.warm(() => maskFrame(s, 'walk' + i, b), false, true);
+      for (const p of world.players || [world.player]) this.prepSurvivor(p);   // co-op: the teammate's sprites too
       const def = world.map.def;
       if (def && def.variants) for (const v of def.variants) if (K.Z[v]) {
         const zs = K.zset(v);
@@ -997,6 +991,16 @@
       }
       if (world.map.id === 'quarantine' && K.Z.nest) { const ns = K.zset('nest'); for (let i = 0; i < 4; i++) for (let b = 0; b < 3; b++) K.warm(() => setFrame(ns, i, b), false, true); }
       for (const t of ['shambler', 'sprinter']) { const zs = K.zset(t); if (zs.seen !== RUN.gen) noteSet(zs); }
+    },
+    /* one survivor's frames: this frame's walk cycle now, the rest queued */
+    prepSurvivor(p) {
+      const id = (p.surv && p.surv.id) || p.id || 'rook', of = (p.mastery && p.mastery.outfit) | 0;
+      const s = K.svset(id, of), sp = s.spec;
+      for (let i = 0; i < s.nw; i++) setFrame(s, 'walk' + i, 0);     // drawn this frame
+      const keys = ['idle0', 'idle1', 'dash0'].concat(sp.bike ? ['bike0', 'bike1'] : []);
+      for (let i = s.nw - 1; i >= 0; i--) for (let b = 2; b >= 1; b--) K.warm(() => setFrame(s, 'walk' + i, b), true, true);
+      for (const k of keys) for (let b = 0; b < 3; b++) K.warm(() => setFrame(s, k, b), false, true);
+      for (let i = 0; i < s.nw; i++) for (let b = 0; b < 3; b++) K.warm(() => maskFrame(s, 'walk' + i, b), false, true);
     },
     /* once per rendered frame, before anything is drawn from an atlas: hand over the renderer's quality step and
        world→device transform, then run the queued builds under the frame budget */

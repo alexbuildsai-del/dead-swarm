@@ -87,6 +87,22 @@ Spawn with object literals; any field below can be set.
   invuln,noBite,spdMul,windMul(bite wind-up mult),atkCdMul,dmgTakenMul,regen(fraction of max/s),noRecycle,scale,walk,
   tag(1 = radio tag, 2 = elite-hunt tag),ghost(no separation/map collision)`.
 
+## Co-op (two survivors in one world)
+`world.players` lists every survivor (`players[0]` is the local one; `cfg.coop` holds the others' run configs).
+**`world.player` is the acting survivor**: whose weapon, bullet, perk or choice is running, or whom a zombie is after.
+The world switches it with `world.as(q)` (it also switches `world.input`, `world.choice`, `world.choiceQueue` and
+`onScreenZombies()`), and hands back `players[0]` at the end of every loop. So content written for one survivor works
+unchanged; what to keep in mind:
+- Code that runs **in a survivor's setup** (`create`, `apply`, `setup`, `init`) owns the listeners (`world.on`) and
+  `world.dmgMods` it adds. Personal events (`DS.PERSONAL_EVENTS`: kill, hit, dash, playerHit…) only reach a survivor's
+  own listeners for its own deeds; other events run as the owner.
+- Projectiles, areas and allies get `owner` = the acting survivor when spawned and run (update, hits, draw) as it.
+- A check "is **the** survivor standing here?" in shared code (objectives, puddles, telegraph hits) must loop
+  `world.players` (skip `!world.reachable(q)`: dead, downed or aboard). `DS.ZU.hitP`, `BK.fire`, hostile areas and
+  enemy shots already do. `world.nearestPlayer(x, y)` and `world.centre()` help.
+- Rewards everyone gets go through `world.forEachPlayer(fn)`; one survivor's choices through `world.forPlayer(i, fn)`.
+- Solo is one survivor that is always the acting one: nothing changes there (`tools/agents/coop/solo_golden.js`).
+
 ## Weapons (`DS.WEAPONS[id]`) — weapons agent
 ```js
 DS.WEAPONS.pistol = {

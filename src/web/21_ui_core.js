@@ -265,7 +265,13 @@
   /* sel = {map, survivor, difficulty, infection} | {daily: dailyObj} */
   U.startRun = function (sel) {
     let cfg;
-    try { cfg = sel.daily ? M.buildRunConfig({ daily: sel.daily }, M.data) : M.buildRunConfig(sel, M.data); }
+    try {
+      cfg = sel.daily ? M.buildRunConfig({ daily: sel.daily }, M.data) : M.buildRunConfig(sel, M.data);
+      if (sel.buddy) {   // co-op with a bot buddy: it plays with your own save's upgrades
+        const b = M.buildRunConfig(Object.assign({}, sel, { survivor: sel.buddy }), M.data);
+        cfg.coop = [{ survivor: b.survivor, meta: b.meta, mastery: b.mastery, unlocked: b.unlocked, revives: b.revives, rerolls: b.rerolls, banishes: b.banishes, skips: b.skips, extraChoice: b.extraChoice, bot: true }];
+      }
+    }
     catch (e) { console.error(e); U.toast('Could not build the run: ' + e.message, 'bad'); return; }
     if (!sel.daily) M.remember({ map: cfg.map, survivor: cfg.survivor, difficulty: cfg.difficulty, infection: cfg.infection, stage: cfg.stage | 0 });
     U.lastSel = sel;
@@ -411,6 +417,7 @@
         '</section>' +
         '<nav class="m-toc m-sheet" aria-label="Menu">' +
           '<div class="m-toc-head"><span class="m-toc-title">In this issue</span>' + U.wallet() + '</div>' +
+          row('coop', 'Co-op', 'two survivors · bot buddy', 'new') +
           row('survivors', 'Survivors', nSurv + ' of 6 recruited') +
           row('safehouse', 'Safehouse', ranks + ' of ' + M.SAFEHOUSE.reduce((n, d) => n + M.rankCap(d.id), 0) + ' ranks', afford ? 'can afford ' + afford : '') +
           row('armory', 'Armory', nArm + ' of 28 unlocked') +

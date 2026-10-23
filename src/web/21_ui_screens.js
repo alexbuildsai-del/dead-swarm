@@ -30,13 +30,13 @@
      ====================================================================== */
   U.S.play = {
     render(a) {
-      const s = M.data; const L = validSel(a.sel); a.sel = L;
+      const s = M.data, coop = !!a.coop; const L = validSel(coop ? Object.assign({}, a.sel, { map: 'suburbs' }) : a.sel); a.sel = L;
       const maps = M.MAPS.map(id => {
-        const un = M.mapUnlocked(s, id), on = L.map === id, I = M.INFO.maps[id], D = DS.MAPS[id] || {};
+        const un = M.mapUnlocked(s, id) && (!coop || id === 'suburbs'), on = L.map === id, I = M.INFO.maps[id], D = DS.MAPS[id] || {};
         const marks = M.DIFFS.map(d => '<i class="' + (M.clearCount(s, id, d) ? 'on' : '') + '" title="' + esc(M.name('difficulty', d)) + '">' + M.name('difficulty', d)[0] + '</i>').join('');
         return '<button class="m-map' + (on ? ' sel' : '') + (un ? '' : ' locked') + '" data-act="map" data-id="' + id + '"' + (un ? '' : ' aria-disabled="true" data-why="' + esc(M.mapUnlockHow(id)) + '"') + ' aria-pressed="' + on + '">' +
           U.mapThumb(id) + '<span class="m-map-name">' + esc(D.short || I.short) + '</span>' +
-          (un ? '<span class="m-map-obj">' + esc(D.objective || I.objective) + '</span><span class="m-clears" aria-label="Cleared on">' + marks + '</span>' : U.lockBadge(M.mapUnlockHow(id))) + '</button>';
+          (un ? '<span class="m-map-obj">' + esc(D.objective || I.objective) + '</span><span class="m-clears" aria-label="Cleared on">' + marks + '</span>' : U.lockBadge(coop && M.mapUnlocked(s, id) ? 'Co-op starts on Maple Hollow' : M.mapUnlockHow(id))) + '</button>';
       }).join('');
       const diffs = M.DIFFS.map(d => {
         const un = M.diffUnlocked(s, L.map, d), on = L.difficulty === d, D = DS.DIFFICULTY[d];
@@ -71,14 +71,23 @@
       const si = U.survInfo(L.survivor), mi = M.masteryInfo(s, L.survivor);
       const sw = mi.alt ? si.alt : si.start;
       const mult = U.scrapMult(L.difficulty, L.infection);
-      return U.page('Play', '<div class="m-play-grid">' +
+      // co-op: the teammate (a bot for now; a friend online comes next). Same survivor twice is fine.
+      let buddy = '';
+      if (coop) {
+        if (!a.buddy || !M.survivorUnlocked(s, a.buddy)) a.buddy = L.survivor === 'juno' ? 'rook' : M.survivorUnlocked(s, 'juno') ? 'juno' : 'rook';
+        buddy = '<h2 class="m-h2">With <small>a bot buddy for now; a friend online is next</small></h2><div class="m-svs">' + DS.SURVIVOR_ORDER.filter(id => M.survivorUnlocked(s, id)).map(id => {
+          const on = a.buddy === id;
+          return '<button class="m-sv' + (on ? ' sel' : '') + '" data-act="buddy" data-id="' + id + '" aria-pressed="' + on + '" aria-label="Bot buddy: ' + esc(M.name('survivor', id)) + '">' + U.img(U.portraitURL(id, 0, 128), 'm-por', '') + '<span class="m-sv-m">BOT</span></button>';
+        }).join('') + '</div>';
+      }
+      return U.page(coop ? 'Co-op' : 'Play', '<div class="m-play-grid">' +
         '<section class="m-col"><h2 class="m-h2">Where</h2><div class="m-maps">' + maps + '</div>' +
           '<h2 class="m-h2">How bad</h2><div class="m-diffs">' + diffs + '</div>' + nights + inf + '</section>' +
         '<section class="m-col"><h2 class="m-h2">Who</h2><div class="m-svs">' + survs + '</div>' +
           '<div class="m-svinfo"><b>' + esc(si.fullName) + '</b> <span class="m-role">' + esc(si.role) + '</span>' +
             '<p>' + esc(si.passive.name) + ': ' + esc(si.passive.desc) + '</p>' +
-            '<p class="m-sw">' + U.icon(sw, 32) + 'Starts with ' + esc(M.name('weapon', sw)) + (mi.talent ? ' · Talent ' + mi.talent + ': ' + esc(si.talents[mi.talent].name) : '') + '</p></div>' +
-          '<button class="m-sticker m-start" data-act="start"><span class="m-play-big">START</span><span class="m-play-sub">' + (L.stage === 1 || L.stage === 2 ? 'Night ' + L.stage + ' · ' + esc(M.NIGHTS[L.stage - 1].ends) : 'Scrap ' + U.multTxt(mult) + ' · ' + esc(M.name('mapShort', L.map))) + '</span></button>' +
+            '<p class="m-sw">' + U.icon(sw, 32) + 'Starts with ' + esc(M.name('weapon', sw)) + (mi.talent ? ' · Talent ' + mi.talent + ': ' + esc(si.talents[mi.talent].name) : '') + '</p></div>' + buddy +
+          '<button class="m-sticker m-start" data-act="start"><span class="m-play-big">START</span><span class="m-play-sub">' + (coop ? 'with ' + esc(M.name('survivor', a.buddy)) + ' · ' : '') + (L.stage === 1 || L.stage === 2 ? 'Night ' + L.stage + ' · ' + esc(M.NIGHTS[L.stage - 1].ends) : 'Scrap ' + U.multTxt(mult) + ' · ' + esc(M.name('mapShort', L.map))) + '</span></button>' +
         '</section></div>', { cls: 'p-play', right: U.wallet() });
     },
     act: {
@@ -87,9 +96,12 @@
       inf(b) { const a = cur().args; a.sel.infection = Math.max(0, Math.min(M.infectionMax(M.data), (a.sel.infection | 0) + (+b.dataset.d))); M.remember(a.sel); U.snd('ui_click'); U.refresh(); },
       surv(b) { const a = cur().args; a.sel.survivor = b.dataset.id; M.remember(a.sel); U.snd('ui_click'); U.refresh(); },
       night(b) { const a = cur().args; a.sel.stage = +b.dataset.id; a.sel = validSel(a.sel); M.remember(a.sel); U.snd('ui_click'); U.refresh(); },
-      start() { const a = cur().args; U.snd('radio_tune'); U.startRun(validSel(a.sel)); }
+      buddy(b) { cur().args.buddy = b.dataset.id; U.snd('ui_click'); U.refresh(); },
+      start() { const a = cur().args; U.snd('radio_tune'); U.startRun(a.coop ? Object.assign(validSel(Object.assign({}, a.sel, { map: 'suburbs' })), { buddy: a.buddy }) : validSel(a.sel)); }
     }
   };
+  /* CO-OP: the Play screen for two (Maple Hollow first). Progress, Scrap and Nights go to your own save as in solo. */
+  U.S.coop = Object.assign({}, U.S.play, { render(a) { a.coop = true; return U.S.play.render(a); } });
   function cur() { return U.stack[U.stack.length - 1]; }
 
   /* ======================================================================

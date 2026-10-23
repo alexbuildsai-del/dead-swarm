@@ -63,6 +63,9 @@ DS.HUD = {
     if (p.revives > 0) { ctx.fillStyle = DS.COL.paper; ctx.font = '11px ' + DS.FONT.type; ctx.textAlign = 'left'; ctx.fillText('♥×' + p.revives, L + hpW + 48, hy + 8); }
     // ---- slots
     const sz = small ? 22 : 28, gap = 3, sy = hy + hpH + 7;
+    // ---- co-op: each teammate's chip (name, HP, down / aboard): right of the slots, or under them on a narrow screen
+    const nMates = world.players ? world.players.length - 1 : 0, mateH = W < 600 ? nMates * 34 : 0;
+    if (nMates) this.mates(ctx, world, W < 600 ? L : L + 5 * (sz + gap) + 6, W < 600 ? sy + 2 * (sz + gap) + 6 : sy, t);
     for (let i = 0; i < 5; i++) this.slot(ctx, L + i * (sz + gap), sy, sz, p.weapons[i], 'w');
     for (let i = 0; i < 5; i++) this.slot(ctx, L + i * (sz + gap), sy + sz + gap + 2, sz, p.gear[i], 'g');
     // ---- timer + counters
@@ -102,7 +105,7 @@ DS.HUD = {
     if (ob && ob.title) {
       const ttl = ob.title.toUpperCase();
       let ox, oy, ow;
-      if (narrow) { ox = L; oy = Math.max(sy + 2 * (sz + gap) + 14, bars.length ? by + 8 : 0); ow = Math.min(W * 0.62, 260); }
+      if (narrow) { ox = L; oy = Math.max(sy + 2 * (sz + gap) + 14 + mateH, bars.length ? by + 8 : 0); ow = Math.min(W * 0.62, 260); }
       else { ox = Rt; oy = T + 64; ow = DS.clamp(Rt - (W / 2 + bw / 2) - 16, 130, 300); }
       ctx.textAlign = narrow ? 'left' : 'right';
       ctx.font = '13px ' + DS.FONT.head; ctx.fillStyle = DS.COL.yellow; ctx.lineWidth = 3; ctx.strokeStyle = DS.COL.ink;
@@ -128,6 +131,24 @@ DS.HUD = {
     this.markers(ctx, world, R, t);
     // ---- evac prompt
     if (world.evac) this.evacPrompt(ctx, world, W, H, t);
+    // ---- co-op: you're out (bled out, or aboard and waiting): the camera follows your teammate
+    if ((p.dead || p.boarded) && world.players && world.players.length > 1 && !world.over) {
+      const mate = world.players.find(q => q !== p && !q.dead && !q.boarded);
+      if (mate) {
+        const a = p.boarded ? 'ABOARD' : 'YOU\'RE OUT', b = (mate.name || mate.surv.name).toUpperCase() + ' FIGHTS ON';
+        ctx.textAlign = 'center'; ctx.lineWidth = 5; ctx.strokeStyle = DS.COL.ink;
+        ctx.font = '26px ' + DS.FONT.head; ctx.fillStyle = DS.COL.paper; ctx.strokeText(a, W / 2, H * 0.3); ctx.fillText(a, W / 2, H * 0.3);
+        ctx.font = '14px ' + DS.FONT.head; ctx.strokeText(b, W / 2, H * 0.3 + 24); ctx.fillText(b, W / 2, H * 0.3 + 24);
+      }
+    }
+    // ---- co-op: you're down
+    if (p.downed) {
+      const mate = (world.players || []).find(q => q !== p && !q.dead && !q.downed && !q.boarded);
+      const a = 'YOU\'RE DOWN', b = (mate ? (mate.name || mate.surv.name).toUpperCase() + ' HAS ' : 'BLEEDING OUT · ') + Math.ceil(Math.max(0, p.downT)) + 's' + (mate ? ' TO REACH YOU' : '');
+      ctx.textAlign = 'center'; ctx.lineWidth = 5; ctx.strokeStyle = DS.COL.ink;
+      ctx.font = '30px ' + DS.FONT.head; ctx.fillStyle = DS.COL.yellow; ctx.strokeText(a, W / 2, H * 0.36); ctx.fillText(a, W / 2, H * 0.36);
+      ctx.font = '15px ' + DS.FONT.head; ctx.fillStyle = DS.COL.paper; ctx.strokeText(b, W / 2, H * 0.36 + 28); ctx.fillText(b, W / 2, H * 0.36 + 28);
+    }
     // ---- radio subtitle
     this.radio(ctx, world, W, H, S, dt, t);
     // ---- desktop key hints for dash/ult
@@ -135,6 +156,21 @@ DS.HUD = {
     if (this.tipUntil > 0 && world.t < this.tipUntil) this.tips(ctx, world, W, H, S, t);
     if (DS.Settings.fps) { ctx.textAlign = 'left'; ctx.font = '11px ' + DS.FONT.type; ctx.fillStyle = this.fps < 50 ? DS.COL.red : '#9fe08a'; ctx.fillText(Math.round(this.fps) + ' fps · ' + world.zombies.length + 'z · q' + R.q, L, H - S.b - 10); }
     if (DS.Input && DS.Input.enabled) DS.Input.updateButtons(world);
+  },
+  mates(ctx, world, x, y, t) {
+    const C = DS.COL;
+    for (const q of world.players) {
+      if (q === world.player) continue;
+      const w = 92, k = DS.clamp(q.hp / q.stats.maxHp, 0, 1);
+      ctx.fillStyle = 'rgba(27,31,26,0.8)'; ctx.fillRect(x, y, w, 30);
+      ctx.textAlign = 'left'; ctx.font = '11px ' + DS.FONT.head; ctx.fillStyle = C.paper;
+      ctx.fillText((q.name || q.surv.name).toUpperCase() + ' · LV' + q.level, x + 5, y + 9);
+      let st = '';
+      if (q.dead) st = 'OUT'; else if (q.boarded) st = 'ABOARD'; else if (q.downed) st = 'DOWN ' + Math.ceil(Math.max(0, q.downT)) + 's';
+      if (st) { ctx.fillStyle = q.downed && ((t * 3) | 0) % 2 ? C.red : C.yellow; ctx.fillText(st, x + 5, y + 22); }
+      else { ctx.fillStyle = '#3a1b1d'; ctx.fillRect(x + 5, y + 18, w - 10, 7); ctx.fillStyle = '#9fe08a'; ctx.fillRect(x + 5, y + 18, (w - 10) * k, 7); }
+      y += 34;
+    }
   },
   /* kills / Scrap / Serum as icon chips centred under the timer; the Serum chip flashes "+N SERUM" when it grows */
   counters(ctx, world, cx, cy, dt) {
@@ -289,6 +325,7 @@ DS.HUD = {
     if (world.radio && world.radio.markers) for (const mk of world.radio.markers) dot(mk.x, mk.y, 4, C.white, C.ink, '', true);
     if (world.evac && world.evac.state !== 'away') { pulse(world.evac.x, world.evac.y, C.uv, true); dot(world.evac.x, world.evac.y, 5, C.uv, C.ink, '', true); }
     for (const b of world.bosses) if (b.alive) dot(b.x, b.y, 4.5, C.red, C.ink, '', true);
+    if (world.players) for (const q of world.players) if (q !== p && !q.dead && !q.boarded) { if (q.downed) pulse(q.x, q.y, C.yellow, true); dot(q.x, q.y, 4.5, q.downed ? C.yellow : '#9fe08a', C.ink, '', true); }
     // the survivor, pointing where they face
     ctx.save(); ctx.translate(cx, cy); ctx.rotate(Math.atan2(p.facingY, p.facingX));
     ctx.beginPath(); ctx.moveTo(7, 0); ctx.lineTo(-5, -4.5); ctx.lineTo(-2.5, 0); ctx.lineTo(-5, 4.5); ctx.closePath();
@@ -319,16 +356,17 @@ DS.HUD = {
     if (world.evac && world.evac.state !== 'away') list.push({ x: world.evac.x, y: world.evac.y, kind: 'evac', label: 'EVAC' });
     if (world.radio && world.radio.markers) for (const m of world.radio.markers) list.push(m);
     for (const b of world.bosses) if (b.alive) list.push({ x: b.x, y: b.y, kind: 'boss', label: '' });
+    if (world.players) for (const q of world.players) if (q !== world.player && !q.dead && !q.boarded) list.push({ x: q.x, y: q.y, kind: q.downed ? 'mateDown' : 'mate', label: q.downed ? 'REVIVE ' + (q.name || q.surv.name).toUpperCase() : (q.name || q.surv.name).toUpperCase(), mate: true });
     for (const m of list) {
       R.toScreen(m.x, m.y, tmp);
       const inside = tmp.x > 0 && tmp.x < W && tmp.y > 0 && tmp.y < H;
-      if (inside) { if (m.kind !== 'boss' && m.label) { ctx.font = '11px ' + DS.FONT.head; ctx.textAlign = 'center'; ctx.lineWidth = 3; ctx.strokeStyle = DS.COL.ink; ctx.fillStyle = DS.COL.yellow; ctx.strokeText(m.label, tmp.x, tmp.y - 50); ctx.fillText(m.label, tmp.x, tmp.y - 50); } continue; }
+      if (inside) { if (m.kind !== 'boss' && m.label && !m.mate) { ctx.font = '11px ' + DS.FONT.head; ctx.textAlign = 'center'; ctx.lineWidth = 3; ctx.strokeStyle = DS.COL.ink; ctx.fillStyle = DS.COL.yellow; ctx.strokeText(m.label, tmp.x, tmp.y - 50); ctx.fillText(m.label, tmp.x, tmp.y - 50); } continue; }
       // clamp to the screen edge, but keep below the timer band and off the minimap
       const top = this.safe.t + (W < 600 ? 104 : 84), cx = W / 2, cy = H / 2, dx = tmp.x - cx, dy = tmp.y - cy;
       const k = Math.min((W / 2 - pad) / Math.abs(dx || 1e-6), (dy < 0 ? cy - top : H / 2 - pad) / Math.abs(dy || 1e-6));
       let x = cx + dx * k, y = cy + dy * k; const a = Math.atan2(dy, dx), mm = this.mmRect;
       if (mm && x > mm.l - 18 && x < mm.r + 18 && y > mm.t - 18 && y < mm.b + 18) { if (mm.l < W / 2) x = mm.r + 22; else x = mm.l - 22; }
-      const col = m.kind === 'boss' ? DS.COL.red : m.kind === 'evac' ? DS.COL.uv : DS.COL.yellow;
+      const col = m.kind === 'boss' ? DS.COL.red : m.kind === 'evac' ? DS.COL.uv : m.kind === 'mate' ? '#9fe08a' : DS.COL.yellow;
       // a big notched arrow with a thick ink outline and a slow pulse, so it reads at the screen edge mid-fight
       const s = 1 + 0.08 * Math.sin(t * 5);
       ctx.save(); ctx.translate(x, y); ctx.rotate(a); ctx.scale(s, s);
@@ -340,7 +378,10 @@ DS.HUD = {
   },
   evacPrompt(ctx, world, W, H, t) {
     const e = world.evac; let txt = '';
-    if (e.state === 'incoming') txt = 'EVAC INBOUND · ' + Math.max(0, Math.ceil(6 - e.t)) + 's';
+    const p = world.player, P = world.players || [p], down = P.find(q => q.downed), wait = P.find(q => q !== p && !q.dead && !q.boarded);
+    if (e.state === 'landed' && P.length > 1 && p.boarded) txt = wait ? 'ABOARD · WAITING FOR ' + (wait.name || wait.surv.name).toUpperCase() : 'ABOARD';
+    else if (e.state === 'landed' && P.length > 1 && down && down !== p) txt = 'REVIVE ' + (down.name || down.surv.name).toUpperCase() + ' FIRST';
+    else if (e.state === 'incoming') txt = 'EVAC INBOUND · ' + Math.max(0, Math.ceil(6 - e.t)) + 's';
     else if (e.state === 'landed') txt = e.board > 0 ? 'BOARDING… ' + Math.min(100, Math.round(e.board / 3 * 100)) + '%' : (world.holdOut ? 'CHOPPER ON THE PAD · ' + Math.ceil(Math.max(0, e.windowT)) + 's' : 'STAND IN THE RING TO EVAC');
     else if (world.holdOut) txt = 'HOLDING OUT · next chopper ' + Math.max(0, Math.ceil(120 - e.t)) + 's';
     if (!txt) return;

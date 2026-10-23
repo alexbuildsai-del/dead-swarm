@@ -60,8 +60,9 @@ DS.FlowField = class FlowField {
     if (i < 0 || j < 0 || i >= this.cols || j >= this.rows) return -1;
     return j * this.cols + i;
   }
-  compute(tx, ty) {
-    const { cols, rows, block, dist, queue } = this;
+  /* the cell to start a BFS from for a survivor at (tx, ty), or -1 */
+  seed(tx, ty) {
+    const { cols, rows, block } = this;
     let s = this.idx(tx, ty);
     if (s < 0) { // survivor outside the grid: clamp to the nearest edge cell
       const i = DS.clamp(Math.floor((tx - this.ox) / this.cell), 0, cols - 1), j = DS.clamp(Math.floor((ty - this.oy) / this.cell), 0, rows - 1); s = j * cols + i;
@@ -69,11 +70,18 @@ DS.FlowField = class FlowField {
     if (block[s]) { // survivor stands in a blocked cell (edge): use nearest open neighbour
       const si = s % cols, sj = (s / cols) | 0; let found = -1;
       for (let r = 1; r < 7 && found < 0; r++) for (let dj = -r; dj <= r && found < 0; dj++) for (let di = -r; di <= r; di++) { const i = si + di, j = sj + dj; if (i >= 0 && j >= 0 && i < cols && j < rows && !block[j * cols + i]) { found = j * cols + i; break; } }
-      if (found < 0) return; // keep the last good field rather than wiping all pathing
       s = found;
     }
+    return s;
+  }
+  /* BFS from (tx, ty); co-op passes the other survivors in more (each one a source: zombies head for the nearest) */
+  compute(tx, ty, more) {
+    const { cols, rows, block, dist, queue } = this;
+    const s = this.seed(tx, ty);
+    if (s < 0) return; // keep the last good field rather than wiping all pathing
     dist.fill(-1); this.tx = tx; this.ty = ty;
     let qh = 0, qt = 0; queue[qt++] = s; dist[s] = 0;
+    if (more) for (const m of more) { const s2 = this.seed(m.x, m.y); if (s2 >= 0 && dist[s2] < 0) { queue[qt++] = s2; dist[s2] = 0; } }
     while (qh < qt) {
       const c = queue[qh++], ci = c % cols, cj = (c / cols) | 0, nd = dist[c] + 1;
       if (ci > 0) { const n = c - 1; if (dist[n] < 0 && !block[n]) { dist[n] = nd; queue[qt++] = n; } }
@@ -125,7 +133,9 @@ DS.MapBase = class MapBase {
     this.updateObjective(world, dt);
     this.updateInteractables(world, dt);
   }
-  refreshFlow(world) { this.flow.compute(world.player.x, world.player.y); }
+  refreshFlow(world) { const p = world.player; this.flow.compute(p.x, p.y, world.players.length > 1 ? this.flowSources(world) : null); }
+  /* co-op: every survivor zombies can reach is a flow source */
+  flowSources(world) { const o = this._fs || (this._fs = []); o.length = 0; for (const q of world.players) if (world.reachable(q)) o.push(q); return o; }
   flowDir(world, x, y) { return this.flow ? this.flow.dir(x, y) : null; }
   updateObjective() { }
   updateInteractables() { }   // loot spots (13_loot.js); maps that have them override this
@@ -208,9 +218,10 @@ DS.MapBase = class MapBase {
   }
   /* safety net: anything important stuck inside walls gets moved to open ground */
   unstick(world, dt) {
-    const p = world.player;
-    if (!p.dead && this.embedded(p)) { p.stuckT = (p.stuckT || 0) + dt; if (p.stuckT > 0.5) { const q = this.nearestOpen(p.x, p.y, p.r + 2); p.x = p.px = q.x; p.y = p.py = q.y; p.stuckT = 0; world.stats.unstuck = (world.stats.unstuck || 0) + 1; } }
-    else p.stuckT = 0;
+    for (const p of world.players) {
+      if (!p.dead && !p.boarded && this.embedded(p)) { p.stuckT = (p.stuckT || 0) + dt; if (p.stuckT > 0.5) { const q = this.nearestOpen(p.x, p.y, p.r + 2); p.x = p.px = q.x; p.y = p.py = q.y; p.stuckT = 0; world.stats.unstuck = (world.stats.unstuck || 0) + 1; } }
+      else p.stuckT = 0;
+    }
     for (let i = 0; i < world.bosses.length; i++) {
       const z = world.bosses[i]; if (!z.alive || z.hidden) continue;
       if (this.embedded(z) || (this.flow && this.bounded && this.flow.qn > 0 && this.flow.pathDist(z.x, z.y) < 0 && this.blockedCircle(z.x, z.y, z.r * 0.5))) {
@@ -267,7 +278,7 @@ DS.MapBase = class MapBase {
   deserialize() { }
   objectiveDone(world, label) {
     world.stats.objectives++;
-    world.queueChoice({ type: 'crate', min: 1 });
+    world.forEachPlayer(() => world.queueChoice({ type: 'crate', min: 1 }));   // co-op: a crate each
     world.addScrap(15);
     world.fx('objective', world.player.x, world.player.y, 0, 0, 0, label);
     world.emit('objective', label);
@@ -337,15 +348,17 @@ DS.MapSuburbs = class MapSuburbs extends DS.MapBase {
   /* generator 3 restores the K-DED relay: call-in rewards double */
   get relay() { return this.gens[2].done; }
   updateBench(world, dt) {
-    const b = this.bench, p = world.player;
+    const b = this.bench;
     if (!b.on) { if (this.gens[1].done) { b.on = true; this.porchAt = null; world.emit('benchOnline'); } else return; }
     if (b.cd > 0) b.cd = Math.max(0, b.cd - dt);
-    const on = !p.dead && b.cd <= 0 && DS.dist2(p.x, p.y, b.x, b.y) < b.r * b.r;
-    if (on) {
+    let p = null;   // co-op: whoever stands on it gets the crate
+    if (b.cd <= 0) for (const q of world.players) if (!q.dead && !q.downed && !q.boarded && DS.dist2(q.x, q.y, b.x, b.y) < b.r * b.r) { p = q; break; }
+    if (p) {
       b.prog += dt;
       if (b.prog >= DS.TUNE.benchTime) {
         b.prog = 0; b.cd = DS.TUNE.benchCd; world.stats.benchUses = (world.stats.benchUses | 0) + 1;
-        world.queueChoice({ type: 'crate', min: 1 }); world.sound('crate_drop', b.x, b.y, 0.8); world.emit('bench');
+        const prev = world.player; world.as(p); world.queueChoice({ type: 'crate', min: 1 }); world.as(prev);
+        world.sound('crate_drop', b.x, b.y, 0.8); world.emit('bench');
       }
     } else if (b.prog > 0) b.prog = Math.max(0, b.prog - dt);
   }
@@ -359,9 +372,13 @@ DS.MapSuburbs = class MapSuburbs extends DS.MapBase {
     if (this.blocks.size > 120) this.pruneBlocks();
     return b;
   }
-  pruneBlocks() {
-    const p = this.w.player, B = DS.SUB.B, pbx = Math.floor(p.x / B), pby = Math.floor(p.y / B);
-    for (const [k, b] of this.blocks) if (Math.abs(b.bx - pbx) > 5 || Math.abs(b.by - pby) > 5) this.blocks.delete(k);
+  pruneBlocks() {   // drop blocks far from every survivor
+    const B = DS.SUB.B, P = this.w.players;
+    for (const [k, b] of this.blocks) {
+      let near = false;
+      for (const p of P) if (Math.abs(b.bx - Math.floor(p.x / B)) <= 5 && Math.abs(b.by - Math.floor(p.y / B)) <= 5) { near = true; break; }
+      if (!near) this.blocks.delete(k);
+    }
   }
   genBlock(bx, by) {
     const B = DS.SUB.B, SW = DS.SUB.SW, half = SW / 2;
@@ -415,7 +432,7 @@ DS.MapSuburbs = class MapSuburbs extends DS.MapBase {
     return out;
   }
   refreshFlow(world) {
-    const p = world.player, f = this.flow, S = 320;
+    const p = world.centre(), f = this.flow, S = 320;   // the window follows the group; every survivor is a source
     const ox = Math.round(p.x / S) * S - 1280, oy = Math.round(p.y / S) * S - 1280;
     if (ox !== this.flowOx || oy !== this.flowOy) {
       const fn = this._blkFn || (this._blkFn = (x, y) => this.blockedCircle(x, y, 12));
@@ -423,11 +440,12 @@ DS.MapSuburbs = class MapSuburbs extends DS.MapBase {
       else f.shiftBlocked(ox, oy, fn);
       this.flowOx = ox; this.flowOy = oy;
     }
-    f.compute(p.x, p.y);
+    const q = world.player;
+    f.compute(q.x, q.y, world.players.length > 1 ? this.flowSources(world) : null);
   }
   flowDir(world, x, y) { return this.flow.dir(x, y); }
   updateObjective(world, dt) {
-    const p = world.player;
+    const P = world.players;
     let charging = null;
     const CT = DS.OBJ_CHARGE;
     for (const g of this.gens) {
@@ -435,10 +453,12 @@ DS.MapSuburbs = class MapSuburbs extends DS.MapBase {
       g.locked = world.t < g.unlockT || (g.idx > 0 && !this.gens[g.idx - 1].done);
       if (g.locked) { g.active = false; continue; }
       if (!g.announced) { g.announced = true; world.emit('objectiveReady', 'generator', g.idx); if (g.idx > 0) world.fx('banner', 0, 0, 2.2, 0, 0, 'GENERATOR ' + (g.idx + 1) + ' ONLINE'); }
-      g.active = DS.dist2(p.x, p.y, g.x, g.y) < g.r * g.r;
+      // co-op: anyone standing in it charges it; two inside charge it 50% faster
+      let inside = 0; for (const p of P) if (!p.dead && !p.downed && !p.boarded && DS.dist2(p.x, p.y, g.x, g.y) < g.r * g.r) inside++;
+      g.active = inside > 0;
       if (g.active) {
         charging = g;
-        g.charge += dt / CT;
+        g.charge += dt / CT * (inside > 1 ? 1.5 : 1);
         if (((g.charge * CT) | 0) !== (((g.charge - dt / CT) * CT) | 0)) world.sound('gen_charge', g.x, g.y, 0.5);
         if (g.charge >= 1) {
           g.charge = 1; g.done = true; this.genDone++; world.stats.generators = this.genDone;
@@ -465,11 +485,19 @@ DS.MapSuburbs = class MapSuburbs extends DS.MapBase {
     return b.spot;
   }
   updateInteractables(world, dt) {
-    const p = world.player, B = DS.SUB.B, bx = Math.floor(p.x / B), by = Math.floor(p.y / B), r = DS.TUNE.lootR;
-    const s = this.lootSpot(this.blockAt(bx, by));
-    this.loot.update(world, dt, s && !p.dead && DS.dist2(p.x, p.y, s.dx, s.dy) < r * r ? s : null);
+    const B = DS.SUB.B, r = DS.TUNE.lootR, P = world.players;
+    let spot = null, looter = null;   // co-op: the first survivor standing at a lootable door
+    for (const p of P) {
+      if (p.dead || p.downed || p.boarded) continue;
+      const s = this.lootSpot(this.blockAt(Math.floor(p.x / B), Math.floor(p.y / B)));
+      if (s && DS.dist2(p.x, p.y, s.dx, s.dy) < r * r) { spot = s; looter = p; break; }
+    }
+    const prev = world.player; if (looter && looter !== prev) world.as(looter);
+    this.loot.update(world, dt, spot);
+    if (world.player !== prev) world.as(prev);
     this.updateBench(world, dt);
-    // the lit porches around the survivor, drawn as props (rebuilt when they cross into another block)
+    // the lit porches around the survivor(s), drawn as props (rebuilt when they cross into another block)
+    const c = world.centre(), bx = Math.floor(c.x / B), by = Math.floor(c.y / B);
     const key = bx + ',' + by;
     if (this.porchAt !== key) {
       this.porchAt = key; this.porches.length = 0;

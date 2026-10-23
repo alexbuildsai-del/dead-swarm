@@ -158,6 +158,19 @@ class Bot {
   goal() {
     const w = this.w, p = w.player;
     const hpk = p.hp / p.stats.maxHp;
+    // co-op: a downed teammate first (stand over them), then stay within a screen of the group
+    if (w.players && w.players.length > 1) {
+      let mate = null, md = 1e18;
+      for (const q of w.players) {
+        if (q === p || q.dead || q.boarded) continue;
+        const d = Math.hypot(q.x - p.x, q.y - p.y);
+        if (q.downed && !p.downed) return { x: q.x, y: q.y, w: 30, stay: d < 36 };
+        if (d < md) { md = d; mate = q; }
+      }
+      if (p.downed && mate) return { x: mate.x, y: mate.y, w: 14 };
+      const pad = w.evac && w.evac.state === 'landed';
+      if (mate && !pad && md > 420) return { x: mate.x, y: mate.y, w: Math.min(24, 8 + (md - 420) / 30) };
+    }
     // evac pad
     if (w.evac && w.evac.state === 'landed' && (!w.holdOut || w.holdT / 60 >= this.holdOutMinutes)) return { x: w.evac.x, y: w.evac.y, w: 26, stay: Math.hypot(w.evac.x - p.x, w.evac.y - p.y) < 60 };
     let best = null, bd = 1e18;
